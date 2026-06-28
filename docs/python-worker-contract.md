@@ -123,7 +123,76 @@ Worker response result:
 
 `audioPath` is an internal Node↔Python handoff field only. Public job responses expose `/tts/audio/:jobId`, never local file paths or text. Node resolves `audioPath` and rejects values outside `TTS_AUDIO_ROOT`/`SEOJING_TTS_AUDIO_DIR` before streaming, so a worker bug cannot turn the public audio route into arbitrary file disclosure. Routes convert worker timeouts/errors to stable public TTS job/error states instead of leaking Python stack traces.
 
-The included `workers/seojing_python_worker.py` is the loopback MVP worker. Provision it with `python3 -m pip install -r workers/requirements.txt` inside the worker virtualenv; it uses `edge-tts` for real synthesis and refuses non-loopback binds by default.
+### Article Q&A/RAG task payload/result
+
+Node owns the public article, section, question, and session policy. Python receives only the already-selected published article context chunks and returns generation/retrieval output.
+
+Public Node endpoint:
+
+- `POST /articles/:slug/qa` — ask a source-backed question about one published article. Body: `question`, optional `section_id`/`sectionId`, optional opaque `session_id`/`sessionId`.
+
+Node validates:
+
+- the slug resolves to a `PUBLISHED` article through `ArticleService.getPublicArticleBySlug`;
+- optional `section_id` exists in the current article revision and scopes context to that heading section;
+- question/session identifiers are bounded strings;
+- responses expose source excerpts and public slugs only, not local paths, worker URLs, raw stack traces, ops routes, or private data.
+
+Worker request payload for `POST /v1/tasks/qa`:
+
+```json
+{
+  "requestId": "qa-correlation-id",
+  "payload": {
+    "article": {
+      "slug": "study/js-closure",
+      "title": "JavaScript Closure Study",
+      "sectionId": "closure"
+    },
+    "question": "How does closure lexical scope work?",
+    "sessionId": "optional-opaque-reader-session",
+    "context": [
+      {
+        "blockId": "p-closure",
+        "sectionId": "closure",
+        "heading": null,
+        "text": "A closure keeps lexical scope after the outer function returns.",
+        "excerpt": "A closure keeps lexical scope after the outer function returns.",
+        "score": 3
+      }
+    ]
+  }
+}
+```
+
+Worker response result:
+
+```json
+{
+  "requestId": "qa-correlation-id",
+  "result": {
+    "status": "answered",
+    "answer": "Source-backed answer text",
+    "sources": [
+      {
+        "articleSlug": "study/js-closure",
+        "blockId": "p-closure",
+        "sectionId": "closure",
+        "heading": null,
+        "excerpt": "A closure keeps lexical scope after the outer function returns.",
+        "score": 3
+      }
+    ],
+    "related": [
+      { "slug": "study/js-closure", "title": "JavaScript Closure Study" }
+    ]
+  }
+}
+```
+
+If the worker times out, returns invalid output, or is not configured, Node returns a deterministic source-backed fallback. If no chunk has enough evidence, the public response uses `status: "insufficient_context"` rather than guessing.
+
+The included `workers/seojing_python_worker.py` is the loopback MVP worker. Provision it with `python3 -m pip install -r workers/requirements.txt` inside the worker virtualenv; it uses `edge-tts` for real synthesis and a deterministic source-citation Q&A fallback for the initial QA/RAG contract. It refuses non-loopback binds by default.
 
 ## Timeout, retry, and cancellation
 

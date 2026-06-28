@@ -8,10 +8,12 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { ArticleRepository } from "./repositories/articles.js";
 import { CommunityRepository } from "./repositories/community.js";
 import { registerAdminWritingRoutes } from "./routes/admin-writing.js";
+import { registerArticleQaRoutes } from "./routes/article-qa.js";
 import { registerArticleRoutes } from "./routes/articles.js";
 import { registerCommunityRoutes } from "./routes/community.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerTtsRoutes } from "./routes/tts.js";
+import { ArticleQaService } from "./services/article-qa.js";
 import { ArticleService } from "./services/articles.js";
 import { CommunityService } from "./services/community.js";
 import { GitHubOAuthService } from "./services/github-oauth.js";
@@ -68,6 +70,11 @@ export async function buildApp(
           description:
             "Node public TTS API backed by an internal Python worker",
         },
+        {
+          name: "qa",
+          description:
+            "Source-backed article Q&A delegated to the internal Python worker",
+        },
       ],
     },
   });
@@ -94,6 +101,14 @@ export async function buildApp(
     options.githubOAuthService ??
     createGitHubOAuthService(options, communityService);
   registerArticleRoutes(app, { articleService });
+  registerArticleQaRoutes(app, {
+    articleQaService: new ArticleQaService(
+      articleService,
+      options.pythonWorkerClient?.invoke
+        ? options.pythonWorkerClient
+        : undefined,
+    ),
+  });
   registerAdminWritingRoutes(app, {
     articleService,
     adminToken: options.adminToken,
