@@ -21,7 +21,14 @@
     "format:check": "prettier . --check",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "db:local:start": "bash scripts/local-postgres.sh start",
+    "db:local:stop": "bash scripts/local-postgres.sh stop",
+    "db:local:status": "bash scripts/local-postgres.sh status",
     "openapi:check": "tsx scripts/check-openapi.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.1.0",

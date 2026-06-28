@@ -19,6 +19,7 @@
   "include": [
     "src/**/*.ts",
     "scripts/**/*.ts",
+    "prisma/**/*.ts",
     "test/**/*.ts",
     "vitest.config.ts"
   ],
