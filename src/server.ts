@@ -1,5 +1,6 @@
 import { buildApp } from "./app.js";
 import { loadEnv, parseCorsOrigins } from "./config/env.js";
+import { PythonWorkerClient } from "./services/python-worker.js";
 
 const env = loadEnv();
 const app = await buildApp({
@@ -17,6 +18,13 @@ const app = await buildApp({
           callbackUrl: env.GITHUB_OAUTH_CALLBACK_URL,
         }
       : undefined,
+  pythonWorkerClient: env.PYTHON_WORKER_ENABLED
+    ? new PythonWorkerClient({
+        baseUrl: env.PYTHON_WORKER_BASE_URL,
+        timeoutMs: env.PYTHON_WORKER_TIMEOUT_MS,
+        retryAttempts: env.PYTHON_WORKER_RETRY_ATTEMPTS,
+      })
+    : undefined,
 });
 
 try {

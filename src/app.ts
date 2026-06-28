@@ -14,6 +14,9 @@ import { registerHealthRoutes } from "./routes/health.js";
 import { ArticleService } from "./services/articles.js";
 import { CommunityService } from "./services/community.js";
 import { GitHubOAuthService } from "./services/github-oauth.js";
+import { type PythonWorkerClient } from "./services/python-worker.js";
+
+export type PythonWorkerGateway = Pick<PythonWorkerClient, "health">;
 
 export interface BuildAppOptions {
   logger?: boolean;
@@ -28,6 +31,7 @@ export interface BuildAppOptions {
   };
   githubOAuthService?: GitHubOAuthService;
   communitySessionSecret?: string;
+  pythonWorkerClient?: PythonWorkerGateway;
 }
 
 export async function buildApp(
@@ -63,7 +67,7 @@ export async function buildApp(
     routePrefix: "/docs",
   });
 
-  registerHealthRoutes(app);
+  registerHealthRoutes(app, { pythonWorkerClient: options.pythonWorkerClient });
 
   const prisma =
     options.articleService && options.communityService
