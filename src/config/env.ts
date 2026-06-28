@@ -13,6 +13,10 @@ const envSchema = z.object({
   PUBLIC_BASE_URL: z.string().url().default("http://localhost:4000"),
   CORS_ORIGIN: z.string().default("http://localhost:5173,https://seojing.com"),
   ADMIN_API_TOKEN: z.string().min(1).optional(),
+  GITHUB_OAUTH_CLIENT_ID: z.string().min(1).optional(),
+  GITHUB_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
+  GITHUB_OAUTH_CALLBACK_URL: z.string().url().optional(),
+  GITHUB_OAUTH_SESSION_SECRET: z.string().min(16).optional(),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

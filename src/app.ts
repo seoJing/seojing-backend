@@ -6,16 +6,28 @@ import swaggerUi from "@fastify/swagger-ui";
 import Fastify, { type FastifyInstance } from "fastify";
 
 import { ArticleRepository } from "./repositories/articles.js";
+import { CommunityRepository } from "./repositories/community.js";
 import { registerAdminWritingRoutes } from "./routes/admin-writing.js";
 import { registerArticleRoutes } from "./routes/articles.js";
+import { registerCommunityRoutes } from "./routes/community.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { ArticleService } from "./services/articles.js";
+import { CommunityService } from "./services/community.js";
+import { GitHubOAuthService } from "./services/github-oauth.js";
 
 export interface BuildAppOptions {
   logger?: boolean;
   corsOrigins?: string[];
   adminToken?: string;
   articleService?: ArticleService;
+  communityService?: CommunityService;
+  githubOAuth?: {
+    clientId: string;
+    clientSecret: string;
+    callbackUrl?: string;
+  };
+  githubOAuthService?: GitHubOAuthService;
+  communitySessionSecret?: string;
 }
 
 export async function buildApp(
@@ -39,6 +51,10 @@ export async function buildApp(
       tags: [
         { name: "health", description: "Runtime health checks" },
         { name: "articles", description: "Future public article API" },
+        {
+          name: "community",
+          description: "GitHub-authenticated comments and questions",
+        },
       ],
     },
   });
@@ -49,11 +65,24 @@ export async function buildApp(
 
   registerHealthRoutes(app);
 
-  const prisma = options.articleService ? undefined : new PrismaClient();
+  const prisma =
+    options.articleService && options.communityService
+      ? undefined
+      : new PrismaClient();
   const articleService = options.articleService ?? createArticleService(prisma);
+  const communityService =
+    options.communityService ?? createCommunityService(prisma, options);
+  const githubOAuthService =
+    options.githubOAuthService ??
+    createGitHubOAuthService(options, communityService);
   registerArticleRoutes(app, { articleService });
   registerAdminWritingRoutes(app, {
     articleService,
+    adminToken: options.adminToken,
+  });
+  registerCommunityRoutes(app, {
+    communityService,
+    githubOAuthService,
     adminToken: options.adminToken,
   });
 
@@ -92,4 +121,29 @@ function createArticleService(
     );
   }
   return new ArticleService(new ArticleRepository(prisma));
+}
+
+function createCommunityService(
+  prisma: PrismaClient | undefined,
+  options: BuildAppOptions,
+): CommunityService {
+  if (!prisma) {
+    throw new Error(
+      "Prisma client is required when communityService is not provided.",
+    );
+  }
+  return new CommunityService(
+    new CommunityRepository(prisma),
+    options.communitySessionSecret ?? "local-dev-community-session-secret",
+  );
+}
+
+function createGitHubOAuthService(
+  options: BuildAppOptions,
+  communityService: CommunityService,
+): GitHubOAuthService | undefined {
+  if (!options.githubOAuth) {
+    return undefined;
+  }
+  return new GitHubOAuthService(options.githubOAuth, communityService);
 }

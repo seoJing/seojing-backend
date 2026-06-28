@@ -8,6 +8,15 @@ const app = await buildApp({
   adminToken:
     env.ADMIN_API_TOKEN ??
     (env.NODE_ENV === "production" ? "__missing-admin-api-token__" : undefined),
+  communitySessionSecret: env.GITHUB_OAUTH_SESSION_SECRET,
+  githubOAuth:
+    env.GITHUB_OAUTH_CLIENT_ID && env.GITHUB_OAUTH_CLIENT_SECRET
+      ? {
+          clientId: env.GITHUB_OAUTH_CLIENT_ID,
+          clientSecret: env.GITHUB_OAUTH_CLIENT_SECRET,
+          callbackUrl: env.GITHUB_OAUTH_CALLBACK_URL,
+        }
+      : undefined,
 });
 
 try {

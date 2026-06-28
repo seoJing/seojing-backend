@@ -64,6 +64,7 @@ model Article {
   revisions       ArticleRevision[] @relation("ArticleRevisions")
   blocks          ArticleBlock[]
   assets          ArticleAsset[]
+  comments        ArticleComment[]
 
   @@index([status, publishedAt])
   @@map("articles")
@@ -135,4 +136,70 @@ model ArticleAsset {
   @@index([revisionId])
   @@index([blockId])
   @@map("article_assets")
+}
+
+enum UserRole {
+  READER
+  MODERATOR
+  ADMIN
+
+  @@map("user_role")
+}
+
+enum CommentKind {
+  COMMENT
+  QUESTION
+
+  @@map("comment_kind")
+}
+
+enum CommentStatus {
+  PENDING
+  VISIBLE
+  HIDDEN
+
+  @@map("comment_status")
+}
+
+model User {
+  id                  String   @id @default(uuid()) @db.Uuid
+  githubId            String   @unique @map("github_id")
+  githubLogin         String   @unique @map("github_login")
+  displayName         String?  @map("display_name")
+  avatarUrl           String?  @map("avatar_url")
+  profileUrl          String?  @map("profile_url")
+  role                UserRole @default(READER)
+  lastAuthenticatedAt DateTime @default(now()) @map("last_authenticated_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  comments ArticleComment[]
+
+  @@index([githubLogin])
+  @@map("users")
+}
+
+model ArticleComment {
+  id               String        @id @default(uuid()) @db.Uuid
+  articleId        String        @map("article_id") @db.Uuid
+  authorId         String        @map("author_id") @db.Uuid
+  parentId         String?       @map("parent_id") @db.Uuid
+  kind             CommentKind   @default(COMMENT)
+  status           CommentStatus @default(PENDING)
+  sectionId        String?       @map("section_id")
+  body             String
+  moderationReason String?       @map("moderation_reason")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  article Article          @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  author  User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  ArticleComment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies ArticleComment[] @relation("CommentThread")
+
+  @@index([articleId, status, kind, createdAt])
+  @@index([articleId, sectionId, status])
+  @@index([authorId, createdAt])
+  @@index([parentId])
+  @@map("article_comments")
 }
