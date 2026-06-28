@@ -22,6 +22,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
+    "mdx:ingest": "tsx scripts/ingest-mdx.ts",
     "db:local:start": "bash scripts/local-postgres.sh start",
     "db:local:stop": "bash scripts/local-postgres.sh stop",
     "db:local:status": "bash scripts/local-postgres.sh status",
