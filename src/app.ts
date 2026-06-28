@@ -60,7 +60,10 @@ export async function buildApp(
       servers: [{ url: "http://localhost:4000", description: "local" }],
       tags: [
         { name: "health", description: "Runtime health checks" },
-        { name: "articles", description: "Future public article API" },
+        {
+          name: "articles",
+          description: "Public article metadata, body, and cache API",
+        },
         {
           name: "community",
           description: "GitHub-authenticated comments and questions",
