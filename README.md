@@ -120,7 +120,7 @@ pnpm openapi:check
 
 ## Production routing
 
-Mac mini 운영 라우팅은 [`docs/production-routing.md`](docs/production-routing.md)에 기록합니다. 현재 공개 API 경계는 `https://api.seojing.com`이고, 이 저장소의 launchd 서비스가 `127.0.0.1:4027`에서 받는 구조입니다.
+Mac mini 운영 라우팅은 [`docs/production-routing.md`](docs/production-routing.md)에 기록합니다. 현재 공개 API 경계는 `https://api.seojing.com`이고, 이 저장소의 launchd 서비스가 `127.0.0.1:4027`에서 받는 구조입니다. 기존 `127.0.0.1:9101` FastAPI sidecar는 공개 API 경계가 아니며, SEOJing 공개 기능은 Node API가 소유합니다.
 
 ## Roadmap
 

@@ -11,7 +11,15 @@ Ticket #172 switched the public SEOJing API boundary from the old OkayJing sidec
 - database: local PostgreSQL database `seojing_backend`
 - public hostname: `https://api.seojing.com`
 
-The old `com.seojing.api` sidecar may still exist locally on `127.0.0.1:9101`, but Cloudflare Tunnel must not route `api.seojing.com` to it.
+The old `com.seojing.api` FastAPI sidecar on `127.0.0.1:9101` is retired. SEOJing public routes (`/articles`, `/community`, `/tts`, `/article-qa`, `/docs`, `/openapi.json`) are owned by this Node service. Any remaining Python process must be treated as an internal worker dependency only; it must not be the public API boundary and must not be routed by Cloudflare Tunnel.
+
+## Boundary matrix
+
+| Host / port                                      | Owner                          | Allowed responsibility                                                        | Must not expose                                                                        |
+| ------------------------------------------------ | ------------------------------ | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `https://api.seojing.com` → `127.0.0.1:4027`     | `seojing-backend` Node service | SEOJing public content/community/TTS/Q&A API                                  | OkayJing habitat, ticket, session, worker, or ops endpoints                            |
+| `https://ops-api.seojing.com` → `127.0.0.1:9100` | OkayJing 서식지 / Ops FastAPI  | private OkayJing control-plane and habitat endpoints behind Cloudflare Access | SEOJing public article/community/TTS API                                               |
+| Python worker / retired sidecar ports            | internal only                  | loopback-only worker dependency for long-running generation/RAG tasks         | public HTTP API routing, Cloudflare Tunnel ingress, or unauthenticated direct exposure |
 
 ## Cloudflare Tunnel ingress
 
