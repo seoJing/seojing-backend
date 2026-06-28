@@ -177,6 +177,30 @@ describe("public article API", () => {
     await app.close();
   });
 
+  it("accepts unencoded slash-containing article slugs for direct API probes", async () => {
+    const getPublicArticleBySlug = vi.fn().mockResolvedValue(
+      publicArticleFixture({
+        slug: "study/effective-typescript/day6",
+      }),
+    );
+    const app = await appWithArticleService({ getPublicArticleBySlug });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/articles/study/effective-typescript/day6",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(getPublicArticleBySlug).toHaveBeenCalledWith(
+      "study/effective-typescript/day6",
+    );
+    expect(response.json()).toEqual(
+      expect.objectContaining({ slug: "study/effective-typescript/day6" }),
+    );
+
+    await app.close();
+  });
+
   it("sanitizes public rendered HTML before returning backend article bodies", async () => {
     const getPublicArticleBySlug = vi.fn().mockResolvedValue(
       publicArticleFixture({

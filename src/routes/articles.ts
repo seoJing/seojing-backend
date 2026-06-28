@@ -20,6 +20,10 @@ interface ArticleSlugParams {
   slug: string;
 }
 
+interface WildcardArticleSlugParams {
+  "*": string;
+}
+
 interface PublicArticleSummary {
   slug: string;
   title: string;
@@ -112,22 +116,46 @@ export function registerArticleRoutes(
       },
     },
     async (request, reply) => {
-      const article = await options.articleService.getPublicArticleBySlug(
+      return sendPublicArticle(
         request.params.slug,
+        options.articleService,
+        request,
+        reply,
       );
-      if (!article) {
-        return reply.status(404).send({ error: "Article not found" });
-      }
-
-      const payload = toPublicArticleDetail(article);
-      setPublicCacheHeaders(reply, payload.etag);
-      if (isNotModified(request, payload.etag)) {
-        return reply.status(304).send();
-      }
-
-      return payload;
     },
   );
+
+  app.get<{ Params: WildcardArticleSlugParams }>(
+    "/articles/*",
+    async (request, reply) => {
+      return sendPublicArticle(
+        request.params["*"],
+        options.articleService,
+        request,
+        reply,
+      );
+    },
+  );
+}
+
+async function sendPublicArticle(
+  slug: string,
+  articleService: ArticleService,
+  request: FastifyRequest,
+  reply: FastifyReply,
+) {
+  const article = await articleService.getPublicArticleBySlug(slug);
+  if (!article) {
+    return reply.status(404).send({ error: "Article not found" });
+  }
+
+  const payload = toPublicArticleDetail(article);
+  setPublicCacheHeaders(reply, payload.etag);
+  if (isNotModified(request, payload.etag)) {
+    return reply.status(304).send();
+  }
+
+  return payload;
 }
 
 function parseLimit(value: string | number | undefined): number | undefined {
