@@ -11,12 +11,15 @@ import { registerAdminWritingRoutes } from "./routes/admin-writing.js";
 import { registerArticleRoutes } from "./routes/articles.js";
 import { registerCommunityRoutes } from "./routes/community.js";
 import { registerHealthRoutes } from "./routes/health.js";
+import { registerTtsRoutes } from "./routes/tts.js";
 import { ArticleService } from "./services/articles.js";
 import { CommunityService } from "./services/community.js";
 import { GitHubOAuthService } from "./services/github-oauth.js";
 import { type PythonWorkerClient } from "./services/python-worker.js";
+import { TtsService } from "./services/tts.js";
 
-export type PythonWorkerGateway = Pick<PythonWorkerClient, "health">;
+export type PythonWorkerGateway = Pick<PythonWorkerClient, "health"> &
+  Partial<Pick<PythonWorkerClient, "invoke">>;
 
 export interface BuildAppOptions {
   logger?: boolean;
@@ -32,6 +35,7 @@ export interface BuildAppOptions {
   githubOAuthService?: GitHubOAuthService;
   communitySessionSecret?: string;
   pythonWorkerClient?: PythonWorkerGateway;
+  ttsAudioRoot?: string;
 }
 
 export async function buildApp(
@@ -59,6 +63,11 @@ export async function buildApp(
           name: "community",
           description: "GitHub-authenticated comments and questions",
         },
+        {
+          name: "tts",
+          description:
+            "Node public TTS API backed by an internal Python worker",
+        },
       ],
     },
   });
@@ -68,6 +77,11 @@ export async function buildApp(
   });
 
   registerHealthRoutes(app, { pythonWorkerClient: options.pythonWorkerClient });
+  registerTtsRoutes(app, {
+    ttsService: new TtsService(options.pythonWorkerClient, {
+      audioRoot: options.ttsAudioRoot,
+    }),
+  });
 
   const prisma =
     options.articleService && options.communityService

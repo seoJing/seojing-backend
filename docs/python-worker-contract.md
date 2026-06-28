@@ -30,12 +30,13 @@ The default worker URL is `http://127.0.0.1:4037`; `PythonWorkerClient` rejects 
 
 ### Environment
 
-| Variable                       | Default                 | Notes                                                                                                 |
-| ------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| `PYTHON_WORKER_ENABLED`        | `false`                 | Readiness checks include the worker only when enabled.                                                |
-| `PYTHON_WORKER_BASE_URL`       | `http://127.0.0.1:4037` | Must be loopback (`127.0.0.1`, `localhost`, or `::1`).                                                |
-| `PYTHON_WORKER_TIMEOUT_MS`     | `10000`                 | Per-request Node-side timeout.                                                                        |
-| `PYTHON_WORKER_RETRY_ATTEMPTS` | `1`                     | Retry count for idempotent worker health/readiness checks. Task invocation is not retried by default. |
+| Variable                                   | Default                     | Notes                                                                                                      |
+| ------------------------------------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `PYTHON_WORKER_ENABLED`                    | `false`                     | Readiness checks include the worker only when enabled.                                                     |
+| `PYTHON_WORKER_BASE_URL`                   | `http://127.0.0.1:4037`     | Must be loopback (`127.0.0.1`, `localhost`, or `::1`).                                                     |
+| `PYTHON_WORKER_TIMEOUT_MS`                 | `10000`                     | Per-request Node-side timeout.                                                                             |
+| `PYTHON_WORKER_RETRY_ATTEMPTS`             | `1`                         | Retry count for idempotent worker health/readiness checks. Task invocation is not retried by default.      |
+| `TTS_AUDIO_ROOT` / `SEOJING_TTS_AUDIO_DIR` | `.seojing-worker/tts-audio` | Node will stream only worker-returned audio paths contained under this root. Keep it local and non-public. |
 
 ### Worker endpoints expected by Node
 
@@ -76,7 +77,53 @@ Response:
 }
 ```
 
-The concrete payload/result schemas should be added per feature ticket. This ticket intentionally only creates the common transport, timeout, cancellation, and error boundary.
+### TTS task payload/result
+
+Node owns the public TTS API and job lifecycle. The Python worker owns only local synthesis/cache work behind the loopback boundary.
+
+Public Node endpoints:
+
+- `GET /tts/summary` — summary/counts and defaults, no local paths;
+- `POST /tts/jobs` — create a job, returns `202`, supports `idempotency_key` or `Idempotency-Key`;
+- `GET /tts/jobs` — list jobs with optional `status` and `limit`;
+- `GET /tts/jobs/:jobId` — read status;
+- `GET /tts/audio/:jobId` — Node streams generated audio with `Accept-Ranges: bytes`.
+
+Worker request payload for `POST /v1/tasks/tts`:
+
+```json
+{
+  "requestId": "TTS-abc123",
+  "payload": {
+    "operation": "synthesize",
+    "jobId": "TTS-abc123",
+    "text": "Korean narration text",
+    "articleId": "optional-article-id",
+    "voice": "ko-KR-SunHiNeural",
+    "rate": "+0%",
+    "metadata": {},
+    "idempotencyKey": "optional-client-key"
+  }
+}
+```
+
+Worker response result:
+
+```json
+{
+  "requestId": "TTS-abc123",
+  "result": {
+    "audioPath": "/loopback/local/cache/TTS-abc123.mp3",
+    "mimeType": "audio/mpeg",
+    "byteLength": 12345,
+    "durationMs": 1000
+  }
+}
+```
+
+`audioPath` is an internal Node↔Python handoff field only. Public job responses expose `/tts/audio/:jobId`, never local file paths or text. Node resolves `audioPath` and rejects values outside `TTS_AUDIO_ROOT`/`SEOJING_TTS_AUDIO_DIR` before streaming, so a worker bug cannot turn the public audio route into arbitrary file disclosure. Routes convert worker timeouts/errors to stable public TTS job/error states instead of leaking Python stack traces.
+
+The included `workers/seojing_python_worker.py` is the loopback MVP worker. Provision it with `python3 -m pip install -r workers/requirements.txt` inside the worker virtualenv; it uses `edge-tts` for real synthesis and refuses non-loopback binds by default.
 
 ## Timeout, retry, and cancellation
 
