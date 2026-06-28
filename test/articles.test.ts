@@ -97,6 +97,25 @@ describe("ArticleService", () => {
   it("keeps Korean slugs while stripping noisy punctuation", () => {
     expect(normalizeSlug("  테스트 글!! / Day 1  ")).toBe("테스트-글/day-1");
   });
+  it("reads only published articles for the public API", async () => {
+    const findPublishedBySlug = vi
+      .fn()
+      .mockResolvedValue(articleFixture({ status: "PUBLISHED" }));
+    const listPublished = vi
+      .fn()
+      .mockResolvedValue([articleFixture({ status: "PUBLISHED" })]);
+    const repository = {
+      findPublishedBySlug,
+      listPublished,
+    } as unknown as ArticleRepository;
+    const service = new ArticleService(repository);
+
+    await service.getPublicArticleBySlug(" Published API Contract ");
+    await service.listPublicArticles(3);
+
+    expect(findPublishedBySlug).toHaveBeenCalledWith("published-api-contract");
+    expect(listPublished).toHaveBeenCalledWith(3);
+  });
 });
 
 describe("ArticleRepository", () => {

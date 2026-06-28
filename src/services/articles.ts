@@ -59,6 +59,16 @@ export class ArticleService {
   async getArticleBySlug(slug: string): Promise<ArticleWithContent | null> {
     return this.repository.findBySlug(normalizeSlug(slug));
   }
+
+  async getPublicArticleBySlug(
+    slug: string,
+  ): Promise<ArticleWithContent | null> {
+    return this.repository.findPublishedBySlug(normalizeSlug(slug));
+  }
+
+  async listPublicArticles(limit?: number): Promise<ArticleWithContent[]> {
+    return this.repository.listPublished(limit);
+  }
 }
 
 export function normalizeSlug(slug: string): string {

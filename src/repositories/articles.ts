@@ -62,18 +62,43 @@ type ArticleRepositoryDb = ArticleRepositoryTx & {
   ): Promise<T>;
 };
 
+const articleContentInclude = {
+  currentRevision: true,
+  revisions: { orderBy: { revisionNumber: "desc" } },
+  blocks: { orderBy: { sortOrder: "asc" } },
+  assets: { orderBy: { createdAt: "asc" } },
+} satisfies Prisma.ArticleInclude;
+
 export class ArticleRepository {
   constructor(private readonly db: ArticleRepositoryDb) {}
 
   async findBySlug(slug: string): Promise<ArticleWithContent | null> {
     return this.db.article.findUnique({
       where: { slug },
-      include: {
-        currentRevision: true,
-        revisions: { orderBy: { revisionNumber: "desc" } },
-        blocks: { orderBy: { sortOrder: "asc" } },
-        assets: { orderBy: { createdAt: "asc" } },
+      include: articleContentInclude,
+    });
+  }
+
+  async findPublishedBySlug(slug: string): Promise<ArticleWithContent | null> {
+    return this.db.article.findFirst({
+      where: {
+        slug,
+        status: "PUBLISHED",
       },
+      include: articleContentInclude,
+    });
+  }
+
+  async listPublished(limit = 20): Promise<ArticleWithContent[]> {
+    const safeLimit = Math.min(Math.max(limit, 1), 50);
+
+    return this.db.article.findMany({
+      where: {
+        status: "PUBLISHED",
+      },
+      orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
+      take: safeLimit,
+      include: articleContentInclude,
     });
   }
 
