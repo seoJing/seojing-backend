@@ -5,12 +5,15 @@ import { PrismaClient } from "@prisma/client";
 
 import { ArticleRepository } from "../src/repositories/articles.js";
 import { ArticleService } from "../src/services/articles.js";
-import { importMdxArticleDraft } from "../src/services/article-ingest.js";
-import { ingestMdxArticle } from "../src/services/mdx-ingest.js";
+import {
+  ingestMdxArticle,
+  type MdxIngestResult,
+} from "../src/services/mdx-ingest.js";
 
 interface CliOptions {
   contentRoot?: string;
   writeDb: boolean;
+  publish: boolean;
   files: string[];
 }
 
@@ -18,7 +21,14 @@ const options = parseArgs(process.argv.slice(2));
 
 if (!options.files.length) {
   console.error(
-    "Usage: pnpm mdx:ingest [--content-root <path>] [--write-db] <file.mdx> [...file.mdx]",
+    "Usage: pnpm mdx:ingest [--content-root <path>] [--write-db] [--publish] <file.mdx> [...file.mdx]",
+  );
+  process.exit(1);
+}
+
+if (options.publish && !options.writeDb) {
+  console.error(
+    "--publish requires --write-db because publish state is stored in the database.",
   );
   process.exit(1);
 }
@@ -39,15 +49,20 @@ try {
         : undefined,
     };
 
+    const ingest = ingestMdxArticle(sourceText, ingestOptions);
+
     if (service) {
-      const { ingest, article } = await importMdxArticleDraft(
-        service,
-        sourceText,
-        ingestOptions,
+      const article = await upsertMdxArticle(service, ingest);
+      const publishedArticle = options.publish
+        ? await service.publishCurrentRevision(ingest.slug)
+        : article;
+      printSummary(
+        sourcePath,
+        ingest,
+        (publishedArticle ?? article).id,
+        (publishedArticle ?? article).status,
       );
-      printSummary(sourcePath, ingest, article.id);
     } else {
-      const ingest = ingestMdxArticle(sourceText, ingestOptions);
       printSummary(sourcePath, ingest);
     }
   }
@@ -56,12 +71,16 @@ try {
 }
 
 function parseArgs(args: string[]): CliOptions {
-  const parsed: CliOptions = { writeDb: false, files: [] };
+  const parsed: CliOptions = { writeDb: false, publish: false, files: [] };
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (arg === "--write-db") {
       parsed.writeDb = true;
+      continue;
+    }
+    if (arg === "--publish") {
+      parsed.publish = true;
       continue;
     }
     if (arg === "--content-root") {
@@ -83,14 +102,16 @@ function parseArgs(args: string[]): CliOptions {
 
 function printSummary(
   sourcePath: string,
-  ingest: ReturnType<typeof ingestMdxArticle>,
+  ingest: MdxIngestResult,
   articleId?: string,
+  status?: string,
 ): void {
   console.log(
     JSON.stringify(
       {
         sourcePath: relative(process.cwd(), sourcePath),
         articleId,
+        status,
         slug: ingest.slug,
         title: ingest.title,
         description: ingest.description,
@@ -104,4 +125,42 @@ function printSummary(
       2,
     ),
   );
+}
+
+async function upsertMdxArticle(
+  service: ArticleService,
+  ingest: MdxIngestResult,
+) {
+  const existing = await service.getArticleBySlug(ingest.slug);
+  if (!existing) {
+    return service.createInitialDraft({
+      slug: ingest.slug,
+      title: ingest.title,
+      description: ingest.description,
+      sourceFormat: "MDX",
+      sourceText: ingest.sourceText,
+      renderedHtml: ingest.renderedHtml,
+      blocks: ingest.blocks,
+      assets: ingest.assets,
+      changeSummary: "Imported from SEOJing MDX source",
+      authorName: "SEOJing MDX ingest",
+    });
+  }
+
+  const updated = await service.createEditorRevision(ingest.slug, {
+    title: ingest.title,
+    description: ingest.description,
+    sourceText: ingest.sourceText,
+    renderedHtml: ingest.renderedHtml,
+    blocks: ingest.blocks,
+    assets: ingest.assets,
+    changeSummary: "Updated from SEOJing MDX source",
+    authorName: "SEOJing MDX ingest",
+  });
+
+  if (!updated) {
+    throw new Error(`Failed to update article: ${ingest.slug}`);
+  }
+
+  return updated;
 }

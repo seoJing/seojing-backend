@@ -21,6 +21,14 @@ import { ArticleQuiz } from "~/components/ArticleQuiz";
 
 본문 첫 문단과 **강조** 그리고 [링크](/blog/test)가 있다.
 
+- 첫 번째 리뷰 포인트
+- 두 번째 리뷰 포인트
+
+| 선언 | 선언 전 읽기 |
+| --- | --- |
+| \`var\` | \`undefined\` |
+| \`let\` | TDZ 에러 |
+
 ![흐름도](/images/content/study/js/day1/flow.svg "Execution flow")
 
 \`\`\`ts
@@ -51,11 +59,25 @@ describe("MDX ingest pipeline", () => {
       '<h2 id="실행-컨텍스트">실행 컨텍스트</h2>',
     );
     expect(article.renderedHtml).toContain('<a href="/blog/test">링크</a>');
-    expect(article.renderedHtml).toContain('data-mdx-component="ArticleQuiz"');
+    expect(article.renderedHtml).toContain("<ul>");
+    expect(article.renderedHtml).toContain("<table>");
+    expect(article.renderedHtml).not.toContain(
+      "ArticleQuiz component placeholder",
+    );
+    expect(article.renderedHtml).not.toContain("[ArticleQuiz component]");
+    expect(
+      article.blocks.find((block) => block.type === "QUIZ")?.plainText,
+    ).toBe(undefined);
     expect(article.renderedHtml).not.toContain("import { ArticleQuiz }");
+    expect(article.renderedHtml).toContain(
+      'data-mdx-component="UnknownWidget"',
+    );
+    expect(article.renderedHtml).toContain("UnknownWidget component omitted");
     expect(article.blocks.map((block) => block.type)).toEqual([
       "HEADING",
       "HEADING",
+      "PARAGRAPH",
+      "PARAGRAPH",
       "PARAGRAPH",
       "IMAGE",
       "CODE",
@@ -72,10 +94,10 @@ describe("MDX ingest pipeline", () => {
     expect(article.unsupportedComponents).toEqual([
       {
         name: "ArticleQuiz",
-        line: 16,
+        line: 24,
         strategy: "structured-block-candidate",
       },
-      { name: "UnknownWidget", line: 18, strategy: "placeholder" },
+      { name: "UnknownWidget", line: 26, strategy: "placeholder" },
     ]);
   });
 
@@ -119,8 +141,8 @@ describe("importMdxArticleDraft", () => {
         title: "JS Quizbook Day 1",
         description: "Execution context reminder",
         sourceFormat: "MDX",
-        renderedHtml: expect.stringContaining(
-          'data-mdx-component="ArticleQuiz"',
+        renderedHtml: expect.not.stringContaining(
+          "ArticleQuiz component placeholder",
         ) as string,
         blocks: expect.arrayContaining([
           expect.objectContaining({ type: "QUIZ" }),

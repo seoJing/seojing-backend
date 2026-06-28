@@ -162,8 +162,10 @@ function toPublicArticleDetail(
   return {
     ...toPublicArticleSummary(article),
     body: {
-      html: scrubLocalPaths(
-        article.renderedHtml ?? article.currentRevision?.renderedHtml ?? "",
+      html: sanitizePublicHtml(
+        scrubLocalPaths(
+          article.renderedHtml ?? article.currentRevision?.renderedHtml ?? "",
+        ),
       ),
       blocks: currentRevisionBlocks(article).map((block) => ({
         id: block.id,
@@ -289,6 +291,27 @@ function scrubLocalPaths(value: string): string {
     /(?:file:\/\/)?(?:\/Users\/[^\s"'<>)]*|\/tmp\/[^\s"'<>)]*|\/var\/folders\/[^\s"'<>)]*)/g,
     "[local-path-redacted]",
   );
+}
+
+function sanitizePublicHtml(value: string): string {
+  return value
+    .replace(
+      /<\s*(script|style|iframe|object|embed|link|meta)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi,
+      "",
+    )
+    .replace(
+      /<\s*(script|style|iframe|object|embed|link|meta)\b[^>]*\/?>/gi,
+      "",
+    )
+    .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(
+      /\s+(href|src)\s*=\s*("|')\s*javascript:[\s\S]*?\2/gi,
+      ' $1="#removed-javascript-url"',
+    )
+    .replace(
+      /\s+(href|src)\s*=\s*javascript:[^\s>]+/gi,
+      ' $1="#removed-javascript-url"',
+    );
 }
 
 function slugifyForToc(value: string): string {

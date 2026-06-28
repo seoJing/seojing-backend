@@ -177,6 +177,33 @@ describe("public article API", () => {
     await app.close();
   });
 
+  it("sanitizes public rendered HTML before returning backend article bodies", async () => {
+    const getPublicArticleBySlug = vi.fn().mockResolvedValue(
+      publicArticleFixture({
+        renderedHtml:
+          '<h1 onclick="alert(1)">Title</h1><script>alert(1)</script><a href="javascript:alert(1)">bad</a><img src="/safe.svg" onerror="alert(1)" />',
+      }),
+    );
+    const app = await appWithArticleService({ getPublicArticleBySlug });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/articles/published-api-contract",
+    });
+
+    expect(response.statusCode).toBe(200);
+    const payload: { body: { html: string } } = response.json();
+    expect(payload.body.html).toContain("<h1>Title</h1>");
+    expect(payload.body.html).toContain('href="#removed-javascript-url"');
+    expect(payload.body.html).toContain('src="/safe.svg"');
+    expect(payload.body.html).not.toContain("<script");
+    expect(payload.body.html).not.toContain("onclick");
+    expect(payload.body.html).not.toContain("onerror");
+    expect(payload.body.html).not.toContain("javascript:alert");
+
+    await app.close();
+  });
+
   it("does not expose missing or draft articles", async () => {
     const getPublicArticleBySlug = vi.fn().mockResolvedValue(null);
     const app = await appWithArticleService({ getPublicArticleBySlug });

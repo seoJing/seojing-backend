@@ -72,21 +72,13 @@ DB 통합 테스트까지 실행할 때:
 
 ```bash
 pnpm db:local:start
-DATABASE_URL='postgresql://seojing@localhost:5432/seojing_backend?schema=public' RUN_DB_TESTS=true pnpm test
+DATABASE_URL='<postgres-url>' pnpm mdx:ingest --write-db --content-root ../SEOJing/apps/web/content ../SEOJing/apps/web/content/study/javascript-quizbook/day1.mdx
 ```
 
-## MDX ingest
-
-기존 SEOJing MDX를 backend article draft로 가져오는 dry-run:
+기존 article을 갱신하면서 현재 revision까지 발행하려면 `--publish`를 함께 붙인다. `--publish`는 DB 상태를 바꾸므로 `--write-db`와 같이 써야 한다.
 
 ```bash
-pnpm mdx:ingest --content-root ../SEOJing/apps/web/content ../SEOJing/apps/web/content/study/javascript-quizbook/day1.mdx
-```
-
-DB에 쓰려면 로컬 Postgres와 `DATABASE_URL`을 준비한 뒤 `--write-db`를 붙입니다.
-
-```bash
-DATABASE_URL='postgresql://seojing@localhost:5432/seojing_backend?schema=public' pnpm mdx:ingest --write-db --content-root ../SEOJing/apps/web/content ../SEOJing/apps/web/content/study/javascript-quizbook/day1.mdx
+DATABASE_URL='<postgres-url>' pnpm mdx:ingest --write-db --publish --content-root ../SEOJing/apps/web/content ../SEOJing/apps/web/content/study/javascript-quizbook/day6.mdx
 ```
 
 지원 범위와 custom component 처리 정책은 [`docs/mdx-ingest-support.md`](docs/mdx-ingest-support.md)에 정리했습니다.

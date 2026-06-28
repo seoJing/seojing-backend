@@ -18,6 +18,12 @@ DB에 초안으로 쓰려면 로컬 Postgres와 `DATABASE_URL`을 준비한 뒤 
 DATABASE_URL='<postgres-url>' pnpm mdx:ingest --write-db --content-root ../SEOJing/apps/web/content ../SEOJing/apps/web/content/study/javascript-quizbook/day1.mdx
 ```
 
+기존 article을 갱신하면서 현재 revision까지 발행하려면 `--publish`를 함께 붙인다. `--publish`는 DB 상태를 바꾸므로 `--write-db`와 같이 써야 한다.
+
+```bash
+DATABASE_URL='<postgres-url>' pnpm mdx:ingest --write-db --publish --content-root ../SEOJing/apps/web/content ../SEOJing/apps/web/content/study/javascript-quizbook/day6.mdx
+```
+
 ## 생성 결과
 
 - `slug`
@@ -40,18 +46,20 @@ DATABASE_URL='<postgres-url>' pnpm mdx:ingest --write-db --content-root ../SEOJi
 
 ## 현재 지원 범위
 
-| 입력                      | 처리                                                |
-| ------------------------- | --------------------------------------------------- |
-| `#`~`######` heading      | TOC + `HEADING` block + sanitized HTML              |
-| paragraph                 | `PARAGRAPH` block + escaped HTML                    |
-| fenced code block         | `CODE` block + escaped `<pre><code>`                |
-| `> quote`                 | `QUOTE` block                                       |
-| `![alt](url "title")`     | `IMAGE` block + `INLINE_IMAGE` asset                |
-| markdown link             | `http(s)` 또는 `/` URL만 anchor 변환                |
-| `import` / `export` line  | 렌더링 대상에서 제외                                |
-| `ArticleQuiz`             | `QUIZ` placeholder, structured block 후보로 표시    |
-| `Callout`                 | `CALLOUT` placeholder, structured block 후보로 표시 |
-| 기타 대문자 JSX component | `RAW_MDX` placeholder                               |
+| 입력                      | 처리                                                      |
+| ------------------------- | --------------------------------------------------------- |
+| `#`~`######` heading      | TOC + `HEADING` block + sanitized HTML                    |
+| paragraph                 | `PARAGRAPH` block + escaped HTML                          |
+| unordered/ordered list    | `PARAGRAPH` block + `<ul>`/`<ol>` HTML                    |
+| markdown table            | `PARAGRAPH` block + `<table>` HTML                        |
+| fenced code block         | `CODE` block + escaped `<pre><code>`                      |
+| `> quote`                 | `QUOTE` block                                             |
+| `![alt](url "title")`     | `IMAGE` block + `INLINE_IMAGE` asset                      |
+| markdown link             | `http(s)` 또는 `/` URL만 anchor 변환                      |
+| `import` / `export` line  | 렌더링 대상에서 제외                                      |
+| `ArticleQuiz`             | `QUIZ` block 후보로 표시하고 본문 placeholder HTML은 생략 |
+| `Callout`                 | `CALLOUT` placeholder, structured block 후보로 표시       |
+| 기타 대문자 JSX component | `RAW_MDX` placeholder                                     |
 
 ## 의도적으로 아직 안 하는 것
 

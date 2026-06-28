@@ -57,17 +57,19 @@ interface RenderState {
     lines: string[];
     startLine: number;
   };
+  skippedComponent?: {
+    name: string;
+  };
 }
 
 const supportedComponentPolicy: Record<string, string> = {
-  ArticleQuiz: "placeholder now; structured QUIZ block later",
-  ArticleQuizItem: "placeholder inside ArticleQuiz; structured quiz item later",
+  ArticleQuiz: "omitted from rendered HTML; structured QUIZ block later",
+  ArticleQuizItem: "omitted inside ArticleQuiz; structured quiz item later",
   Callout: "placeholder now; structured CALLOUT block candidate",
   Image:
     "prefer markdown image ingestion; JSX Image is placeholder-only in MVP",
 };
 
-const jsxLinePattern = /^\s*<([A-Z][A-Za-z0-9_.]*)\b[^>]*(?:\/>|>.*)?\s*$/;
 const importExportPattern = /^\s*(import|export)\s+/;
 
 export function ingestMdxArticle(
@@ -128,8 +130,17 @@ function renderMdxBody(body: string): Omit<RenderState, "paragraph"> {
   };
 
   const lines = body.split("\n");
-  lines.forEach((line, index) => {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
     const lineNumber = index + 1;
+
+    if (state.skippedComponent) {
+      const closingPattern = new RegExp(`</${state.skippedComponent.name}>`);
+      if (closingPattern.test(line) || line.trim().endsWith("/>")) {
+        state.skippedComponent = undefined;
+      }
+      continue;
+    }
 
     if (state.codeFence) {
       if (line.trim().startsWith("```")) {
@@ -137,7 +148,7 @@ function renderMdxBody(body: string): Omit<RenderState, "paragraph"> {
       } else {
         state.codeFence.lines.push(line);
       }
-      return;
+      continue;
     }
 
     const trimmed = line.trim();
@@ -149,24 +160,27 @@ function renderMdxBody(body: string): Omit<RenderState, "paragraph"> {
         lines: [],
         startLine: lineNumber,
       };
-      return;
+      continue;
     }
 
     if (!trimmed) {
       flushParagraph(state);
-      return;
+      continue;
     }
 
     if (importExportPattern.test(trimmed)) {
       flushParagraph(state);
-      return;
+      continue;
     }
 
-    const jsxMatch = jsxLinePattern.exec(trimmed);
+    const jsxMatch = /^<([A-Z][A-Za-z0-9_.]*)\b/.exec(trimmed);
     if (jsxMatch?.[1]) {
       flushParagraph(state);
       addComponentPlaceholder(state, jsxMatch[1], trimmed, lineNumber);
-      return;
+      if (!trimmed.includes(`</${jsxMatch[1]}>`) && !trimmed.endsWith("/>")) {
+        state.skippedComponent = { name: jsxMatch[1] };
+      }
+      continue;
     }
 
     const headingMatch = /^(#{1,6})\s+(.+)$/.exec(trimmed);
@@ -177,7 +191,23 @@ function renderMdxBody(body: string): Omit<RenderState, "paragraph"> {
         headingMatch[1]?.length ?? 1,
         stripInlineMdx(headingMatch[2] ?? ""),
       );
-      return;
+      continue;
+    }
+
+    const table = tryReadTable(lines, index);
+    if (table) {
+      flushParagraph(state);
+      addTable(state, table.headers, table.rows);
+      index = table.endIndex;
+      continue;
+    }
+
+    const list = tryReadList(lines, index);
+    if (list) {
+      flushParagraph(state);
+      addList(state, list.items, list.ordered);
+      index = list.endIndex;
+      continue;
     }
 
     const imageMatch = /^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)$/.exec(
@@ -186,18 +216,18 @@ function renderMdxBody(body: string): Omit<RenderState, "paragraph"> {
     if (imageMatch) {
       flushParagraph(state);
       addImage(state, imageMatch[1] ?? "", imageMatch[2] ?? "", imageMatch[3]);
-      return;
+      continue;
     }
 
     const quoteMatch = /^>\s?(.+)$/.exec(trimmed);
     if (quoteMatch) {
       flushParagraph(state);
       addQuote(state, stripInlineMdx(quoteMatch[1] ?? ""));
-      return;
+      continue;
     }
 
     state.paragraph.push(trimmed);
-  });
+  }
 
   if (state.codeFence) {
     flushCodeFence(state);
@@ -266,31 +296,160 @@ function addQuote(state: RenderState, text: string): void {
   });
 }
 
+function addList(state: RenderState, items: string[], ordered: boolean): void {
+  const tag = ordered ? "ol" : "ul";
+  state.html.push(
+    `<${tag}>${items.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join("")}</${tag}>`,
+  );
+  state.blocks.push({
+    type: "PARAGRAPH",
+    sortOrder: state.blocks.length,
+    content: { listType: ordered ? "ordered" : "unordered", items },
+    plainText: items.join("\n"),
+  });
+}
+
+function addTable(
+  state: RenderState,
+  headers: string[],
+  rows: string[][],
+): void {
+  const headerHtml = headers
+    .map((header) => `<th>${renderInlineMarkdown(header)}</th>`)
+    .join("");
+  const bodyHtml = rows
+    .map(
+      (row) =>
+        `<tr>${row.map((cell) => `<td>${renderInlineMarkdown(cell)}</td>`).join("")}</tr>`,
+    )
+    .join("");
+  state.html.push(
+    `<table><thead><tr>${headerHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>`,
+  );
+  state.blocks.push({
+    type: "PARAGRAPH",
+    sortOrder: state.blocks.length,
+    content: { table: { headers, rows } },
+    plainText: [
+      headers.join(" | "),
+      ...rows.map((row) => row.join(" | ")),
+    ].join("\n"),
+  });
+}
+
+function tryReadList(
+  lines: string[],
+  startIndex: number,
+): { items: string[]; ordered: boolean; endIndex: number } | null {
+  const first = parseListItem(lines[startIndex] ?? "");
+  if (!first) {
+    return null;
+  }
+
+  const items = [first.text];
+  let endIndex = startIndex;
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const item = parseListItem(lines[index] ?? "");
+    if (!item || item.ordered !== first.ordered) {
+      break;
+    }
+    items.push(item.text);
+    endIndex = index;
+  }
+
+  return { items, ordered: first.ordered, endIndex };
+}
+
+function parseListItem(
+  line: string,
+): { text: string; ordered: boolean } | null {
+  const trimmed = line.trim();
+  const unordered = /^[-*+]\s+(.+)$/.exec(trimmed);
+  if (unordered?.[1]) {
+    return { text: stripInlineMdx(unordered[1]), ordered: false };
+  }
+
+  const ordered = /^\d+[.)]\s+(.+)$/.exec(trimmed);
+  if (ordered?.[1]) {
+    return { text: stripInlineMdx(ordered[1]), ordered: true };
+  }
+
+  return null;
+}
+
+function tryReadTable(
+  lines: string[],
+  startIndex: number,
+): { headers: string[]; rows: string[][]; endIndex: number } | null {
+  const header = parseTableRow(lines[startIndex] ?? "");
+  const separator = lines[startIndex + 1]?.trim() ?? "";
+  if (!header || !isTableSeparator(separator)) {
+    return null;
+  }
+
+  const rows: string[][] = [];
+  let endIndex = startIndex + 1;
+  for (let index = startIndex + 2; index < lines.length; index += 1) {
+    const row = parseTableRow(lines[index] ?? "");
+    if (!row) {
+      break;
+    }
+    rows.push(row);
+    endIndex = index;
+  }
+
+  return rows.length ? { headers: header, rows, endIndex } : null;
+}
+
+function parseTableRow(line: string): string[] | null {
+  const trimmed = line.trim();
+  if (!trimmed.includes("|")) {
+    return null;
+  }
+  const cells = trimmed
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => stripInlineMdx(cell.trim()));
+  return cells.length >= 2 ? cells : null;
+}
+
+function isTableSeparator(line: string): boolean {
+  const cells = parseTableRow(line);
+  return Boolean(
+    cells?.every((cell) => /^:?-{3,}:?$/.test(cell.replace(/\s+/g, ""))),
+  );
+}
+
 function addComponentPlaceholder(
   state: RenderState,
   componentName: string,
   rawLine: string,
   line: number,
 ): void {
-  const isStructuredCandidate =
-    componentName === "ArticleQuiz" || componentName === "Callout";
+  const isQuizComponent =
+    componentName === "ArticleQuiz" || componentName === "ArticleQuizItem";
+  const isStructuredCandidate = isQuizComponent || componentName === "Callout";
   const strategy = isStructuredCandidate
     ? "structured-block-candidate"
     : "placeholder";
   state.unsupportedComponents.push({ name: componentName, line, strategy });
-  state.html.push(
-    `<div data-mdx-component="${escapeAttribute(componentName)}" data-mdx-strategy="${strategy}">${escapeHtml(componentName)} component placeholder</div>`,
-  );
+  if (!isQuizComponent) {
+    state.html.push(
+      `<aside data-mdx-component="${escapeAttribute(componentName)}" data-mdx-strategy="${strategy}">${escapeHtml(componentName)} component omitted by backend MDX ingest MVP</aside>`,
+    );
+  }
   state.blocks.push({
-    type:
-      componentName === "ArticleQuiz"
-        ? "QUIZ"
-        : componentName === "Callout"
-          ? "CALLOUT"
-          : "RAW_MDX",
+    type: isQuizComponent
+      ? "QUIZ"
+      : componentName === "Callout"
+        ? "CALLOUT"
+        : "RAW_MDX",
     sortOrder: state.blocks.length,
     content: { componentName, raw: rawLine, strategy },
-    plainText: `${componentName} component placeholder`,
+    plainText: isStructuredCandidate
+      ? undefined
+      : `${componentName} component omitted`,
     metadata: { line },
   });
 }
@@ -440,14 +599,15 @@ function unquote(value: string): string {
 
 function stripInlineMdx(text: string): string {
   return text
-    .replace(/<([A-Z][A-Za-z0-9_.]*)\b[^>]*\/>/g, "[$1 component]")
-    .replace(/<\/?([A-Z][A-Za-z0-9_.]*)\b[^>]*>/g, "[$1 component]")
+    .replace(/<([A-Z][A-Za-z0-9_.]*)\b[^>]*\/>/g, "")
+    .replace(/<\/?([A-Z][A-Za-z0-9_.]*)\b[^>]*>/g, "")
     .replace(/\{[^}]+\}/g, "")
     .trim();
 }
 
 function renderInlineMarkdown(text: string): string {
   return escapeHtml(text)
+    .replace(/&lt;br\s*\/&gt;/g, "<br />")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(
