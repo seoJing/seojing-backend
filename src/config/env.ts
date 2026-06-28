@@ -12,6 +12,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url().startsWith("postgresql://"),
   PUBLIC_BASE_URL: z.string().url().default("http://localhost:4000"),
   CORS_ORIGIN: z.string().default("http://localhost:5173,https://seojing.com"),
+  ADMIN_API_TOKEN: z.string().min(1).optional(),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

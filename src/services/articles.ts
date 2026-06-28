@@ -21,6 +21,17 @@ export interface CreateArticleInput {
   assets?: ArticleAssetDraft[];
 }
 
+export interface ArticleEditorDraftInput {
+  title?: string;
+  description?: string;
+  sourceText: string;
+  renderedHtml?: string;
+  changeSummary?: string;
+  authorName?: string;
+  blocks?: ArticleBlockDraft[];
+  assets?: ArticleAssetDraft[];
+}
+
 export class ArticleService {
   constructor(private readonly repository: ArticleRepository) {}
 
@@ -68,6 +79,34 @@ export class ArticleService {
 
   async listPublicArticles(limit?: number): Promise<ArticleWithContent[]> {
     return this.repository.listPublished(limit);
+  }
+
+  async createEditorRevision(
+    slug: string,
+    input: ArticleEditorDraftInput,
+  ): Promise<ArticleWithContent | null> {
+    const normalizedSlug = normalizeSlug(slug);
+    if (!normalizedSlug) {
+      throw new Error("Article slug is required.");
+    }
+    if (!input.sourceText.trim()) {
+      throw new Error("Article sourceText is required.");
+    }
+
+    return this.repository.createEditorRevision({
+      ...input,
+      slug: normalizedSlug,
+      title: input.title?.trim(),
+      description: input.description?.trim(),
+      sourceFormat: "MDX",
+      blocks: input.blocks ?? deriveBlocksFromSource(input.sourceText),
+    });
+  }
+
+  async publishCurrentRevision(
+    slug: string,
+  ): Promise<ArticleWithContent | null> {
+    return this.repository.publishLatestRevision(normalizeSlug(slug));
   }
 }
 

@@ -6,6 +6,7 @@ import swaggerUi from "@fastify/swagger-ui";
 import Fastify, { type FastifyInstance } from "fastify";
 
 import { ArticleRepository } from "./repositories/articles.js";
+import { registerAdminWritingRoutes } from "./routes/admin-writing.js";
 import { registerArticleRoutes } from "./routes/articles.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { ArticleService } from "./services/articles.js";
@@ -13,6 +14,7 @@ import { ArticleService } from "./services/articles.js";
 export interface BuildAppOptions {
   logger?: boolean;
   corsOrigins?: string[];
+  adminToken?: string;
   articleService?: ArticleService;
 }
 
@@ -50,6 +52,10 @@ export async function buildApp(
   const prisma = options.articleService ? undefined : new PrismaClient();
   const articleService = options.articleService ?? createArticleService(prisma);
   registerArticleRoutes(app, { articleService });
+  registerAdminWritingRoutes(app, {
+    articleService,
+    adminToken: options.adminToken,
+  });
 
   if (prisma) {
     app.addHook("onClose", async () => {

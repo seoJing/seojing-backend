@@ -151,8 +151,8 @@ function toPublicArticleSummary(
     publishedAt: article.publishedAt?.toISOString() ?? null,
     updatedAt: article.updatedAt.toISOString(),
     etag: articleEtag(article),
-    toc: article.blocks.filter(isHeadingBlock).map(toTocItem),
-    assets: article.assets.map(toPublicAsset),
+    toc: currentRevisionBlocks(article).filter(isHeadingBlock).map(toTocItem),
+    assets: currentRevisionAssets(article).map(toPublicAsset),
   };
 }
 
@@ -165,7 +165,7 @@ function toPublicArticleDetail(
       html: scrubLocalPaths(
         article.renderedHtml ?? article.currentRevision?.renderedHtml ?? "",
       ),
-      blocks: article.blocks.map((block) => ({
+      blocks: currentRevisionBlocks(article).map((block) => ({
         id: block.id,
         type: block.type,
         sortOrder: block.sortOrder,
@@ -178,6 +178,22 @@ function toPublicArticleDetail(
 
 function isHeadingBlock(block: ArticleWithContent["blocks"][number]): boolean {
   return block.type === "HEADING";
+}
+
+function currentRevisionBlocks(
+  article: ArticleWithContent,
+): ArticleWithContent["blocks"] {
+  return article.blocks.filter(
+    (block) => block.revisionId === article.currentRevisionId,
+  );
+}
+
+function currentRevisionAssets(
+  article: ArticleWithContent,
+): ArticleWithContent["assets"] {
+  return article.assets.filter(
+    (asset) => asset.revisionId === article.currentRevisionId,
+  );
 }
 
 function toTocItem(block: ArticleWithContent["blocks"][number]): PublicTocItem {
