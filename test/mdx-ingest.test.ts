@@ -31,7 +31,7 @@ import { ArticleQuiz } from "~/components/ArticleQuiz";
 
 ![흐름도](/images/content/study/js/day1/flow.svg "Execution flow")
 
-\`\`\`ts
+\`\`\`ts filename="example.ts"
 const answer = 42;
 \`\`\`
 
@@ -84,6 +84,34 @@ describe("MDX ingest pipeline", () => {
       "QUIZ",
       "RAW_MDX",
     ]);
+    expect(
+      article.blocks.find((block) => block.type === "CODE")?.content,
+    ).toEqual(
+      expect.objectContaining({
+        language: "ts",
+        meta: 'filename="example.ts"',
+        code: "const answer = 42;",
+      }),
+    );
+    expect(
+      article.blocks.find((block) => block.type === "QUIZ")?.content,
+    ).toEqual(
+      expect.objectContaining({
+        componentName: "ArticleQuiz",
+        props: { id: "q1" },
+        renderHint: "ArticleQuiz",
+        strategy: "structured-block-candidate",
+      }),
+    );
+    expect(
+      article.blocks.find((block) => block.type === "RAW_MDX")?.content,
+    ).toEqual(
+      expect.objectContaining({
+        componentName: "UnknownWidget",
+        props: { value: "x" },
+        rawMdx: '<UnknownWidget value="x" />',
+      }),
+    );
     expect(article.assets).toEqual([
       expect.objectContaining({
         kind: "INLINE_IMAGE",
@@ -118,6 +146,42 @@ describe("MDX ingest pipeline", () => {
 
     expect(parsed.frontmatter).toEqual({});
     expect(parsed.body).toBe("# Plain MDX\n\nBody");
+  });
+
+  it("preserves multi-line quiz items and callout body as structured block candidates without executing MDX", () => {
+    const article = ingestMdxArticle(
+      `# Components\n\n<ArticleQuiz title="호이스팅 점검">\n  <ArticleQuizItem question="var는?" answer="undefined" />\n  <ArticleQuizItem question="let은?" answer="TDZ" />\n</ArticleQuiz>\n\n<Callout tone="warning" title="주의">\n  raw HTML <script>alert(1)</script> and **markdown** stay sanitized.\n</Callout>`,
+    );
+
+    const quiz = article.blocks.find((block) => block.type === "QUIZ");
+    expect(quiz?.content).toEqual(
+      expect.objectContaining({
+        componentName: "ArticleQuiz",
+        props: { title: "호이스팅 점검" },
+        items: [
+          expect.objectContaining({
+            props: { question: "var는?", answer: "undefined" },
+          }),
+          expect.objectContaining({
+            props: { question: "let은?", answer: "TDZ" },
+          }),
+        ],
+        rawMdx: expect.stringContaining("ArticleQuizItem") as unknown,
+      }),
+    );
+
+    const callout = article.blocks.find((block) => block.type === "CALLOUT");
+    expect(callout?.content).toEqual(
+      expect.objectContaining({
+        componentName: "Callout",
+        props: { tone: "warning", title: "주의" },
+        bodyText: expect.stringContaining("raw HTML") as unknown,
+        renderHint: "Callout",
+      }),
+    );
+    expect(article.renderedHtml).toContain('data-mdx-component="Callout"');
+    expect(article.renderedHtml).not.toContain("<script>");
+    expect(article.renderedHtml).not.toContain("ArticleQuizItem");
   });
 });
 

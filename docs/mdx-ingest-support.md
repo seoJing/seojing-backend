@@ -40,32 +40,34 @@ DATABASE_URL='<postgres-url>' pnpm mdx:ingest --write-db --publish --content-roo
   - 허용한 Markdown subset만 HTML 태그로 생성
   - 일반 텍스트와 raw HTML은 escape한다
 - `blocks`
-  - heading, paragraph, image, code, quote, quiz/callout placeholder, raw MDX placeholder
+  - heading, paragraph, image, code, quote
+  - code fence는 `language`, `meta`, `code`를 분리해 `CODE` block에 보존
+  - quiz/callout/기타 JSX는 실행하지 않고 `rawMdx`, `props`, `renderHint`, `strategy`를 가진 structured candidate/placeholder block으로 보존
 - `assets`
   - Markdown image를 `INLINE_IMAGE` asset 후보로 추출
 
 ## 현재 지원 범위
 
-| 입력                      | 처리                                                      |
-| ------------------------- | --------------------------------------------------------- |
-| `#`~`######` heading      | TOC + `HEADING` block + sanitized HTML                    |
-| paragraph                 | `PARAGRAPH` block + escaped HTML                          |
-| unordered/ordered list    | `PARAGRAPH` block + `<ul>`/`<ol>` HTML                    |
-| markdown table            | `PARAGRAPH` block + `<table>` HTML                        |
-| fenced code block         | `CODE` block + escaped `<pre><code>`                      |
-| `> quote`                 | `QUOTE` block                                             |
-| `![alt](url "title")`     | `IMAGE` block + `INLINE_IMAGE` asset                      |
-| markdown link             | `http(s)` 또는 `/` URL만 anchor 변환                      |
-| `import` / `export` line  | 렌더링 대상에서 제외                                      |
-| `ArticleQuiz`             | `QUIZ` block 후보로 표시하고 본문 placeholder HTML은 생략 |
-| `Callout`                 | `CALLOUT` placeholder, structured block 후보로 표시       |
-| 기타 대문자 JSX component | `RAW_MDX` placeholder                                     |
+| 입력                      | 처리                                                                                                  |
+| ------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `#`~`######` heading      | TOC + `HEADING` block + sanitized HTML                                                                |
+| paragraph                 | `PARAGRAPH` block + escaped HTML                                                                      |
+| unordered/ordered list    | `PARAGRAPH` block + `<ul>`/`<ol>` HTML                                                                |
+| markdown table            | `PARAGRAPH` block + `<table>` HTML                                                                    |
+| fenced code block         | `CODE` block + escaped `<pre><code>`; info string을 `language`/`meta`로 보존                          |
+| `> quote`                 | `QUOTE` block                                                                                         |
+| `![alt](url "title")`     | `IMAGE` block + `INLINE_IMAGE` asset                                                                  |
+| markdown link             | `http(s)` 또는 `/` URL만 anchor 변환                                                                  |
+| `import` / `export` line  | 렌더링 대상에서 제외                                                                                  |
+| `ArticleQuiz`             | `QUIZ` block 후보. `props`, `rawMdx`, `ArticleQuizItem` props 배열 보존; 본문 placeholder HTML은 생략 |
+| `Callout`                 | `CALLOUT` block 후보. `props`, `bodyText`, `rawMdx` 보존 + sanitized fallback `<aside>`               |
+| 기타 대문자 JSX component | `RAW_MDX` placeholder. `props`와 `rawMdx` 보존                                                        |
 
 ## 의도적으로 아직 안 하는 것
 
 - MDX/React component를 실제 실행하지 않는다. 서버 ingest에서 임의 JSX를 실행하면 보안·번들·런타임 경계가 흐려진다.
 - 복잡한 YAML 전체 스펙을 구현하지 않는다. SEOJing frontmatter에서 자주 쓰는 단순 scalar/inline array만 MVP로 본다.
-- `ArticleQuizItem` 내부 구조를 완전 파싱하지 않는다. #163에서는 placeholder와 structured block 후보 분리까지만 한다.
+- `ArticleQuizItem`의 중첩 children/복잡한 expression을 완전 실행·평가하지 않는다. 단순 props와 원문 `rawMdx`를 보존해 프론트엔드 렌더러가 재해석할 수 있는 최소 계약까지만 제공한다.
 - raw HTML을 trust하지 않는다. 이 MVP의 HTML은 allowlist 방식으로 생성한 태그와 escaped text만 담는다.
 
 ## 다음 티켓 후보

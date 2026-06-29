@@ -10,6 +10,7 @@ import type {
   CreateArticleInput,
 } from "../services/articles.js";
 import type { BlockEditorBlockInput } from "../services/block-renderer.js";
+import { ingestMdxArticle } from "../services/mdx-ingest.js";
 
 interface RegisterAdminWritingRoutesOptions {
   articleService: ArticleService;
@@ -255,27 +256,37 @@ function isAuthorized(request: FastifyRequest, adminToken: string | undefined) {
 }
 
 function toCreateArticleInput(body: UpsertDraftBody): CreateArticleInput {
+  const sourceText = requiredString(body.sourceText, "sourceText");
+  const slug = requiredString(body.slug, "slug");
+  const title = requiredString(body.title, "title");
+  const ingest = ingestMdxArticle(sourceText, { fallbackSlug: slug });
   return {
-    slug: requiredString(body.slug, "slug"),
-    title: requiredString(body.title, "title"),
-    description: optionalString(body.description),
+    slug,
+    title,
+    description: optionalString(body.description) ?? ingest.description,
     sourceFormat: "MDX",
-    sourceText: requiredString(body.sourceText, "sourceText"),
-    renderedHtml: optionalString(body.renderedHtml),
+    sourceText,
+    renderedHtml: optionalString(body.renderedHtml) ?? ingest.renderedHtml,
     changeSummary: optionalString(body.changeSummary) ?? "Admin editor draft",
     authorName: optionalString(body.authorName),
+    blocks: ingest.blocks,
+    assets: ingest.assets,
   };
 }
 
 function toEditorDraftInput(body: UpsertDraftBody): ArticleEditorDraftInput {
+  const sourceText = requiredString(body.sourceText, "sourceText");
+  const ingest = ingestMdxArticle(sourceText);
   return {
-    title: optionalString(body.title),
-    description: optionalString(body.description),
-    sourceText: requiredString(body.sourceText, "sourceText"),
-    renderedHtml: optionalString(body.renderedHtml),
+    title: optionalString(body.title) ?? ingest.title,
+    description: optionalString(body.description) ?? ingest.description,
+    sourceText,
+    renderedHtml: optionalString(body.renderedHtml) ?? ingest.renderedHtml,
     changeSummary:
       optionalString(body.changeSummary) ?? "Admin editor revision",
     authorName: optionalString(body.authorName),
+    blocks: ingest.blocks,
+    assets: ingest.assets,
   };
 }
 

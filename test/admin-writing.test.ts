@@ -138,6 +138,13 @@ describe("admin writing API", () => {
         title: "Admin Draft",
         sourceFormat: "MDX",
         sourceText: "# Admin Draft",
+        renderedHtml: '<h1 id="admin-draft">Admin Draft</h1>',
+        blocks: [
+          expect.objectContaining({
+            type: "HEADING",
+            content: { level: 1, text: "Admin Draft", id: "admin-draft" },
+          }),
+        ],
       }),
     );
 
@@ -155,6 +162,18 @@ describe("admin writing API", () => {
       "admin-draft",
       expect.objectContaining({
         sourceText: "# Admin Draft v2\n\n<Callout />",
+        renderedHtml: expect.stringContaining(
+          'data-mdx-component="Callout"',
+        ) as string,
+        blocks: [
+          expect.objectContaining({ type: "HEADING" }),
+          expect.objectContaining({
+            type: "CALLOUT",
+            content: expect.objectContaining({
+              componentName: "Callout",
+            }) as unknown,
+          }),
+        ],
       }),
     );
     const revisionPayload = JSON.parse(revisionResponse.body) as EditorPayload;

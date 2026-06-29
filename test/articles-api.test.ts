@@ -67,6 +67,24 @@ function publicArticleFixture(
         createdAt: baseDate,
         updatedAt: baseDate,
       },
+      {
+        id: "66666666-6666-6666-6666-666666666666",
+        articleId: "11111111-1111-1111-1111-111111111111",
+        revisionId: "22222222-2222-2222-2222-222222222222",
+        type: "QUIZ",
+        sortOrder: 2,
+        content: {
+          componentName: "ArticleQuiz",
+          props: { title: "점검" },
+          renderHint: "ArticleQuiz",
+          items: [{ props: { question: "Q", answer: "A" } }],
+          rawMdx: '<ArticleQuiz title="점검" />',
+        },
+        plainText: null,
+        metadata: { line: 12 },
+        createdAt: baseDate,
+        updatedAt: baseDate,
+      },
     ],
     assets: [
       {
@@ -163,6 +181,16 @@ describe("public article API", () => {
     expect(payload.body.html).toContain("public body");
     expect(payload.body.blocks[1]?.content.sourcePath).toBe(
       "[local-path-redacted]",
+    );
+    expect(payload.body.blocks[2]).toEqual(
+      expect.objectContaining({
+        type: "QUIZ",
+        content: expect.objectContaining({
+          componentName: "ArticleQuiz",
+          renderHint: "ArticleQuiz",
+          items: [{ props: { question: "Q", answer: "A" } }],
+        }) as unknown,
+      }),
     );
     expect(payload.assets[0]?.url).toBe("#redacted-local-asset");
 

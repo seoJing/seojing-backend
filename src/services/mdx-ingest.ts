@@ -54,12 +54,24 @@ interface RenderState {
   paragraph: string[];
   codeFence?: {
     language?: string;
+    meta?: string;
     lines: string[];
     startLine: number;
   };
-  skippedComponent?: {
+}
+
+interface MdxComponentBlock {
+  name: string;
+  line: number;
+  rawMdx: string;
+  props: Record<string, string | boolean>;
+  bodyText?: string;
+  children: Array<{
     name: string;
-  };
+    props: Record<string, string | boolean>;
+    rawMdx: string;
+  }>;
+  endIndex: number;
 }
 
 const supportedComponentPolicy: Record<string, string> = {
@@ -134,14 +146,6 @@ function renderMdxBody(body: string): Omit<RenderState, "paragraph"> {
     const line = lines[index] ?? "";
     const lineNumber = index + 1;
 
-    if (state.skippedComponent) {
-      const closingPattern = new RegExp(`</${state.skippedComponent.name}>`);
-      if (closingPattern.test(line) || line.trim().endsWith("/>")) {
-        state.skippedComponent = undefined;
-      }
-      continue;
-    }
-
     if (state.codeFence) {
       if (line.trim().startsWith("```")) {
         flushCodeFence(state);
@@ -155,8 +159,10 @@ function renderMdxBody(body: string): Omit<RenderState, "paragraph"> {
 
     if (trimmed.startsWith("```")) {
       flushParagraph(state);
+      const fenceInfo = parseCodeFenceInfo(trimmed);
       state.codeFence = {
-        language: trimmed.replace(/^```/, "").trim() || undefined,
+        language: fenceInfo.language,
+        meta: fenceInfo.meta,
         lines: [],
         startLine: lineNumber,
       };
@@ -173,13 +179,11 @@ function renderMdxBody(body: string): Omit<RenderState, "paragraph"> {
       continue;
     }
 
-    const jsxMatch = /^<([A-Z][A-Za-z0-9_.]*)\b/.exec(trimmed);
-    if (jsxMatch?.[1]) {
+    const componentBlock = readMdxComponentBlock(lines, index);
+    if (componentBlock) {
       flushParagraph(state);
-      addComponentPlaceholder(state, jsxMatch[1], trimmed, lineNumber);
-      if (!trimmed.includes(`</${jsxMatch[1]}>`) && !trimmed.endsWith("/>")) {
-        state.skippedComponent = { name: jsxMatch[1] };
-      }
+      addComponentPlaceholder(state, componentBlock);
+      index = componentBlock.endIndex;
       continue;
     }
 
@@ -423,22 +427,36 @@ function isTableSeparator(line: string): boolean {
 
 function addComponentPlaceholder(
   state: RenderState,
-  componentName: string,
-  rawLine: string,
-  line: number,
+  component: MdxComponentBlock,
 ): void {
+  const componentName = component.name;
   const isQuizComponent =
     componentName === "ArticleQuiz" || componentName === "ArticleQuizItem";
   const isStructuredCandidate = isQuizComponent || componentName === "Callout";
   const strategy = isStructuredCandidate
     ? "structured-block-candidate"
     : "placeholder";
-  state.unsupportedComponents.push({ name: componentName, line, strategy });
-  if (!isQuizComponent) {
+  const content = buildComponentContent(component, strategy);
+
+  state.unsupportedComponents.push({
+    name: componentName,
+    line: component.line,
+    strategy,
+  });
+
+  if (componentName === "Callout") {
+    const title = readComponentString(component.props.title);
+    const tone = readComponentString(component.props.tone) ?? "note";
+    const bodyText = component.bodyText ?? "";
+    state.html.push(
+      `<aside data-mdx-component="Callout" data-mdx-strategy="${strategy}" data-callout-tone="${escapeAttribute(tone)}">${title ? `<strong>${escapeHtml(title)}</strong>` : ""}${bodyText ? `<p>${renderInlineMarkdown(bodyText)}</p>` : ""}</aside>`,
+    );
+  } else if (!isQuizComponent) {
     state.html.push(
       `<aside data-mdx-component="${escapeAttribute(componentName)}" data-mdx-strategy="${strategy}">${escapeHtml(componentName)} component omitted by backend MDX ingest MVP</aside>`,
     );
   }
+
   state.blocks.push({
     type: isQuizComponent
       ? "QUIZ"
@@ -446,12 +464,160 @@ function addComponentPlaceholder(
         ? "CALLOUT"
         : "RAW_MDX",
     sortOrder: state.blocks.length,
-    content: { componentName, raw: rawLine, strategy },
-    plainText: isStructuredCandidate
-      ? undefined
-      : `${componentName} component omitted`,
-    metadata: { line },
+    content: content as ArticleBlockDraft["content"],
+    plainText:
+      componentName === "Callout"
+        ? component.bodyText
+        : isStructuredCandidate
+          ? undefined
+          : `${componentName} component omitted`,
+    metadata: { line: component.line },
   });
+}
+
+function buildComponentContent(
+  component: MdxComponentBlock,
+  strategy: "placeholder" | "structured-block-candidate",
+): Record<string, unknown> {
+  const base = {
+    componentName: component.name,
+    props: component.props,
+    rawMdx: component.rawMdx,
+    strategy,
+  };
+
+  if (component.name === "ArticleQuiz") {
+    return {
+      ...base,
+      renderHint: "ArticleQuiz",
+      items: component.children
+        .filter((child) => child.name === "ArticleQuizItem")
+        .map((child) => ({ props: child.props, rawMdx: child.rawMdx })),
+    };
+  }
+
+  if (component.name === "Callout") {
+    return {
+      ...base,
+      renderHint: "Callout",
+      bodyText: component.bodyText ?? "",
+    };
+  }
+
+  return base;
+}
+
+function readMdxComponentBlock(
+  lines: string[],
+  startIndex: number,
+): MdxComponentBlock | null {
+  const firstLine = lines[startIndex]?.trim() ?? "";
+  const open = /^<([A-Z][A-Za-z0-9_.]*)\b([^>]*)>?/.exec(firstLine);
+  if (!open?.[1]) {
+    return null;
+  }
+
+  const name = open[1];
+  const rawLines = [lines[startIndex] ?? ""];
+  const firstProps = open[2] ?? "";
+  const selfClosing = /\/\s*>$/.test(firstLine);
+  const sameLineClosed = firstLine.includes(`</${name}>`);
+  let endIndex = startIndex;
+
+  if (!selfClosing && !sameLineClosed) {
+    for (let index = startIndex + 1; index < lines.length; index += 1) {
+      const line = lines[index] ?? "";
+      rawLines.push(line);
+      endIndex = index;
+      if (line.includes(`</${name}>`)) {
+        break;
+      }
+    }
+  }
+
+  const rawMdx = rawLines.join("\n");
+  const children = extractChildComponents(rawMdx, name);
+
+  return {
+    name,
+    line: startIndex + 1,
+    rawMdx,
+    props: parseComponentProps(firstProps),
+    bodyText: extractComponentBodyText(rawMdx, name),
+    children,
+    endIndex,
+  };
+}
+
+function extractChildComponents(
+  rawMdx: string,
+  parentName: string,
+): MdxComponentBlock["children"] {
+  const children: MdxComponentBlock["children"] = [];
+  const withoutParentOpen = rawMdx.replace(
+    new RegExp(`^\\s*<${parentName}\\b[^>]*>`),
+    "",
+  );
+  const innerMdx = withoutParentOpen.replace(
+    new RegExp(`</${parentName}>\\s*$`),
+    "",
+  );
+  const childPattern =
+    /<([A-Z][A-Za-z0-9_.]*)\b([\s\S]*?)(?:\/>|>[\s\S]*?<\/\1>)/g;
+  let match: RegExpExecArray | null;
+  while ((match = childPattern.exec(innerMdx))) {
+    const name = match[1];
+    if (!name || name === parentName) {
+      continue;
+    }
+    children.push({
+      name,
+      props: parseComponentProps(match[2] ?? ""),
+      rawMdx: match[0].trim(),
+    });
+  }
+  return children;
+}
+
+function parseComponentProps(
+  rawProps: string,
+): Record<string, string | boolean> {
+  const props: Record<string, string | boolean> = {};
+  const withoutClose = rawProps.replace(/\/\s*$/, "");
+  const propPattern =
+    /([A-Za-z_:][A-Za-z0-9_:.-]*)(?:\s*=\s*("([^"]*)"|'([^']*)'|\{([^}]*)\}))?/g;
+  let match: RegExpExecArray | null;
+  while ((match = propPattern.exec(withoutClose))) {
+    const key = match[1];
+    if (!key) {
+      continue;
+    }
+    const value = match[3] ?? match[4] ?? match[5];
+    props[key] = value === undefined ? true : value.trim();
+  }
+  return props;
+}
+
+function extractComponentBodyText(
+  rawMdx: string,
+  name: string,
+): string | undefined {
+  const withoutOpen = rawMdx.replace(new RegExp(`^\\s*<${name}\\b[^>]*>`), "");
+  const withoutClose = withoutOpen.replace(new RegExp(`</${name}>\\s*$`), "");
+  const text = stripInlineMdx(
+    withoutClose
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line && !/^<[A-Z][A-Za-z0-9_.]*\b/.test(line))
+      .join(" "),
+  );
+  return text || undefined;
+}
+
+function readComponentString(
+  value: string | boolean | undefined,
+): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function flushParagraph(state: RenderState): void {
@@ -477,19 +643,35 @@ function flushCodeFence(state: RenderState): void {
 
   const code = state.codeFence.lines.join("\n");
   const language = state.codeFence.language;
+  const meta = state.codeFence.meta;
   state.html.push(
-    `<pre><code${language ? ` class="language-${escapeAttribute(language)}"` : ""}>${escapeHtml(code)}</code></pre>`,
+    `<pre><code${language ? ` class="language-${escapeAttribute(language)}"` : ""}${meta ? ` data-meta="${escapeAttribute(meta)}"` : ""}>${escapeHtml(code)}</code></pre>`,
   );
   state.blocks.push({
     type: "CODE",
     sortOrder: state.blocks.length,
-    content: { language, code },
+    content: { language, meta, code },
     plainText: code,
     metadata: {
       startLine: state.codeFence.startLine,
     },
   });
   state.codeFence = undefined;
+}
+
+function parseCodeFenceInfo(rawFence: string): {
+  language?: string;
+  meta?: string;
+} {
+  const info = rawFence.replace(/^```/, "").trim();
+  if (!info) {
+    return {};
+  }
+  const [language, ...metaParts] = info.split(/\s+/);
+  return {
+    language: language || undefined,
+    meta: metaParts.join(" ") || undefined,
+  };
 }
 
 function resolveTitle(
