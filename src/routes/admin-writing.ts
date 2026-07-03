@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyRequest, FastifySchema } from "fastify";
 
 import type { ArticleWithContent } from "../repositories/articles.js";
 import type {
@@ -90,6 +90,89 @@ const componentSnippets = [
   },
 ] as const;
 
+const adminWritingTag = ["admin-writing"];
+const articleSlugParamSchema = {
+  type: "object",
+  required: ["slug"],
+  properties: { slug: { type: "string" } },
+};
+const articleBlockParamSchema = {
+  type: "object",
+  required: ["slug", "blockId"],
+  properties: { slug: { type: "string" }, blockId: { type: "string" } },
+};
+const upsertDraftBodySchema = {
+  type: "object",
+  properties: {
+    slug: { type: "string" },
+    title: { type: "string" },
+    description: { type: "string" },
+    sourceText: { type: "string" },
+    renderedHtml: { type: "string" },
+    changeSummary: { type: "string" },
+    authorName: { type: "string" },
+  },
+};
+const articleBlockBodySchema = {
+  type: "object",
+  required: ["type", "content"],
+  properties: {
+    id: { type: "string" },
+    type: {
+      type: "string",
+      enum: ["PARAGRAPH", "HEADING", "CODE", "IMAGE", "CALLOUT", "QUIZ"],
+    },
+    sortOrder: { type: "number" },
+    content: { type: "object", additionalProperties: true },
+    plainText: { type: "string" },
+    metadata: { type: ["object", "null"], additionalProperties: true },
+  },
+  additionalProperties: false,
+};
+const articleBlockPatchSchema = {
+  type: "object",
+  properties: articleBlockBodySchema.properties,
+  minProperties: 1,
+  additionalProperties: false,
+};
+const blockDraftBodySchema = {
+  type: "object",
+  properties: {
+    slug: { type: "string" },
+    title: { type: "string" },
+    description: { type: "string" },
+    blocks: {
+      type: "array",
+      items: articleBlockBodySchema,
+    },
+    changeSummary: { type: "string" },
+    authorName: { type: "string" },
+  },
+};
+const blockMutationBodySchema = {
+  type: "object",
+  properties: {
+    block: articleBlockBodySchema,
+    changeSummary: { type: "string" },
+    authorName: { type: "string" },
+  },
+};
+const blockUpdateBodySchema = {
+  type: "object",
+  properties: {
+    block: articleBlockPatchSchema,
+    changeSummary: { type: "string" },
+    authorName: { type: "string" },
+  },
+};
+const blockDeleteBodySchema = {
+  type: "object",
+  properties: {
+    changeSummary: { type: "string" },
+    authorName: { type: "string" },
+  },
+};
+
 export function registerAdminWritingRoutes(
   app: FastifyInstance,
   options: RegisterAdminWritingRoutesOptions,
@@ -103,10 +186,29 @@ export function registerAdminWritingRoutes(
     }
   });
 
-  app.get("/admin/writing/snippets", () => ({ snippets: componentSnippets }));
+  app.get(
+    "/admin/writing/snippets",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "List admin editor snippets",
+      }),
+    },
+    () => ({ snippets: componentSnippets }),
+  );
 
   app.post<{ Body: UpsertDraftBody }>(
     "/admin/articles",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Create an unpublished article draft",
+        body: {
+          ...upsertDraftBodySchema,
+          required: ["slug", "title", "sourceText"],
+        },
+      }),
+    },
     async (request, reply) => {
       const body = request.body ?? {};
       const article = await options.articleService.createInitialDraft(
@@ -119,6 +221,16 @@ export function registerAdminWritingRoutes(
 
   app.post<{ Body: BlockDraftBody }>(
     "/admin/articles/blocks",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Create an unpublished block-editor article draft",
+        body: {
+          ...blockDraftBodySchema,
+          required: ["slug", "title", "blocks"],
+        },
+      }),
+    },
     async (request, reply) => {
       const article = await options.articleService.createBlockDraft(
         toBlockDraftInput(request.body ?? {}),
@@ -130,6 +242,13 @@ export function registerAdminWritingRoutes(
 
   app.get<{ Params: ArticleSlugParams }>(
     "/admin/articles/:slug/blocks",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Read current block-editor draft state",
+        params: articleSlugParamSchema,
+      }),
+    },
     async (request, reply) => {
       const article = await options.articleService.getArticleBySlug(
         request.params.slug,
@@ -144,11 +263,27 @@ export function registerAdminWritingRoutes(
 
   app.put<{ Params: ArticleSlugParams; Body: BlockDraftBody }>(
     "/admin/articles/:slug/blocks",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Save a block-editor revision",
+        params: articleSlugParamSchema,
+        body: { ...blockDraftBodySchema, required: ["blocks"] },
+      }),
+    },
     async (request, reply) => {
-      const article = await options.articleService.replaceArticleBlocks(
-        request.params.slug,
-        toBlockDraftInput(request.body ?? {}),
+      const article = await rejectPublishedArticleEdits(async () =>
+        options.articleService.replaceArticleBlocks(
+          request.params.slug,
+          toBlockDraftInput(request.body ?? {}),
+        ),
       );
+      if (article === "published-edit-rejected") {
+        return reply.status(409).send({
+          error:
+            "Published article edits require a separate unpublished draft model.",
+        });
+      }
       if (!article) {
         return reply.status(404).send({ error: "Article not found" });
       }
@@ -159,11 +294,27 @@ export function registerAdminWritingRoutes(
 
   app.post<{ Params: ArticleSlugParams; Body: BlockMutationBody }>(
     "/admin/articles/:slug/blocks",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Append a block-editor block as a new revision",
+        params: articleSlugParamSchema,
+        body: { ...blockMutationBodySchema, required: ["block"] },
+      }),
+    },
     async (request, reply) => {
-      const article = await options.articleService.appendArticleBlock(
-        request.params.slug,
-        toBlockMutationInput(request.body ?? {}),
+      const article = await rejectPublishedArticleEdits(async () =>
+        options.articleService.appendArticleBlock(
+          request.params.slug,
+          toBlockMutationInput(request.body ?? {}),
+        ),
       );
+      if (article === "published-edit-rejected") {
+        return reply.status(409).send({
+          error:
+            "Published article edits require a separate unpublished draft model.",
+        });
+      }
       if (!article) {
         return reply.status(404).send({ error: "Article not found" });
       }
@@ -174,12 +325,28 @@ export function registerAdminWritingRoutes(
 
   app.patch<{ Params: ArticleBlockParams; Body: BlockUpdateBody }>(
     "/admin/articles/:slug/blocks/:blockId",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Update a block-editor block as a new revision",
+        params: articleBlockParamSchema,
+        body: { ...blockUpdateBodySchema, required: ["block"] },
+      }),
+    },
     async (request, reply) => {
-      const article = await options.articleService.updateArticleBlock(
-        request.params.slug,
-        request.params.blockId,
-        toBlockUpdateInput(request.body ?? {}),
+      const article = await rejectPublishedArticleEdits(async () =>
+        options.articleService.updateArticleBlock(
+          request.params.slug,
+          request.params.blockId,
+          toBlockUpdateInput(request.body ?? {}),
+        ),
       );
+      if (article === "published-edit-rejected") {
+        return reply.status(409).send({
+          error:
+            "Published article edits require a separate unpublished draft model.",
+        });
+      }
       if (!article) {
         return reply.status(404).send({ error: "Article not found" });
       }
@@ -190,12 +357,32 @@ export function registerAdminWritingRoutes(
 
   app.delete<{ Params: ArticleBlockParams; Body: BlockDeleteBody }>(
     "/admin/articles/:slug/blocks/:blockId",
+    {
+      preValidation: (request, _reply, done) => {
+        request.body ??= {};
+        done();
+      },
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Delete a block-editor block as a new revision",
+        params: articleBlockParamSchema,
+        body: blockDeleteBodySchema,
+      }),
+    },
     async (request, reply) => {
-      const article = await options.articleService.deleteArticleBlock(
-        request.params.slug,
-        request.params.blockId,
-        request.body ?? {},
+      const article = await rejectPublishedArticleEdits(async () =>
+        options.articleService.deleteArticleBlock(
+          request.params.slug,
+          request.params.blockId,
+          request.body ?? {},
+        ),
       );
+      if (article === "published-edit-rejected") {
+        return reply.status(409).send({
+          error:
+            "Published article edits require a separate unpublished draft model.",
+        });
+      }
       if (!article) {
         return reply.status(404).send({ error: "Article not found" });
       }
@@ -206,6 +393,13 @@ export function registerAdminWritingRoutes(
 
   app.get<{ Params: ArticleSlugParams }>(
     "/admin/articles/:slug/editor",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Read admin editor state for an article",
+        params: articleSlugParamSchema,
+      }),
+    },
     async (request, reply) => {
       const article = await options.articleService.getArticleBySlug(
         request.params.slug,
@@ -220,11 +414,27 @@ export function registerAdminWritingRoutes(
 
   app.put<{ Params: ArticleSlugParams; Body: UpsertDraftBody }>(
     "/admin/articles/:slug/revisions",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Save an MDX source-text article revision",
+        params: articleSlugParamSchema,
+        body: { ...upsertDraftBodySchema, required: ["sourceText"] },
+      }),
+    },
     async (request, reply) => {
-      const article = await options.articleService.createEditorRevision(
-        request.params.slug,
-        toEditorDraftInput(request.body ?? {}),
+      const article = await rejectPublishedArticleEdits(async () =>
+        options.articleService.createEditorRevision(
+          request.params.slug,
+          toEditorDraftInput(request.body ?? {}),
+        ),
       );
+      if (article === "published-edit-rejected") {
+        return reply.status(409).send({
+          error:
+            "Published article edits require a separate unpublished draft model.",
+        });
+      }
       if (!article) {
         return reply.status(404).send({ error: "Article not found" });
       }
@@ -235,6 +445,13 @@ export function registerAdminWritingRoutes(
 
   app.post<{ Params: ArticleSlugParams }>(
     "/admin/articles/:slug/publish",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Publish the latest saved article revision",
+        params: articleSlugParamSchema,
+      }),
+    },
     async (request, reply) => {
       const article = await options.articleService.publishCurrentRevision(
         request.params.slug,
@@ -246,6 +463,36 @@ export function registerAdminWritingRoutes(
       return toEditorPayload(article);
     },
   );
+}
+
+type OpenApiFastifySchema = FastifySchema & {
+  tags?: string[];
+  summary?: string;
+};
+
+async function rejectPublishedArticleEdits<T>(
+  action: () => Promise<T>,
+): Promise<T | "published-edit-rejected"> {
+  try {
+    return await action();
+  } catch (error) {
+    if (isPublishedArticleEditError(error)) {
+      return "published-edit-rejected";
+    }
+    throw error;
+  }
+}
+
+function isPublishedArticleEditError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message ===
+      "Published article edits require a separate unpublished draft model."
+  );
+}
+
+function openApiSchema(schema: OpenApiFastifySchema): FastifySchema {
+  return { ...schema };
 }
 
 function isAuthorized(request: FastifyRequest, adminToken: string | undefined) {

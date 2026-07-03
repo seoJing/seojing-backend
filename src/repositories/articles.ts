@@ -160,6 +160,12 @@ export class ArticleRepository {
         return null;
       }
 
+      if (article.status !== "DRAFT") {
+        throw new Error(
+          "Published article edits require a separate unpublished draft model.",
+        );
+      }
+
       const nextRevisionNumber =
         (article.revisions[0]?.revisionNumber ?? 0) + 1;
       const revision = await this.createRevisionRecord(
@@ -173,8 +179,9 @@ export class ArticleRepository {
       await tx.article.update({
         where: { id: article.id },
         data: {
+          currentRevisionId: revision.id,
           title: input.title ?? article.title,
-          description: input.description,
+          description: input.description ?? article.description,
           sourceFormat: input.sourceFormat,
           sourceText: input.sourceText,
           renderedHtml: input.renderedHtml,

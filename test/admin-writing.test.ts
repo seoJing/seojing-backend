@@ -292,6 +292,36 @@ describe("admin writing API", () => {
       expect.objectContaining({ blocks }),
     );
 
+    const roundTripBlocks = [
+      {
+        id: "block-1",
+        type: "HEADING",
+        sortOrder: 0,
+        content: { level: 1, text: "Block Draft" },
+        plainText: "Block Draft",
+        metadata: null,
+      },
+      {
+        id: "block-2",
+        type: "PARAGRAPH",
+        sortOrder: 1,
+        content: { text: "수정된 문단" },
+        plainText: "수정된 문단",
+        metadata: null,
+      },
+    ];
+    const roundTripResponse = await app.inject({
+      method: "PUT",
+      url: "/admin/articles/block-draft/blocks",
+      headers: { authorization: "Bearer test-admin-token" },
+      payload: { blocks: roundTripBlocks },
+    });
+    expect(roundTripResponse.statusCode).toBe(201);
+    expect(replaceArticleBlocks).toHaveBeenLastCalledWith(
+      "block-draft",
+      expect.objectContaining({ blocks: roundTripBlocks }),
+    );
+
     await app.inject({
       method: "POST",
       url: "/admin/articles/block-draft/blocks",
@@ -327,6 +357,54 @@ describe("admin writing API", () => {
       "block-2",
       {},
     );
+
+    await app.close();
+  });
+
+  it("returns a conflict when editing a published article without an unpublished draft model", async () => {
+    const createEditorRevision = vi
+      .fn()
+      .mockRejectedValue(
+        new Error(
+          "Published article edits require a separate unpublished draft model.",
+        ),
+      );
+    const app = await appWithArticleService({ createEditorRevision });
+
+    const response = await app.inject({
+      method: "PUT",
+      url: "/admin/articles/published-post/revisions",
+      headers: { authorization: "Bearer test-admin-token" },
+      payload: {
+        sourceText: "# Published edit",
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      error:
+        "Published article edits require a separate unpublished draft model.",
+    });
+
+    await app.close();
+  });
+
+  it("documents admin article draft, revision, and publish endpoints in OpenAPI", async () => {
+    const app = await appWithArticleService({});
+    const response = await app.inject({
+      method: "GET",
+      url: "/openapi.json",
+    });
+
+    expect(response.statusCode).toBe(200);
+    const document: {
+      tags?: Array<{ name: string }>;
+      paths?: Record<string, unknown>;
+    } = response.json();
+    expect(document.tags?.map((tag) => tag.name)).toContain("admin-writing");
+    expect(document.paths).toHaveProperty("/admin/articles");
+    expect(document.paths).toHaveProperty("/admin/articles/{slug}/revisions");
+    expect(document.paths).toHaveProperty("/admin/articles/{slug}/publish");
 
     await app.close();
   });

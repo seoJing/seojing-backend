@@ -65,6 +65,11 @@ export async function buildApp(
           description: "Public article metadata, body, and cache API",
         },
         {
+          name: "admin-writing",
+          description:
+            "Admin-only article draft, revision, block editor, and publish workflow",
+        },
+        {
           name: "community",
           description: "GitHub-authenticated comments and questions",
         },

@@ -9,14 +9,19 @@ const describeDb = runDbTests ? describe : describe.skip;
 const prisma = new PrismaClient();
 const service = new ArticleService(new ArticleRepository(prisma));
 const integrationSlug = "integration-article-schema-mvp";
+const publishFlowSlug = "integration-admin-write-publish-flow";
 
 describeDb("Article database integration", () => {
   beforeEach(async () => {
-    await prisma.article.deleteMany({ where: { slug: integrationSlug } });
+    await prisma.article.deleteMany({
+      where: { slug: { in: [integrationSlug, publishFlowSlug] } },
+    });
   });
 
   afterAll(async () => {
-    await prisma.article.deleteMany({ where: { slug: integrationSlug } });
+    await prisma.article.deleteMany({
+      where: { slug: { in: [integrationSlug, publishFlowSlug] } },
+    });
     await prisma.$disconnect();
   });
 
@@ -62,5 +67,44 @@ describeDb("Article database integration", () => {
     expect(seedArticle?.assets.some((asset) => asset.kind === "COVER")).toBe(
       true,
     );
+  });
+
+  it("keeps drafts hidden from public reads until the latest revision is published", async () => {
+    const draft = await service.createInitialDraft({
+      slug: publishFlowSlug,
+      title: "Admin Write Publish Flow",
+      description: "Draft should not be public before publish",
+      sourceText: "# Admin Write Publish Flow\n\nDraft body",
+      renderedHtml: "<h1>Admin Write Publish Flow</h1><p>Draft body</p>",
+      changeSummary: "Initial admin draft",
+      authorName: "OkayJing",
+    });
+
+    expect(draft.status).toBe("DRAFT");
+    await expect(
+      service.getPublicArticleBySlug(publishFlowSlug),
+    ).resolves.toBeNull();
+
+    const revised = await service.createEditorRevision(publishFlowSlug, {
+      sourceText: "# Admin Write Publish Flow v2\n\nPublished body",
+      renderedHtml: "<h1>Admin Write Publish Flow v2</h1><p>Published body</p>",
+      changeSummary: "Save publish candidate",
+      authorName: "OkayJing",
+    });
+
+    expect(revised?.currentRevision?.revisionNumber).toBe(2);
+    expect(revised?.currentRevision?.sourceText).toContain("v2");
+    await expect(
+      service.getPublicArticleBySlug(publishFlowSlug),
+    ).resolves.toBeNull();
+
+    const published = await service.publishCurrentRevision(publishFlowSlug);
+    const publicReadback =
+      await service.getPublicArticleBySlug(publishFlowSlug);
+
+    expect(published?.status).toBe("PUBLISHED");
+    expect(publicReadback?.status).toBe("PUBLISHED");
+    expect(publicReadback?.currentRevision?.revisionNumber).toBe(2);
+    expect(publicReadback?.renderedHtml).toContain("Published body");
   });
 });
