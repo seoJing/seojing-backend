@@ -268,21 +268,38 @@ describe("ArticleRepository", () => {
     expect(revised?.currentRevisionId).toBe(secondRevision.id);
   });
 
-  it("rejects published article editor revisions until unpublished drafts exist", async () => {
+  it("saves a private revision for a published article without changing the public pointer", async () => {
     const firstRevision = articleFixture().currentRevision!;
+    const privateRevision = {
+      ...firstRevision,
+      id: "33333333-3333-3333-3333-333333333333",
+      revisionNumber: 2,
+      sourceText: "# Private published draft",
+      renderedHtml: "<h1>Private published draft</h1>",
+    };
     const tx = {
       article: {
-        findUnique: vi.fn().mockResolvedValue(
-          articleFixture({
-            status: "PUBLISHED",
-            currentRevisionId: firstRevision.id,
-            currentRevision: firstRevision,
-            revisions: [firstRevision],
-          }),
-        ),
+        findUnique: vi
+          .fn()
+          .mockResolvedValueOnce(
+            articleFixture({
+              status: "PUBLISHED",
+              currentRevisionId: firstRevision.id,
+              currentRevision: firstRevision,
+              revisions: [firstRevision],
+            }),
+          )
+          .mockResolvedValueOnce(
+            articleFixture({
+              status: "PUBLISHED",
+              currentRevisionId: firstRevision.id,
+              currentRevision: firstRevision,
+              revisions: [privateRevision, firstRevision],
+            }),
+          ),
         update: vi.fn(),
       },
-      articleRevision: { create: vi.fn() },
+      articleRevision: { create: vi.fn().mockResolvedValue(privateRevision) },
       articleBlock: { createMany: vi.fn() },
       articleAsset: { createMany: vi.fn() },
     };
@@ -294,56 +311,21 @@ describe("ArticleRepository", () => {
     };
     const repository = new ArticleRepository(db as never);
 
-    await expect(
-      repository.createEditorRevision({
-        slug: "article-schema-mvp",
-        sourceFormat: "MDX",
-        sourceText: "# Private published draft",
-        renderedHtml: "<h1>Private published draft</h1>",
-      }),
-    ).rejects.toThrow("separate unpublished draft model");
-    expect(tx.articleRevision.create).not.toHaveBeenCalled();
-    expect(tx.article.update).not.toHaveBeenCalled();
-  });
+    const revised = await repository.createEditorRevision({
+      slug: "article-schema-mvp",
+      sourceFormat: "MDX",
+      sourceText: "# Private published draft",
+      renderedHtml: "<h1>Private published draft</h1>",
+    });
 
-  it("rejects published article metadata edits until unpublished drafts exist", async () => {
-    const firstRevision = articleFixture().currentRevision!;
-    const tx = {
-      article: {
-        findUnique: vi.fn().mockResolvedValue(
-          articleFixture({
-            status: "PUBLISHED",
-            title: "Published title",
-            currentRevisionId: firstRevision.id,
-            currentRevision: firstRevision,
-            revisions: [firstRevision],
-          }),
-        ),
-        update: vi.fn(),
-      },
-      articleRevision: { create: vi.fn() },
-      articleBlock: { createMany: vi.fn() },
-      articleAsset: { createMany: vi.fn() },
-    };
-    const db = {
-      ...tx,
-      $transaction: vi.fn(async (fn: (client: typeof tx) => Promise<unknown>) =>
-        fn(tx),
-      ),
-    };
-    const repository = new ArticleRepository(db as never);
-
-    await expect(
-      repository.createEditorRevision({
-        slug: "article-schema-mvp",
-        title: "Changed title",
-        sourceFormat: "MDX",
-        sourceText: "# Private published draft",
-        renderedHtml: "<h1>Private published draft</h1>",
+    expect(tx.articleRevision.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: expect.objectContaining({ revisionNumber: 2 }),
       }),
-    ).rejects.toThrow("separate unpublished draft model");
-    expect(tx.articleRevision.create).not.toHaveBeenCalled();
+    );
     expect(tx.article.update).not.toHaveBeenCalled();
+    expect(revised?.currentRevisionId).toBe(firstRevision.id);
   });
 
   it("publishes the latest revision for public reads", async () => {
