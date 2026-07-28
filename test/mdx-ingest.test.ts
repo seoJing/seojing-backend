@@ -21,6 +21,8 @@ import { ArticleQuiz } from "~/components/ArticleQuiz";
 
 본문 첫 문단과 **강조** 그리고 [링크](/blog/test)가 있다.
 
+\`{ ...user }\`는 최상위 객체만 새로 만들 수 있고, JSX 표현식 {internalOnly}은 제거한다.
+
 - 첫 번째 리뷰 포인트
 - 두 번째 리뷰 포인트
 
@@ -59,6 +61,8 @@ describe("MDX ingest pipeline", () => {
       '<h2 id="실행-컨텍스트">실행 컨텍스트</h2>',
     );
     expect(article.renderedHtml).toContain('<a href="/blog/test">링크</a>');
+    expect(article.renderedHtml).toContain("<code>{ ...user }</code>");
+    expect(article.renderedHtml).not.toContain("internalOnly");
     expect(article.renderedHtml).toContain("<ul>");
     expect(article.renderedHtml).toContain("<table>");
     expect(article.renderedHtml).not.toContain(
@@ -76,6 +80,7 @@ describe("MDX ingest pipeline", () => {
     expect(article.blocks.map((block) => block.type)).toEqual([
       "HEADING",
       "HEADING",
+      "PARAGRAPH",
       "PARAGRAPH",
       "PARAGRAPH",
       "PARAGRAPH",
@@ -122,10 +127,10 @@ describe("MDX ingest pipeline", () => {
     expect(article.unsupportedComponents).toEqual([
       {
         name: "ArticleQuiz",
-        line: 24,
+        line: 26,
         strategy: "structured-block-candidate",
       },
-      { name: "UnknownWidget", line: 26, strategy: "placeholder" },
+      { name: "UnknownWidget", line: 28, strategy: "placeholder" },
     ]);
   });
 

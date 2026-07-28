@@ -780,11 +780,24 @@ function unquote(value: string): string {
 }
 
 function stripInlineMdx(text: string): string {
-  return text
+  const codeSpans: string[] = [];
+  const masked = text.replace(/`([^`]+)`/g, (match) => {
+    const token = `@@CODE_SPAN_${codeSpans.length}@@`;
+    codeSpans.push(match);
+    return token;
+  });
+
+  const stripped = masked
     .replace(/<([A-Z][A-Za-z0-9_.]*)\b[^>]*\/>/g, "")
     .replace(/<\/?([A-Z][A-Za-z0-9_.]*)\b[^>]*>/g, "")
     .replace(/\{[^}]+\}/g, "")
     .trim();
+
+  return codeSpans.reduce(
+    (result, codeSpan, index) =>
+      result.replace(`@@CODE_SPAN_${index}@@`, codeSpan),
+    stripped,
+  );
 }
 
 function renderInlineMarkdown(text: string): string {
