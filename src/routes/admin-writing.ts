@@ -25,6 +25,10 @@ interface ArticleBlockParams extends ArticleSlugParams {
   blockId: string;
 }
 
+interface WildcardArticleParams {
+  "*": string;
+}
+
 interface UpsertDraftBody {
   slug?: string;
   title?: string;
@@ -463,6 +467,230 @@ export function registerAdminWritingRoutes(
       return toEditorPayload(article);
     },
   );
+
+  // Fastify wildcards must terminate a route. These hidden fallbacks preserve the
+  // documented flat-slug routes above while accepting a slash-containing slug.
+  app.get<{ Params: WildcardArticleParams }>(
+    "/admin/articles/*",
+    { schema: { hide: true } },
+    async (request, reply) => {
+      const slug = wildcardSlugForAction(request.params["*"], [
+        "blocks",
+        "editor",
+      ]);
+      if (!slug) {
+        return reply.status(404).send({ error: "Article not found" });
+      }
+      const article = await options.articleService.getArticleBySlug(slug);
+      if (!article) {
+        return reply.status(404).send({ error: "Article not found" });
+      }
+
+      return toEditorPayload(article);
+    },
+  );
+
+  app.put<{
+    Params: WildcardArticleParams;
+    Body: BlockDraftBody | UpsertDraftBody;
+  }>(
+    "/admin/articles/*",
+    { schema: { hide: true } },
+    async (request, reply) => {
+      const action = wildcardArticleAction(request.params["*"], [
+        "blocks",
+        "revisions",
+      ]);
+      if (!action) {
+        return reply.status(404).send({ error: "Article not found" });
+      }
+      const body = request.body as Record<string, unknown>;
+      if (
+        (action.name === "blocks" && !Array.isArray(body.blocks)) ||
+        (action.name === "revisions" && typeof body.sourceText !== "string")
+      ) {
+        return reply
+          .status(400)
+          .send({ error: "Invalid article revision body" });
+      }
+      const article = await rejectPublishedArticleEdits(async () =>
+        action.name === "blocks"
+          ? options.articleService.replaceArticleBlocks(
+              action.slug,
+              toBlockDraftInput(request.body),
+            )
+          : options.articleService.createEditorRevision(
+              action.slug,
+              toEditorDraftInput(request.body),
+            ),
+      );
+      if (article === "published-edit-rejected") {
+        return reply.status(409).send({
+          error:
+            "Published article edits require a separate unpublished draft model.",
+        });
+      }
+      if (!article) {
+        return reply.status(404).send({ error: "Article not found" });
+      }
+
+      return reply.status(201).send(toEditorPayload(article));
+    },
+  );
+
+  app.post<{ Params: WildcardArticleParams; Body: BlockMutationBody }>(
+    "/admin/articles/*",
+    { schema: { hide: true } },
+    async (request, reply) => {
+      const action = wildcardArticleAction(request.params["*"], [
+        "blocks",
+        "publish",
+      ]);
+      if (!action) {
+        return reply.status(404).send({ error: "Article not found" });
+      }
+      if (
+        action.name === "blocks" &&
+        !(request.body?.block instanceof Object)
+      ) {
+        return reply.status(400).send({ error: "Invalid article block body" });
+      }
+      if (action.name === "publish") {
+        const article = await options.articleService.publishCurrentRevision(
+          action.slug,
+        );
+        if (!article) {
+          return reply.status(404).send({ error: "Article not found" });
+        }
+
+        return toEditorPayload(article);
+      }
+
+      const article = await rejectPublishedArticleEdits(async () =>
+        options.articleService.appendArticleBlock(
+          action.slug,
+          toBlockMutationInput(request.body ?? {}),
+        ),
+      );
+      if (article === "published-edit-rejected") {
+        return reply.status(409).send({
+          error:
+            "Published article edits require a separate unpublished draft model.",
+        });
+      }
+      if (!article) {
+        return reply.status(404).send({ error: "Article not found" });
+      }
+
+      return reply.status(201).send(toEditorPayload(article));
+    },
+  );
+
+  app.patch<{ Params: WildcardArticleParams; Body: BlockUpdateBody }>(
+    "/admin/articles/*",
+    { schema: { hide: true } },
+    async (request, reply) => {
+      const block = wildcardBlockParams(request.params["*"]);
+      if (!block) {
+        return reply.status(404).send({ error: "Article not found" });
+      }
+      if (!(request.body?.block instanceof Object)) {
+        return reply.status(400).send({ error: "Invalid article block body" });
+      }
+      const article = await rejectPublishedArticleEdits(async () =>
+        options.articleService.updateArticleBlock(
+          block.slug,
+          block.blockId,
+          toBlockUpdateInput(request.body ?? {}),
+        ),
+      );
+      if (article === "published-edit-rejected") {
+        return reply.status(409).send({
+          error:
+            "Published article edits require a separate unpublished draft model.",
+        });
+      }
+      if (!article) {
+        return reply.status(404).send({ error: "Article not found" });
+      }
+
+      return reply.status(201).send(toEditorPayload(article));
+    },
+  );
+
+  app.delete<{ Params: WildcardArticleParams; Body: BlockDeleteBody }>(
+    "/admin/articles/*",
+    {
+      preValidation: (request, _reply, done) => {
+        request.body ??= {};
+        done();
+      },
+      schema: { hide: true },
+    },
+    async (request, reply) => {
+      const block = wildcardBlockParams(request.params["*"]);
+      if (!block) {
+        return reply.status(404).send({ error: "Article not found" });
+      }
+      const article = await rejectPublishedArticleEdits(async () =>
+        options.articleService.deleteArticleBlock(
+          block.slug,
+          block.blockId,
+          request.body ?? {},
+        ),
+      );
+      if (article === "published-edit-rejected") {
+        return reply.status(409).send({
+          error:
+            "Published article edits require a separate unpublished draft model.",
+        });
+      }
+      if (!article) {
+        return reply.status(404).send({ error: "Article not found" });
+      }
+
+      return reply.status(201).send(toEditorPayload(article));
+    },
+  );
+}
+
+function wildcardSlugForAction(
+  path: string,
+  actions: string[],
+): string | undefined {
+  return wildcardArticleAction(path, actions)?.slug;
+}
+
+function wildcardArticleAction(
+  path: string,
+  actions: string[],
+): { slug: string; name: string } | undefined {
+  for (const name of actions) {
+    const suffix = `/${name}`;
+    if (!path.endsWith(suffix)) {
+      continue;
+    }
+    const slug = path.slice(0, -suffix.length);
+    if (slug) {
+      return { slug, name };
+    }
+  }
+  return undefined;
+}
+
+function wildcardBlockParams(
+  path: string,
+): { slug: string; blockId: string } | undefined {
+  const marker = "/blocks/";
+  const index = path.lastIndexOf(marker);
+  if (index <= 0) {
+    return undefined;
+  }
+  const slug = path.slice(0, index);
+  const blockId = path.slice(index + marker.length);
+  return slug && blockId && !blockId.includes("/")
+    ? { slug, blockId }
+    : undefined;
 }
 
 type OpenApiFastifySchema = FastifySchema & {
