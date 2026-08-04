@@ -199,6 +199,84 @@ describe("admin writing API", () => {
     await app.close();
   });
 
+  it("routes slash-containing slugs through admin editing and public read endpoints", async () => {
+    const nestedSlug = "guides/fastify-routing";
+    const nestedArticle = articleFixture({
+      slug: nestedSlug,
+      status: "PUBLISHED",
+    });
+    const getArticleBySlug = vi.fn().mockResolvedValue(nestedArticle);
+    const getPublicArticleBySlug = vi.fn().mockResolvedValue(nestedArticle);
+    const replaceArticleBlocks = vi.fn().mockResolvedValue(nestedArticle);
+    const createEditorRevision = vi.fn().mockResolvedValue(nestedArticle);
+    const publishCurrentRevision = vi.fn().mockResolvedValue(nestedArticle);
+    const app = await appWithArticleService({
+      getArticleBySlug,
+      getPublicArticleBySlug,
+      replaceArticleBlocks,
+      createEditorRevision,
+      publishCurrentRevision,
+    });
+    const headers = { authorization: "Bearer test-admin-token" };
+
+    const publicResponse = await app.inject({
+      method: "GET",
+      url: `/articles/${nestedSlug}`,
+    });
+    expect(publicResponse.statusCode).toBe(200);
+    expect(getPublicArticleBySlug).toHaveBeenCalledWith(nestedSlug);
+
+    const readBlocksResponse = await app.inject({
+      method: "GET",
+      url: `/admin/articles/${nestedSlug}/blocks`,
+      headers,
+    });
+    expect(readBlocksResponse.statusCode).toBe(200);
+    expect(getArticleBySlug).toHaveBeenCalledWith(nestedSlug);
+
+    const replaceBlocksResponse = await app.inject({
+      method: "PUT",
+      url: `/admin/articles/${nestedSlug}/blocks`,
+      headers,
+      payload: {
+        blocks: [
+          { type: "PARAGRAPH", content: { text: "Nested route draft" } },
+        ],
+      },
+    });
+    expect(replaceBlocksResponse.statusCode).toBe(201);
+    expect(replaceArticleBlocks).toHaveBeenCalledWith(
+      nestedSlug,
+      expect.objectContaining({
+        blocks: [
+          { type: "PARAGRAPH", content: { text: "Nested route draft" } },
+        ],
+      }),
+    );
+
+    const revisionResponse = await app.inject({
+      method: "PUT",
+      url: `/admin/articles/${nestedSlug}/revisions`,
+      headers,
+      payload: { sourceText: "# Nested route draft" },
+    });
+    expect(revisionResponse.statusCode).toBe(201);
+    expect(createEditorRevision).toHaveBeenCalledWith(
+      nestedSlug,
+      expect.objectContaining({ sourceText: "# Nested route draft" }),
+    );
+
+    const publishResponse = await app.inject({
+      method: "POST",
+      url: `/admin/articles/${nestedSlug}/publish`,
+      headers,
+    });
+    expect(publishResponse.statusCode).toBe(200);
+    expect(publishCurrentRevision).toHaveBeenCalledWith(nestedSlug);
+
+    await app.close();
+  });
+
   it("supports block-based draft creation and block CRUD revision endpoints", async () => {
     const blockArticle = articleFixture({
       sourceFormat: "BLOCKS",
