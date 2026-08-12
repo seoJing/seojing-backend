@@ -16,6 +16,7 @@ function articleFixture(
     slug: "article-schema-mvp",
     title: "Article Schema MVP",
     description: "Schema test fixture",
+    category: "SEOJing",
     status: "DRAFT",
     sourceFormat: "MDX",
     sourceText: "# Article Schema MVP",
@@ -114,7 +115,7 @@ describe("ArticleService", () => {
     await service.listPublicArticles(3);
 
     expect(findPublishedBySlug).toHaveBeenCalledWith("published-api-contract");
-    expect(listPublished).toHaveBeenCalledWith(3);
+    expect(listPublished).toHaveBeenCalledWith(3, undefined);
   });
 });
 

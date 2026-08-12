@@ -14,6 +14,7 @@ function publicArticleFixture(
     slug: "published-api-contract",
     title: "Published API Contract",
     description: "Public article contract fixture",
+    category: "Study",
     status: "PUBLISHED",
     sourceFormat: "MDX",
     sourceText: "# Published API Contract\n\nDo not expose this source.",
@@ -129,13 +130,14 @@ describe("public article API", () => {
       "stale-while-revalidate",
     );
     expect(response.headers.etag).toMatch(/^"[A-Za-z0-9_-]+"$/);
-    expect(listPublicArticles).toHaveBeenCalledWith(1);
+    expect(listPublicArticles).toHaveBeenCalledWith(1, undefined);
     expect(response.json()).toEqual(
       expect.objectContaining({
         count: 1,
         articles: [
           expect.objectContaining({
             slug: "published-api-contract",
+            category: "Study",
             status: "PUBLISHED",
             toc: [
               {
@@ -149,6 +151,27 @@ describe("public article API", () => {
       }),
     );
 
+    await app.close();
+  });
+
+  it("passes an optional category filter through the published-only list service", async () => {
+    const listPublicArticles = vi
+      .fn()
+      .mockResolvedValue([publicArticleFixture()]);
+    const app = await appWithArticleService({ listPublicArticles });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/articles?category=Study",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(listPublicArticles).toHaveBeenCalledWith(undefined, "Study");
+    const payload: { articles: Array<{ category: string; status: string }> } =
+      response.json();
+    expect(payload.articles[0]).toEqual(
+      expect.objectContaining({ category: "Study", status: "PUBLISHED" }),
+    );
     await app.close();
   });
 

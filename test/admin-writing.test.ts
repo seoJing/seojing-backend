@@ -51,6 +51,7 @@ function articleFixture(
     slug: "admin-draft",
     title: "Admin Draft",
     description: "Writing UX fixture",
+    category: "SEOJing",
     status: "DRAFT",
     sourceFormat: "MDX",
     sourceText: revision.sourceText,
@@ -196,6 +197,47 @@ describe("admin writing API", () => {
     const publishPayload = JSON.parse(publishResponse.body) as EditorPayload;
     expect(publishPayload.article.status).toBe("PUBLISHED");
 
+    await app.close();
+  });
+
+  it("supports unpublish, archive, and permanent delete actions", async () => {
+    const unpublishArticle = vi
+      .fn()
+      .mockResolvedValue(articleFixture({ status: "DRAFT" }));
+    const archiveArticle = vi
+      .fn()
+      .mockResolvedValue(articleFixture({ status: "ARCHIVED" }));
+    const deleteArticle = vi.fn().mockResolvedValue(true);
+    const app = await appWithArticleService({
+      unpublishArticle,
+      archiveArticle,
+      deleteArticle,
+    });
+    const headers = { authorization: "Bearer test-admin-token" };
+
+    const unpublished = await app.inject({
+      method: "POST",
+      url: "/admin/articles/admin-draft/unpublish",
+      headers,
+    });
+    expect(unpublished.statusCode).toBe(200);
+    expect(unpublishArticle).toHaveBeenCalledWith("admin-draft");
+
+    const archived = await app.inject({
+      method: "POST",
+      url: "/admin/articles/admin-draft/archive",
+      headers,
+    });
+    expect(archived.statusCode).toBe(200);
+    expect(archiveArticle).toHaveBeenCalledWith("admin-draft");
+
+    const deleted = await app.inject({
+      method: "DELETE",
+      url: "/admin/articles/admin-draft",
+      headers,
+    });
+    expect(deleted.statusCode).toBe(204);
+    expect(deleteArticle).toHaveBeenCalledWith("admin-draft");
     await app.close();
   });
 
