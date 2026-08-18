@@ -51,6 +51,7 @@ model Article {
   slug              String              @unique
   title             String
   description       String?
+  category          String              @default("SEOJing")
   status            ArticleStatus       @default(DRAFT)
   sourceFormat      ArticleSourceFormat @default(MDX) @map("source_format")
   sourceText        String              @map("source_text")

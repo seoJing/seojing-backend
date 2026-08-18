@@ -14,6 +14,7 @@ interface RegisterArticleRoutesOptions {
 
 interface ArticleListQuery {
   limit?: string | number;
+  category?: string;
 }
 
 interface ArticleSlugParams {
@@ -28,6 +29,7 @@ interface PublicArticleSummary {
   slug: string;
   title: string;
   description: string | null;
+  category: string;
   status: "PUBLISHED";
   publishedAt: string | null;
   updatedAt: string;
@@ -78,13 +80,17 @@ export function registerArticleRoutes(
           type: "object",
           properties: {
             limit: { type: "integer", minimum: 1, maximum: 50 },
+            category: { type: "string", minLength: 1, maxLength: 120 },
           },
         },
       },
     },
     async (request, reply) => {
       const limit = parseLimit(request.query.limit);
-      const articles = await options.articleService.listPublicArticles(limit);
+      const articles = await options.articleService.listPublicArticles(
+        limit,
+        request.query.category,
+      );
       const items = articles.map(toPublicArticleSummary);
       const etag = makeEtag(items);
 
@@ -175,6 +181,7 @@ function toPublicArticleSummary(
     description: article.description
       ? scrubLocalPaths(article.description)
       : null,
+    category: scrubLocalPaths(article.category),
     status: "PUBLISHED",
     publishedAt: article.publishedAt?.toISOString() ?? null,
     updatedAt: article.updatedAt.toISOString(),

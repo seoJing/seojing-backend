@@ -33,6 +33,7 @@ interface UpsertDraftBody {
   slug?: string;
   title?: string;
   description?: string;
+  category?: string;
   sourceText?: string;
   renderedHtml?: string;
   changeSummary?: string;
@@ -43,6 +44,7 @@ interface BlockDraftBody {
   slug?: string;
   title?: string;
   description?: string;
+  category?: string;
   blocks?: BlockEditorBlockInput[];
   changeSummary?: string;
   authorName?: string;
@@ -111,6 +113,7 @@ const upsertDraftBodySchema = {
     slug: { type: "string" },
     title: { type: "string" },
     description: { type: "string" },
+    category: { type: "string", minLength: 1, maxLength: 120 },
     sourceText: { type: "string" },
     renderedHtml: { type: "string" },
     changeSummary: { type: "string" },
@@ -145,6 +148,7 @@ const blockDraftBodySchema = {
     slug: { type: "string" },
     title: { type: "string" },
     description: { type: "string" },
+    category: { type: "string", minLength: 1, maxLength: 120 },
     blocks: {
       type: "array",
       items: articleBlockBodySchema,
@@ -468,6 +472,63 @@ export function registerAdminWritingRoutes(
     },
   );
 
+  app.post<{ Params: ArticleSlugParams }>(
+    "/admin/articles/:slug/unpublish",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Move an article back to draft visibility",
+        params: articleSlugParamSchema,
+      }),
+    },
+    async (request, reply) => {
+      const article = await options.articleService.unpublishArticle(
+        request.params.slug,
+      );
+      if (!article)
+        return reply.status(404).send({ error: "Article not found" });
+      return toEditorPayload(article);
+    },
+  );
+
+  app.post<{ Params: ArticleSlugParams }>(
+    "/admin/articles/:slug/archive",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Archive an article and remove it from public reads",
+        params: articleSlugParamSchema,
+      }),
+    },
+    async (request, reply) => {
+      const article = await options.articleService.archiveArticle(
+        request.params.slug,
+      );
+      if (!article)
+        return reply.status(404).send({ error: "Article not found" });
+      return toEditorPayload(article);
+    },
+  );
+
+  app.delete<{ Params: ArticleSlugParams }>(
+    "/admin/articles/:slug",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Permanently delete an article",
+        params: articleSlugParamSchema,
+      }),
+    },
+    async (request, reply) => {
+      const deleted = await options.articleService.deleteArticle(
+        request.params.slug,
+      );
+      if (!deleted)
+        return reply.status(404).send({ error: "Article not found" });
+      return reply.status(204).send();
+    },
+  );
+
   // Fastify wildcards must terminate a route. These hidden fallbacks preserve the
   // documented flat-slug routes above while accepting a slash-containing slug.
   app.get<{ Params: WildcardArticleParams }>(
@@ -545,6 +606,8 @@ export function registerAdminWritingRoutes(
       const action = wildcardArticleAction(request.params["*"], [
         "blocks",
         "publish",
+        "unpublish",
+        "archive",
       ]);
       if (!action) {
         return reply.status(404).send({ error: "Article not found" });
@@ -555,10 +618,12 @@ export function registerAdminWritingRoutes(
       ) {
         return reply.status(400).send({ error: "Invalid article block body" });
       }
-      if (action.name === "publish") {
-        const article = await options.articleService.publishCurrentRevision(
-          action.slug,
-        );
+      if (["publish", "unpublish", "archive"].includes(action.name)) {
+        const article = await (action.name === "publish"
+          ? options.articleService.publishCurrentRevision(action.slug)
+          : action.name === "unpublish"
+            ? options.articleService.unpublishArticle(action.slug)
+            : options.articleService.archiveArticle(action.slug));
         if (!article) {
           return reply.status(404).send({ error: "Article not found" });
         }
@@ -630,7 +695,13 @@ export function registerAdminWritingRoutes(
     async (request, reply) => {
       const block = wildcardBlockParams(request.params["*"]);
       if (!block) {
-        return reply.status(404).send({ error: "Article not found" });
+        const deleted = await options.articleService.deleteArticle(
+          request.params["*"],
+        );
+        if (!deleted) {
+          return reply.status(404).send({ error: "Article not found" });
+        }
+        return reply.status(204).send();
       }
       const article = await rejectPublishedArticleEdits(async () =>
         options.articleService.deleteArticleBlock(
@@ -739,6 +810,7 @@ function toCreateArticleInput(body: UpsertDraftBody): CreateArticleInput {
     slug,
     title,
     description: optionalString(body.description) ?? ingest.description,
+    category: optionalString(body.category),
     sourceFormat: "MDX",
     sourceText,
     renderedHtml: optionalString(body.renderedHtml) ?? ingest.renderedHtml,
@@ -755,6 +827,7 @@ function toEditorDraftInput(body: UpsertDraftBody): ArticleEditorDraftInput {
   return {
     title: optionalString(body.title) ?? ingest.title,
     description: optionalString(body.description) ?? ingest.description,
+    category: optionalString(body.category),
     sourceText,
     renderedHtml: optionalString(body.renderedHtml) ?? ingest.renderedHtml,
     changeSummary:
@@ -770,6 +843,7 @@ function toBlockDraftInput(body: BlockDraftBody): BlockEditorDraftInput {
     slug: optionalString(body.slug),
     title: optionalString(body.title),
     description: optionalString(body.description),
+    category: optionalString(body.category),
     blocks: requiredBlocks(body.blocks),
     changeSummary:
       optionalString(body.changeSummary) ?? "Block editor revision",
@@ -829,6 +903,7 @@ function toEditorPayload(article: ArticleWithContent) {
       slug: article.slug,
       title: article.title,
       description: article.description,
+      category: article.category,
       status: article.status,
       sourceFormat: article.sourceFormat,
       sourceText: revision?.sourceText ?? article.sourceText,

@@ -22,6 +22,7 @@ export interface CreateArticleInput {
   slug: string;
   title: string;
   description?: string;
+  category?: string;
   sourceFormat?: ArticleSourceFormat;
   sourceText: string;
   renderedHtml?: string;
@@ -35,6 +36,7 @@ export interface CreateArticleInput {
 export interface ArticleEditorDraftInput {
   title?: string;
   description?: string;
+  category?: string;
   sourceText: string;
   renderedHtml?: string;
   changeSummary?: string;
@@ -47,6 +49,7 @@ export interface BlockEditorDraftInput {
   slug?: string;
   title?: string;
   description?: string;
+  category?: string;
   blocks: BlockEditorBlockInput[];
   changeSummary?: string;
   authorName?: string;
@@ -93,6 +96,7 @@ export class ArticleService {
       slug,
       title: input.title.trim(),
       description: input.description?.trim(),
+      category: normalizeCategory(input.category),
       sourceFormat: input.sourceFormat ?? "MDX",
       status: input.status ?? "DRAFT",
       blocks: input.blocks ?? deriveBlocksFromSource(input.sourceText),
@@ -109,8 +113,14 @@ export class ArticleService {
     return this.repository.findPublishedBySlug(normalizeSlug(slug));
   }
 
-  async listPublicArticles(limit?: number): Promise<ArticleWithContent[]> {
-    return this.repository.listPublished(limit);
+  async listPublicArticles(
+    limit?: number,
+    category?: string,
+  ): Promise<ArticleWithContent[]> {
+    return this.repository.listPublished(
+      limit,
+      category?.trim() ? normalizeCategory(category) : undefined,
+    );
   }
 
   async createEditorRevision(
@@ -130,6 +140,7 @@ export class ArticleService {
       slug: normalizedSlug,
       title: input.title?.trim(),
       description: input.description?.trim(),
+      category: input.category ? normalizeCategory(input.category) : undefined,
       sourceFormat: "MDX",
       blocks: input.blocks ?? deriveBlocksFromSource(input.sourceText),
     });
@@ -144,6 +155,7 @@ export class ArticleService {
       slug: input.slug ?? "",
       title: input.title ?? "",
       description: input.description,
+      category: input.category,
       sourceFormat: "BLOCKS",
       sourceText,
       renderedHtml: renderArticleBlocks(blocks),
@@ -233,11 +245,23 @@ export class ArticleService {
     return this.repository.publishLatestRevision(normalizeSlug(slug));
   }
 
+  async unpublishArticle(slug: string): Promise<ArticleWithContent | null> {
+    return this.repository.setArticleStatus(normalizeSlug(slug), "DRAFT");
+  }
+
+  async archiveArticle(slug: string): Promise<ArticleWithContent | null> {
+    return this.repository.setArticleStatus(normalizeSlug(slug), "ARCHIVED");
+  }
+
+  async deleteArticle(slug: string): Promise<boolean> {
+    return this.repository.deleteBySlug(normalizeSlug(slug));
+  }
+
   private async createBlockRevision(
     slug: string,
     input: Pick<
       BlockEditorDraftInput,
-      "title" | "description" | "changeSummary" | "authorName"
+      "title" | "description" | "category" | "changeSummary" | "authorName"
     >,
     blocks: ArticleBlockDraft[],
   ): Promise<ArticleWithContent | null> {
@@ -249,6 +273,7 @@ export class ArticleService {
       slug,
       title: input.title?.trim(),
       description: input.description?.trim(),
+      category: input.category ? normalizeCategory(input.category) : undefined,
       sourceFormat: "BLOCKS",
       sourceText,
       renderedHtml: renderArticleBlocks(blocks),
@@ -269,6 +294,10 @@ export function normalizeSlug(slug: string): string {
     .replace(/-\//g, "/")
     .replace(/\/-/g, "/")
     .replace(/^[-/]+|[-/]+$/g, "");
+}
+
+export function normalizeCategory(category: string | undefined): string {
+  return category?.trim().replace(/\s+/g, " ") || "SEOJing";
 }
 
 function deriveBlocksFromSource(sourceText: string): ArticleBlockDraft[] {

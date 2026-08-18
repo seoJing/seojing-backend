@@ -33,6 +33,7 @@ export interface CreateArticleDraftInput {
   slug: string;
   title: string;
   description?: string;
+  category?: string;
   sourceFormat: ArticleSourceFormat;
   sourceText: string;
   renderedHtml?: string;
@@ -47,6 +48,7 @@ export interface CreateArticleRevisionInput {
   slug: string;
   title?: string;
   description?: string;
+  category?: string;
   sourceFormat: ArticleSourceFormat;
   sourceText: string;
   renderedHtml?: string;
@@ -102,12 +104,16 @@ export class ArticleRepository {
     });
   }
 
-  async listPublished(limit = 20): Promise<ArticleWithContent[]> {
+  async listPublished(
+    limit = 20,
+    category?: string,
+  ): Promise<ArticleWithContent[]> {
     const safeLimit = Math.min(Math.max(limit, 1), 50);
 
     return this.db.article.findMany({
       where: {
         status: "PUBLISHED",
+        ...(category ? { category } : {}),
       },
       orderBy: [{ publishedAt: "desc" }, { updatedAt: "desc" }],
       take: safeLimit,
@@ -124,6 +130,7 @@ export class ArticleRepository {
           slug: input.slug,
           title: input.title,
           description: input.description,
+          category: input.category ?? "SEOJing",
           status: input.status ?? "DRAFT",
           sourceFormat: input.sourceFormat,
           sourceText: input.sourceText,
@@ -177,6 +184,7 @@ export class ArticleRepository {
             currentRevisionId: revision.id,
             title: input.title ?? article.title,
             description: input.description ?? article.description,
+            category: input.category ?? article.category,
             sourceFormat: input.sourceFormat,
             sourceText: input.sourceText,
             renderedHtml: input.renderedHtml,
@@ -215,6 +223,24 @@ export class ArticleRepository {
 
       return this.readCreatedArticle(tx, article.id);
     });
+  }
+
+  async setArticleStatus(
+    slug: string,
+    status: Exclude<ArticleStatus, "PUBLISHED">,
+  ): Promise<ArticleWithContent | null> {
+    const article = await this.db.article.findUnique({ where: { slug } });
+    if (!article) return null;
+    return this.db.article.update({
+      where: { id: article.id },
+      data: { status, publishedAt: null },
+      include: articleContentInclude,
+    });
+  }
+
+  async deleteBySlug(slug: string): Promise<boolean> {
+    const deleted = await this.db.article.deleteMany({ where: { slug } });
+    return deleted.count > 0;
   }
 
   private async createRevisionRecord(
