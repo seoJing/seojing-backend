@@ -27,6 +27,7 @@
     "db:local:start": "bash scripts/local-postgres.sh start",
     "db:local:stop": "bash scripts/local-postgres.sh stop",
     "db:local:status": "bash scripts/local-postgres.sh status",
+    "db:backup": "tsx scripts/backup-postgres.ts",
     "openapi:check": "tsx scripts/check-openapi.ts"
   },
   "prisma": {

@@ -18,6 +18,7 @@ import { ArticleService } from "./services/articles.js";
 import { CommunityService } from "./services/community.js";
 import { GitHubOAuthService } from "./services/github-oauth.js";
 import { type PythonWorkerClient } from "./services/python-worker.js";
+import { registerPublicRateLimit } from "./services/public-rate-limit.js";
 import { TtsService } from "./services/tts.js";
 
 export type PythonWorkerGateway = Pick<PythonWorkerClient, "health"> &
@@ -48,6 +49,16 @@ export async function buildApp(
   await app.register(helmet);
   await app.register(cors, {
     origin: options.corsOrigins ?? ["https://seojing.com"],
+  });
+
+  const publicRateLimitBuckets = new Map<
+    string,
+    { count: number; resetAt: number }
+  >();
+  app.addHook("onRequest", async (request, reply) => {
+    if (!registerPublicRateLimit(request, reply, publicRateLimitBuckets)) {
+      return reply;
+    }
   });
 
   await app.register(swagger, {

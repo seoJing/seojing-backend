@@ -395,6 +395,7 @@ describe("admin writing API", () => {
         "HEADING",
         "CODE",
         "IMAGE",
+        "QUOTE",
         "CALLOUT",
         "QUIZ",
       ]),
