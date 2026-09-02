@@ -127,7 +127,15 @@ const articleBlockBodySchema = {
     id: { type: "string" },
     type: {
       type: "string",
-      enum: ["PARAGRAPH", "HEADING", "CODE", "IMAGE", "CALLOUT", "QUIZ"],
+      enum: [
+        "PARAGRAPH",
+        "HEADING",
+        "CODE",
+        "IMAGE",
+        "QUOTE",
+        "CALLOUT",
+        "QUIZ",
+      ],
     },
     sortOrder: { type: "number" },
     content: { type: "object", additionalProperties: true },
@@ -922,7 +930,15 @@ function toEditorPayload(article: ArticleWithContent) {
           : `/admin/articles/${article.slug}/revisions`,
       publishTarget: `/admin/articles/${article.slug}/publish`,
       insertButtons: componentSnippets,
-      blockTypes: ["PARAGRAPH", "HEADING", "CODE", "IMAGE", "CALLOUT", "QUIZ"],
+      blockTypes: [
+        "PARAGRAPH",
+        "HEADING",
+        "CODE",
+        "IMAGE",
+        "QUOTE",
+        "CALLOUT",
+        "QUIZ",
+      ],
     },
   };
 }

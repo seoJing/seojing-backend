@@ -14,6 +14,7 @@ const supportedBlockTypes = new Set<ArticleBlockType>([
   "HEADING",
   "CODE",
   "IMAGE",
+  "QUOTE",
   "CALLOUT",
   "QUIZ",
 ]);
@@ -85,6 +86,11 @@ function normalizeBlockContent(
         alt: optionalText(content.alt) ?? "",
         caption: optionalText(content.caption),
       };
+    case "QUOTE":
+      return {
+        text: requiredText(content.text, "quote text"),
+        attribution: optionalText(content.attribution),
+      };
     case "CALLOUT":
       return {
         tone: optionalText(content.tone) ?? "note",
@@ -131,6 +137,11 @@ function renderArticleBlock(block: ArticleBlockDraft): string {
       }
       return `<figure>${image}<figcaption>${escapeHtml(caption)}</figcaption></figure>`;
     }
+    case "QUOTE": {
+      const text = readString(content.text) ?? "";
+      const attribution = readString(content.attribution);
+      return `<blockquote><p>${escapeHtml(text)}</p>${attribution ? `<footer>— ${escapeHtml(attribution)}</footer>` : ""}</blockquote>`;
+    }
     case "CALLOUT": {
       const tone = readString(content.tone) ?? "note";
       const title = readString(content.title);
@@ -174,6 +185,8 @@ function blockToSourceText(block: ArticleBlockDraft): string {
       return `\`\`\`${readString(content.language) ?? "text"}\n${readString(content.code) ?? ""}\n\`\`\``;
     case "IMAGE":
       return `![${readString(content.alt) ?? ""}](${readString(content.url) ?? ""})`;
+    case "QUOTE":
+      return `> ${readString(content.text) ?? ""}${readString(content.attribution) ? `\n> — ${readString(content.attribution)}` : ""}`;
     case "CALLOUT":
       return `> ${readString(content.title) ? `${readString(content.title)}: ` : ""}${readString(content.text) ?? ""}`;
     case "QUIZ":
@@ -195,6 +208,10 @@ function blockPlainText(
       return readString(content.code);
     case "IMAGE":
       return readString(content.alt) ?? readString(content.caption);
+    case "QUOTE":
+      return [readString(content.text), readString(content.attribution)]
+        .filter(Boolean)
+        .join(" — ");
     case "CALLOUT":
       return [readString(content.title), readString(content.text)]
         .filter(Boolean)
