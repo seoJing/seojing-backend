@@ -1,4 +1,4 @@
-import type { CareerActualStatus } from "@prisma/client";
+import type { CareerRecruitmentStatus } from "@prisma/client";
 import { z } from "zod";
 
 import type {
@@ -7,37 +7,7 @@ import type {
   CareerRepository,
 } from "../repositories/careers.js";
 
-const slugSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(160)
-  .transform(normalizeCareerSlug)
-  .refine(Boolean, "A valid slug is required");
-const shortText = z.string().trim().min(1).max(240);
-const optionalShortText = z.string().trim().min(1).max(500).optional();
-const publicUrl = z
-  .string()
-  .trim()
-  .url()
-  .max(2048)
-  .refine(
-    isSafePublicUrl,
-    "Only public HTTP(S) URLs without credentials are allowed",
-  );
-const optionalPublicUrl = publicUrl.optional();
-const dateTime = z
-  .string()
-  .datetime({ offset: true })
-  .transform((value) => new Date(value));
-const optionalDateTime = dateTime.optional();
-const dateOnly = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .transform((value) => new Date(`${value}T00:00:00.000Z`));
-const optionalDateOnly = dateOnly.optional();
-
-export const careerActualStatuses = [
+export const careerRecruitmentStatuses = [
   "OPEN",
   "CLOSED",
   "UPCOMING",
@@ -51,184 +21,165 @@ export const careerEmploymentTypes = [
   "OTHER",
 ] as const;
 export const careerForecastConfidences = ["LOW", "MEDIUM", "HIGH"] as const;
-export const careerSourceRelationships = [
-  "GENERAL",
-  "ACTUAL_STATUS",
-  "RECRUITMENT_HISTORY",
-  "FORECAST",
-] as const;
 
-const companySchema = z.object({
-  slug: slugSchema,
-  name: shortText,
-  website: optionalPublicUrl,
-  summary: optionalShortText,
-  logoUrl: optionalPublicUrl,
-});
-
-const opportunitySchema = z.object({
-  slug: slugSchema,
-  title: shortText,
-  employmentType: z.enum(careerEmploymentTypes),
-  actualStatus: z.enum(careerActualStatuses),
-  actualStatusAsOf: optionalDateTime,
-  location: optionalShortText,
-  summary: z.string().trim().min(1).max(1000),
-  description: z.string().trim().min(1).max(20_000).optional(),
-  applicationUrl: optionalPublicUrl,
-});
-
-const historySchema = z
-  .object({
-    key: z
-      .string()
-      .trim()
-      .min(1)
-      .max(120)
-      .regex(/^[a-z0-9][a-z0-9_-]*$/),
-    openedOn: optionalDateOnly,
-    closedOn: optionalDateOnly,
-    actualStatus: z.enum(careerActualStatuses),
-    note: optionalShortText,
-  })
+const slug = z
+  .string()
+  .trim()
+  .min(1)
+  .max(160)
+  .transform(normalizeCareerSlug)
+  .refine(Boolean, "A valid slug is required");
+const short = z.string().trim().min(1).max(240);
+const text = z.string().trim().min(1).max(2000);
+const uuid = z.string().uuid();
+const publicUrl = z
+  .string()
+  .trim()
+  .url()
+  .max(2048)
   .refine(
-    (entry) =>
-      !entry.openedOn || !entry.closedOn || entry.closedOn >= entry.openedOn,
-    { message: "closedOn must not be earlier than openedOn" },
+    isSafePublicUrl,
+    "Only public HTTP(S) URLs without credentials are allowed",
   );
-
-const forecastSchema = z
-  .object({
-    predictedStatus: z.enum(careerActualStatuses),
-    confidence: z.enum(careerForecastConfidences),
-    windowStart: optionalDateOnly,
-    windowEnd: optionalDateOnly,
-    rationale: z.string().trim().min(1).max(2000),
-  })
-  .refine(
-    (forecast) =>
-      !forecast.windowStart ||
-      !forecast.windowEnd ||
-      forecast.windowEnd >= forecast.windowStart,
-    { message: "windowEnd must not be earlier than windowStart" },
-  );
+const dateTime = z
+  .string()
+  .datetime({ offset: true })
+  .transform((value) => new Date(value));
+const dateOnly = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .transform((value) => new Date(`${value}T00:00:00.000Z`));
 
 const sourceSchema = z.object({
-  key: z
-    .string()
-    .trim()
-    .min(1)
-    .max(120)
-    .regex(/^[a-z0-9][a-z0-9_-]*$/),
-  label: shortText,
-  publisher: optionalShortText,
+  id: uuid.optional(),
+  type: short,
+  title: short,
   url: publicUrl,
-  publishedAt: optionalDateTime,
-  retrievedAt: dateTime,
-  relationship: z.enum(careerSourceRelationships),
-  historyKey: z.string().trim().min(1).max(120).optional(),
-  note: optionalShortText,
+  publisher: short.nullish().transform((value) => value ?? undefined),
+  publishedAt: dateTime.nullish().transform((value) => value ?? undefined),
+  accessedAt: dateTime,
 });
 
-export const careerAggregateInputSchema = z
+const recruitmentSchema = z
   .object({
-    company: companySchema,
-    opportunity: opportunitySchema,
-    history: z.array(historySchema).max(100).default([]),
-    forecast: forecastSchema.optional(),
-    sources: z.array(sourceSchema).min(1).max(100),
+    id: uuid.optional(),
+    year: z.number().int().min(2000).max(2200),
+    title: short,
+    openDate: dateOnly.nullish().transform((value) => value ?? undefined),
+    closeDate: dateOnly.nullish().transform((value) => value ?? undefined),
+    employmentType: z
+      .enum(careerEmploymentTypes)
+      .nullish()
+      .transform((value) => value ?? undefined),
+    eligibility: z.array(text).max(50).default([]),
+    process: z
+      .array(
+        z.object({ order: z.number().int().min(1), type: short, label: short }),
+      )
+      .max(50)
+      .default([]),
+    sources: z.array(sourceSchema).min(1).max(50),
   })
-  .superRefine((input, context) => {
-    const historyKeys = new Set<string>();
-    for (const entry of input.history) {
-      if (historyKeys.has(entry.key)) {
-        context.addIssue({
-          code: "custom",
-          path: ["history"],
-          message: `Duplicate recruitment history key: ${entry.key}`,
-        });
-      }
-      historyKeys.add(entry.key);
-    }
-
-    const sourceKeys = new Set<string>();
-    const linkedHistory = new Set<string>();
-    let hasActualStatusSource = false;
-    let hasForecastSource = false;
-    input.sources.forEach((source, index) => {
-      if (sourceKeys.has(source.key)) {
-        context.addIssue({
-          code: "custom",
-          path: ["sources", index, "key"],
-          message: `Duplicate source key: ${source.key}`,
-        });
-      }
-      sourceKeys.add(source.key);
-
-      if (source.relationship === "ACTUAL_STATUS") {
-        hasActualStatusSource = true;
-      }
-      if (source.relationship === "FORECAST") {
-        hasForecastSource = true;
-        if (!input.forecast) {
-          context.addIssue({
-            code: "custom",
-            path: ["sources", index, "relationship"],
-            message: "FORECAST sources require a forecast",
-          });
-        }
-      }
-      if (source.relationship === "RECRUITMENT_HISTORY") {
-        if (!source.historyKey || !historyKeys.has(source.historyKey)) {
-          context.addIssue({
-            code: "custom",
-            path: ["sources", index, "historyKey"],
-            message:
-              "RECRUITMENT_HISTORY sources require a matching historyKey",
-          });
-        } else {
-          linkedHistory.add(source.historyKey);
-        }
-      } else if (source.historyKey) {
-        context.addIssue({
-          code: "custom",
-          path: ["sources", index, "historyKey"],
-          message: "historyKey is only valid for RECRUITMENT_HISTORY sources",
-        });
-      }
-    });
-
-    if (!hasActualStatusSource) {
+  .superRefine((value, context) => {
+    if (value.openDate && value.closeDate && value.closeDate < value.openDate)
       context.addIssue({
         code: "custom",
-        path: ["sources"],
-        message: "At least one ACTUAL_STATUS source is required",
+        path: ["closeDate"],
+        message: "closeDate must not be earlier than openDate",
       });
-    }
-    if (input.forecast && !hasForecastSource) {
+    if (
+      new Set(value.process.map((step) => step.order)).size !==
+      value.process.length
+    )
       context.addIssue({
         code: "custom",
-        path: ["sources"],
-        message: "A forecast requires at least one FORECAST source",
+        path: ["process"],
+        message: "Process order values must be unique",
       });
-    }
-    for (const key of historyKeys) {
-      if (!linkedHistory.has(key)) {
-        context.addIssue({
-          code: "custom",
-          path: ["history"],
-          message: `Recruitment history requires an explicit source link: ${key}`,
-        });
-      }
-    }
   });
 
-export type CareerAggregateRequest = z.input<typeof careerAggregateInputSchema>;
+const aggregateSchema = z
+  .object({
+    company: z.object({
+      slug,
+      name: short,
+      englishName: short.nullish().transform((value) => value ?? undefined),
+      careersUrl: publicUrl.nullish().transform((value) => value ?? undefined),
+    }),
+    opportunity: z.object({
+      slug,
+      title: short,
+      role: short,
+      category: short,
+      recruitmentStatus: z.enum(careerRecruitmentStatuses),
+      actualStatusAsOf: dateTime
+        .nullish()
+        .transform((value) => value ?? undefined),
+    }),
+    forecast: z
+      .object({
+        expectedOpenFrom: dateOnly
+          .nullish()
+          .transform((value) => value ?? undefined),
+        expectedOpenTo: dateOnly
+          .nullish()
+          .transform((value) => value ?? undefined),
+        confidence: z.enum(careerForecastConfidences),
+        reasons: z.array(text).min(1).max(50),
+        basedOnRecruitmentCount: z.number().int().min(0),
+        methodVersion: short,
+        analyzedAt: dateTime,
+        sources: z.array(sourceSchema).min(1).max(50),
+      })
+      .superRefine((value, context) => {
+        if (
+          value.expectedOpenFrom &&
+          value.expectedOpenTo &&
+          value.expectedOpenTo < value.expectedOpenFrom
+        )
+          context.addIssue({
+            code: "custom",
+            path: ["expectedOpenTo"],
+            message: "expectedOpenTo must not be earlier than expectedOpenFrom",
+          });
+      })
+      .optional()
+      .nullable()
+      .transform((value) => value ?? undefined),
+    recruitments: z.array(recruitmentSchema).max(100).default([]),
+    preparationNotes: z.array(text).max(100).default([]),
+    statusSources: z.array(sourceSchema).min(1).max(50),
+  })
+  .superRefine((value, context) => {
+    const recruitmentIds = value.recruitments
+      .map((item) => item.id)
+      .filter((id): id is string => Boolean(id));
+    if (new Set(recruitmentIds).size !== recruitmentIds.length)
+      context.addIssue({
+        code: "custom",
+        path: ["recruitments"],
+        message: "Recruitment ids must be unique within an aggregate",
+      });
+  });
+
+export const careerAdminBodySchema = z.object({
+  aggregate: aggregateSchema,
+  metadata: z
+    .object({
+      visibility: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
+      publishedAt: dateTime.optional().nullable(),
+      createdAt: dateTime,
+      updatedAt: dateTime,
+    })
+    .optional(),
+});
+
+export type CareerAdminRequest = z.input<typeof careerAdminBodySchema>;
 
 export interface CareerListInput {
   limit?: number;
   company?: string;
-  actualStatus?: CareerActualStatus;
+  recruitmentStatus?: CareerRecruitmentStatus;
 }
 
 export class CareerService {
@@ -239,52 +190,72 @@ export class CareerService {
 
   async listPublic(input: CareerListInput = {}): Promise<CareerAggregate[]> {
     return this.repository.listPublished({
-      limit: input.limit,
+      ...input,
       company: input.company ? normalizeCareerSlug(input.company) : undefined,
-      actualStatus: input.actualStatus,
     });
   }
-
-  async getPublic(slug: string): Promise<CareerAggregate | null> {
-    return this.repository.findPublishedBySlug(normalizeCareerSlug(slug));
+  async getPublic(slugValue: string) {
+    return this.repository.findPublishedBySlug(normalizeCareerSlug(slugValue));
   }
-
-  async getAdmin(slug: string): Promise<CareerAggregate | null> {
-    return this.repository.findBySlug(normalizeCareerSlug(slug));
+  async getAdmin(slugValue: string) {
+    return this.repository.findBySlug(normalizeCareerSlug(slugValue));
   }
 
   async create(input: unknown): Promise<CareerAggregate> {
-    const parsed = parseCareerAggregate(input);
-    const existing = await this.repository.findBySlug(parsed.opportunity.slug);
-    if (existing) {
+    const parsed = parseAdminBody(input);
+    if (await this.repository.findBySlug(parsed.opportunity.slug))
       throw new CareerConflictError(
         `Career opportunity slug already exists: ${parsed.opportunity.slug}`,
       );
-    }
     return this.repository.createAggregate(parsed);
   }
 
-  async update(slug: string, input: unknown): Promise<CareerAggregate | null> {
-    const normalizedSlug = normalizeCareerSlug(slug);
-    const parsed = parseCareerAggregate(input);
-    if (parsed.opportunity.slug !== normalizedSlug) {
+  async update(
+    slugValue: string,
+    input: unknown,
+  ): Promise<CareerAggregate | null> {
+    const normalized = normalizeCareerSlug(slugValue);
+    const parsed = parseAdminBody(input);
+    if (parsed.opportunity.slug !== normalized)
       throw new CareerValidationError([
         {
-          path: "opportunity.slug",
+          path: "aggregate.opportunity.slug",
           message: "Opportunity slug must match the route slug",
         },
       ]);
-    }
-    return this.repository.replaceAggregate(normalizedSlug, parsed);
+    return this.repository.replaceAggregate(normalized, parsed);
   }
 
-  async publish(slug: string): Promise<CareerAggregate | null> {
-    const normalizedSlug = normalizeCareerSlug(slug);
-    const aggregate = await this.repository.findBySlug(normalizedSlug);
+  async publish(slugValue: string): Promise<CareerAggregate | null> {
+    const normalized = normalizeCareerSlug(slugValue);
+    const aggregate = await this.repository.findBySlug(normalized);
     if (!aggregate) return null;
-    validatePublishable(aggregate);
-    return this.repository.publish(normalizedSlug, this.now());
+    const issues: Array<{ path: string; message: string }> = [];
+    if (!aggregate.actualStatusAsOf)
+      issues.push({
+        path: "aggregate.opportunity.actualStatusAsOf",
+        message: "Publishing requires an actual-status observation timestamp",
+      });
+    if (!aggregate.statusSources.length)
+      issues.push({
+        path: "aggregate.statusSources",
+        message: "Publishing requires an actual-status source",
+      });
+    if (issues.length) throw new CareerValidationError(issues);
+    return this.repository.publish(normalized, this.now());
   }
+}
+
+function parseAdminBody(input: unknown): CareerAggregateInput {
+  const result = careerAdminBodySchema.safeParse(input);
+  if (!result.success)
+    throw new CareerValidationError(
+      result.error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        message: issue.message,
+      })),
+    );
+  return result.data.aggregate;
 }
 
 export class CareerValidationError extends Error {
@@ -295,44 +266,11 @@ export class CareerValidationError extends Error {
     this.name = "CareerValidationError";
   }
 }
-
 export class CareerConflictError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "CareerConflictError";
   }
-}
-
-function parseCareerAggregate(input: unknown): CareerAggregateInput {
-  const result = careerAggregateInputSchema.safeParse(input);
-  if (!result.success) {
-    throw new CareerValidationError(
-      result.error.issues.map((issue) => ({
-        path: issue.path.join("."),
-        message: issue.message,
-      })),
-    );
-  }
-  return result.data;
-}
-
-function validatePublishable(aggregate: CareerAggregate): void {
-  const issues: Array<{ path: string; message: string }> = [];
-  if (!aggregate.actualStatusAsOf) {
-    issues.push({
-      path: "opportunity.actualStatusAsOf",
-      message: "Publishing requires an actual-status observation timestamp",
-    });
-  }
-  if (
-    !aggregate.sourceLinks.some((link) => link.relationship === "ACTUAL_STATUS")
-  ) {
-    issues.push({
-      path: "sources",
-      message: "Publishing requires an ACTUAL_STATUS source",
-    });
-  }
-  if (issues.length > 0) throw new CareerValidationError(issues);
 }
 
 export function normalizeCareerSlug(value: string): string {
@@ -344,7 +282,6 @@ export function normalizeCareerSlug(value: string): string {
     .replace(/-{2,}/g, "-")
     .replace(/^-|-$/g, "");
 }
-
 function isSafePublicUrl(value: string): boolean {
   try {
     const url = new URL(value);
@@ -352,9 +289,7 @@ function isSafePublicUrl(value: string): boolean {
       (url.protocol === "https:" || url.protocol === "http:") &&
       !url.username &&
       !url.password &&
-      url.hostname !== "localhost" &&
-      url.hostname !== "127.0.0.1" &&
-      url.hostname !== "::1"
+      !["localhost", "127.0.0.1", "::1"].includes(url.hostname)
     );
   } catch {
     return false;

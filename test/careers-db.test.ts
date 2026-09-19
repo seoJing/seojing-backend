@@ -4,78 +4,84 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { CareerRepository } from "../src/repositories/careers.js";
 import { CareerService } from "../src/services/careers.js";
 
-const runDbTests = process.env.RUN_DB_TESTS === "true";
-const describeDb = runDbTests ? describe : describe.skip;
+const describeDb =
+  process.env.RUN_DB_TESTS === "true" ? describe : describe.skip;
 const prisma = new PrismaClient();
-const publishedAt = new Date("2026-09-20T00:00:00.000Z");
 const repository = new CareerRepository(prisma);
+const publishedAt = new Date("2026-09-20T00:00:00Z");
 const service = new CareerService(repository, () => publishedAt);
 const slug = "integration-career-radar";
 const companySlug = "integration-career-company";
-const sourceKeys = [
-  "integration-status",
-  "integration-history",
-  "integration-forecast",
-];
 
-const aggregateInput = {
-  company: {
-    slug: companySlug,
-    name: "Integration Company",
-    website: "https://example.com",
+const body = {
+  aggregate: {
+    company: {
+      slug: companySlug,
+      name: "Integration Company",
+      englishName: "Integration Company",
+      careersUrl: "https://example.com/careers",
+    },
+    opportunity: {
+      slug,
+      title: "Integration Backend Internship",
+      role: "Backend Engineer",
+      category: "Engineering",
+      recruitmentStatus: "CLOSED",
+      actualStatusAsOf: "2026-09-19T00:00:00.000Z",
+    },
+    forecast: {
+      expectedOpenFrom: "2026-10-01",
+      expectedOpenTo: "2026-10-31",
+      confidence: "LOW",
+      reasons: ["Integration-only reason"],
+      basedOnRecruitmentCount: 1,
+      methodVersion: "integration-v1",
+      analyzedAt: "2026-09-19T01:00:00.000Z",
+      sources: [
+        {
+          type: "ARCHIVE",
+          title: "Integration forecast source",
+          url: "https://example.com/archive",
+          accessedAt: "2026-09-19T01:00:00.000Z",
+        },
+      ],
+    },
+    recruitments: [
+      {
+        year: 2025,
+        title: "Integration 2025 cycle",
+        openDate: "2025-09-01",
+        closeDate: "2025-09-30",
+        employmentType: "INTERNSHIP",
+        eligibility: ["Integration eligibility"],
+        process: [{ order: 1, type: "DOCUMENT", label: "Document review" }],
+        sources: [
+          {
+            type: "OFFICIAL",
+            title: "Integration recruitment source",
+            url: "https://example.com/jobs/2025",
+            accessedAt: "2026-09-19T01:00:00.000Z",
+          },
+        ],
+      },
+    ],
+    preparationNotes: ["Integration preparation note"],
+    statusSources: [
+      {
+        type: "OFFICIAL",
+        title: "Integration status source",
+        url: "https://example.com/jobs",
+        accessedAt: "2026-09-19T01:00:00.000Z",
+      },
+    ],
   },
-  opportunity: {
-    slug,
-    title: "Integration Backend Internship",
-    employmentType: "INTERNSHIP",
-    actualStatus: "CLOSED",
-    actualStatusAsOf: "2026-09-19T00:00:00.000Z",
-    summary: "Integration-only Career Radar record",
-  },
-  history: [
-    {
-      key: "2025-cycle",
-      openedOn: "2025-09-01",
-      closedOn: "2025-09-30",
-      actualStatus: "CLOSED",
-    },
-  ],
-  forecast: {
-    predictedStatus: "UPCOMING",
-    confidence: "LOW",
-    windowStart: "2026-10-01",
-    windowEnd: "2026-10-31",
-    rationale: "Integration-only forecast rationale",
-  },
-  sources: [
-    {
-      key: sourceKeys[0],
-      label: "Official integration status source",
-      url: "https://example.com/jobs",
-      retrievedAt: "2026-09-19T01:00:00.000Z",
-      relationship: "ACTUAL_STATUS",
-    },
-    {
-      key: sourceKeys[1],
-      label: "Integration history source",
-      url: "https://example.com/jobs/history",
-      retrievedAt: "2026-09-19T01:00:00.000Z",
-      relationship: "RECRUITMENT_HISTORY",
-      historyKey: "2025-cycle",
-    },
-    {
-      key: sourceKeys[2],
-      label: "Integration forecast source",
-      url: "https://example.com/jobs/history",
-      retrievedAt: "2026-09-19T01:00:00.000Z",
-      relationship: "FORECAST",
-    },
-  ],
 } as const;
 
-async function clean(): Promise<void> {
+async function clean() {
   await prisma.careerOpportunity.deleteMany({ where: { slug } });
-  await prisma.careerSource.deleteMany({ where: { key: { in: sourceKeys } } });
+  await prisma.careerSource.deleteMany({
+    where: { title: { startsWith: "Integration" } },
+  });
   await prisma.careerCompany.deleteMany({ where: { slug: companySlug } });
 }
 
@@ -86,71 +92,78 @@ describeDb("Career Radar database integration", () => {
     await prisma.$disconnect();
   });
 
-  it("rolls back the whole aggregate when an invalid explicit link reaches the database", async () => {
+  it("rolls back the aggregate when a normalized child constraint fails", async () => {
     await expect(
       repository.createAggregate({
-        company: {
-          slug: companySlug,
-          name: "Integration Company",
-          website: "https://example.com",
-        },
+        company: { slug: companySlug, name: "Integration Company" },
         opportunity: {
           slug,
-          title: "Integration Backend Internship",
-          employmentType: "INTERNSHIP",
-          actualStatus: "UNKNOWN",
-          summary: "Rollback verification",
+          title: "Rollback",
+          role: "Engineer",
+          category: "Engineering",
+          recruitmentStatus: "UNKNOWN",
         },
-        history: [],
-        sources: [
+        recruitments: [
           {
-            key: sourceKeys[0]!,
-            label: "Invalid forecast link",
-            url: "https://example.com/jobs",
-            retrievedAt: new Date("2026-09-19T01:00:00.000Z"),
-            relationship: "FORECAST",
+            year: 2025,
+            title: "Integration invalid cycle",
+            eligibility: [],
+            process: [
+              { order: 1, type: "ONE", label: "One" },
+              { order: 1, type: "TWO", label: "Two" },
+            ],
+            sources: [
+              {
+                type: "OFFICIAL",
+                title: "Integration invalid source",
+                url: "https://example.com",
+                accessedAt: new Date("2026-09-19T01:00:00Z"),
+              },
+            ],
+          },
+        ],
+        preparationNotes: [],
+        statusSources: [
+          {
+            type: "OFFICIAL",
+            title: "Integration rollback status",
+            url: "https://example.com/status",
+            accessedAt: new Date("2026-09-19T01:00:00Z"),
           },
         ],
       }),
     ).rejects.toThrow();
-
     await expect(repository.findBySlug(slug)).resolves.toBeNull();
     await expect(
       prisma.careerCompany.findUnique({ where: { slug: companySlug } }),
     ).resolves.toBeNull();
-    await expect(
-      prisma.careerSource.findUnique({ where: { key: sourceKeys[0] } }),
-    ).resolves.toBeNull();
   });
 
-  it("transactionally writes, replaces, publishes, and reads the aggregate", async () => {
-    const created = await service.create(aggregateInput);
-
+  it("writes, replaces, publishes, and reads all normalized fields transactionally", async () => {
+    const created = await service.create(body);
     expect(created.visibility).toBe("DRAFT");
-    expect(created.history).toHaveLength(1);
-    expect(created.forecast?.confidence).toBe("LOW");
-    expect(created.sourceLinks).toHaveLength(3);
+    expect(created.recruitments[0]?.eligibility[0]?.text).toBe(
+      "Integration eligibility",
+    );
+    expect(created.forecast?.reasons[0]?.text).toBe("Integration-only reason");
+    expect(created.statusSources).toHaveLength(1);
     await expect(service.getPublic(slug)).resolves.toBeNull();
 
     const updated = await service.update(slug, {
-      ...aggregateInput,
-      opportunity: {
-        ...aggregateInput.opportunity,
-        summary: "Updated integration-only summary",
+      ...body,
+      aggregate: {
+        ...body.aggregate,
+        preparationNotes: ["Updated integration note"],
       },
     });
-
-    expect(updated?.summary).toBe("Updated integration-only summary");
-    expect(updated?.history).toHaveLength(1);
-    expect(updated?.sourceLinks).toHaveLength(3);
+    expect(updated?.preparationNotes[0]?.text).toBe("Updated integration note");
+    expect(updated?.recruitments[0]?.sources).toHaveLength(1);
 
     const published = await service.publish(slug);
     const publicRead = await service.getPublic(slug);
-
     expect(published?.visibility).toBe("PUBLISHED");
     expect(published?.publishedAt).toEqual(publishedAt);
-    expect(publicRead?.actualStatus).toBe("CLOSED");
-    expect(publicRead?.forecast?.predictedStatus).toBe("UPCOMING");
+    expect(publicRead?.recruitmentStatus).toBe("CLOSED");
     expect(publicRead?.forecast?.confidence).toBe("LOW");
   });
 });

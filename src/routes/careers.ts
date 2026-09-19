@@ -4,187 +4,371 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
 import type { CareerAggregate } from "../repositories/careers.js";
 import {
-  careerActualStatuses,
   careerEmploymentTypes,
   careerForecastConfidences,
-  careerSourceRelationships,
+  careerRecruitmentStatuses,
   CareerConflictError,
   type CareerService,
   CareerValidationError,
 } from "../services/careers.js";
 
-interface RegisterCareerRoutesOptions {
+interface Options {
   careerService: CareerService;
   adminToken?: string;
 }
-
-interface CareerListQuery {
+interface Query {
   limit?: number;
   company?: string;
-  actualStatus?: (typeof careerActualStatuses)[number];
+  recruitmentStatus?: (typeof careerRecruitmentStatuses)[number];
 }
-
-interface CareerSlugParams {
+interface Params {
   slug: string;
 }
 
-const publicCacheControl =
+const cacheControl =
   "public, max-age=60, s-maxage=300, stale-while-revalidate=86400";
-const publicTags = ["careers"];
-const adminTags = ["admin-careers"];
-const nullableString = { anyOf: [{ type: "string" }, { type: "null" }] };
-const nullableDateTime = {
-  anyOf: [{ type: "string", format: "date-time" }, { type: "null" }],
-};
-const nullableDate = {
-  anyOf: [{ type: "string", format: "date" }, { type: "null" }],
-};
-const slugParamsSchema = {
+const nullable = (schema: Record<string, unknown>) => ({
+  anyOf: [schema, { type: "null" }],
+});
+const date = { type: "string", format: "date" };
+const dateTime = { type: "string", format: "date-time" };
+const sourceSchema = {
   type: "object",
   additionalProperties: false,
-  required: ["slug"],
+  required: ["id", "type", "title", "url", "accessedAt"],
   properties: {
-    slug: { type: "string", minLength: 1, maxLength: 160 },
+    id: { type: "string", format: "uuid" },
+    type: { type: "string" },
+    title: { type: "string" },
+    url: { type: "string", format: "uri" },
+    publisher: nullable({ type: "string" }),
+    publishedAt: nullable(dateTime),
+    accessedAt: dateTime,
   },
 };
-const aggregateBodySchema = {
+const sourceInputSchema = {
+  ...sourceSchema,
+  required: ["type", "title", "url", "accessedAt"],
+  properties: {
+    ...sourceSchema.properties,
+    publisher: nullable({ type: "string" }),
+    publishedAt: nullable(dateTime),
+  },
+};
+const companySchema = {
   type: "object",
   additionalProperties: false,
-  required: ["company", "opportunity", "sources"],
+  required: ["slug", "name"],
   properties: {
-    company: {
-      type: "object",
-      additionalProperties: false,
-      required: ["slug", "name"],
-      properties: {
-        slug: { type: "string", minLength: 1, maxLength: 160 },
-        name: { type: "string", minLength: 1, maxLength: 240 },
-        website: { type: "string", format: "uri", maxLength: 2048 },
-        summary: { type: "string", minLength: 1, maxLength: 500 },
-        logoUrl: { type: "string", format: "uri", maxLength: 2048 },
-      },
-    },
+    slug: { type: "string" },
+    name: { type: "string" },
+    englishName: nullable({ type: "string" }),
+    careersUrl: nullable({ type: "string", format: "uri" }),
+  },
+};
+const publicCompanySchema = {
+  ...companySchema,
+  properties: {
+    ...companySchema.properties,
+    englishName: nullable({ type: "string" }),
+    careersUrl: nullable({ type: "string", format: "uri" }),
+  },
+};
+const processSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["order", "type", "label"],
+  properties: {
+    order: { type: "integer", minimum: 1 },
+    type: { type: "string" },
+    label: { type: "string" },
+  },
+};
+const recruitmentSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["id", "year", "title", "eligibility", "process", "sources"],
+  properties: {
+    id: { type: "string", format: "uuid" },
+    year: { type: "integer" },
+    title: { type: "string" },
+    openDate: nullable(date),
+    closeDate: nullable(date),
+    employmentType: nullable({ type: "string", enum: careerEmploymentTypes }),
+    eligibility: { type: "array", items: { type: "string" } },
+    process: { type: "array", items: processSchema },
+    sources: { type: "array", items: sourceSchema },
+  },
+};
+const recruitmentInputSchema = {
+  ...recruitmentSchema,
+  required: ["year", "title", "sources"],
+  properties: {
+    ...recruitmentSchema.properties,
+    openDate: nullable(date),
+    closeDate: nullable(date),
+    employmentType: nullable({ type: "string", enum: careerEmploymentTypes }),
+    eligibility: { type: "array", default: [], items: { type: "string" } },
+    process: { type: "array", default: [], items: processSchema },
+    sources: { type: "array", minItems: 1, items: sourceInputSchema },
+  },
+};
+const forecastSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "confidence",
+    "reasons",
+    "basedOnRecruitmentCount",
+    "methodVersion",
+    "analyzedAt",
+  ],
+  properties: {
+    expectedOpenFrom: nullable(date),
+    expectedOpenTo: nullable(date),
+    confidence: { type: "string", enum: careerForecastConfidences },
+    reasons: { type: "array", items: { type: "string" } },
+    basedOnRecruitmentCount: { type: "integer", minimum: 0 },
+    methodVersion: { type: "string" },
+    analyzedAt: dateTime,
+  },
+};
+const forecastInputSchema = {
+  ...forecastSchema,
+  required: [...forecastSchema.required, "sources"],
+  properties: {
+    ...forecastSchema.properties,
+    expectedOpenFrom: nullable(date),
+    expectedOpenTo: nullable(date),
+    sources: { type: "array", minItems: 1, items: sourceInputSchema },
+  },
+};
+const aggregateInputSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["company", "opportunity", "statusSources"],
+  properties: {
+    company: companySchema,
     opportunity: {
       type: "object",
       additionalProperties: false,
-      required: ["slug", "title", "employmentType", "actualStatus", "summary"],
+      required: ["slug", "title", "role", "category", "recruitmentStatus"],
       properties: {
-        slug: { type: "string", minLength: 1, maxLength: 160 },
-        title: { type: "string", minLength: 1, maxLength: 240 },
-        employmentType: { type: "string", enum: careerEmploymentTypes },
-        actualStatus: { type: "string", enum: careerActualStatuses },
-        actualStatusAsOf: { type: "string", format: "date-time" },
-        location: { type: "string", minLength: 1, maxLength: 500 },
-        summary: { type: "string", minLength: 1, maxLength: 1000 },
-        description: { type: "string", minLength: 1, maxLength: 20000 },
-        applicationUrl: { type: "string", format: "uri", maxLength: 2048 },
+        slug: { type: "string" },
+        title: { type: "string" },
+        role: { type: "string" },
+        category: { type: "string" },
+        recruitmentStatus: { type: "string", enum: careerRecruitmentStatuses },
+        actualStatusAsOf: nullable(dateTime),
       },
     },
-    history: {
+    forecast: nullable(forecastInputSchema),
+    recruitments: {
       type: "array",
-      maxItems: 100,
       default: [],
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["key", "actualStatus"],
-        properties: {
-          key: { type: "string", pattern: "^[a-z0-9][a-z0-9_-]*$" },
-          openedOn: { type: "string", format: "date" },
-          closedOn: { type: "string", format: "date" },
-          actualStatus: { type: "string", enum: careerActualStatuses },
-          note: { type: "string", minLength: 1, maxLength: 500 },
-        },
-      },
+      maxItems: 100,
+      items: recruitmentInputSchema,
     },
-    forecast: {
+    preparationNotes: {
+      type: "array",
+      default: [],
+      maxItems: 100,
+      items: { type: "string" },
+    },
+    statusSources: { type: "array", minItems: 1, items: sourceInputSchema },
+  },
+};
+const metadataSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["visibility", "publishedAt", "createdAt", "updatedAt"],
+  properties: {
+    visibility: { type: "string", enum: ["DRAFT", "PUBLISHED", "ARCHIVED"] },
+    publishedAt: nullable(dateTime),
+    createdAt: dateTime,
+    updatedAt: dateTime,
+  },
+};
+const adminBodySchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["aggregate"],
+  properties: { aggregate: aggregateInputSchema, metadata: metadataSchema },
+};
+const adminAggregateSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "company",
+    "opportunity",
+    "forecast",
+    "recruitments",
+    "preparationNotes",
+    "statusSources",
+  ],
+  properties: {
+    ...aggregateInputSchema.properties,
+    forecast: nullable({
+      ...forecastSchema,
+      required: [...forecastSchema.required, "sources"],
+      properties: {
+        ...forecastSchema.properties,
+        sources: { type: "array", items: sourceSchema },
+      },
+    }),
+    recruitments: { type: "array", items: recruitmentSchema },
+    preparationNotes: { type: "array", items: { type: "string" } },
+    statusSources: { type: "array", items: sourceSchema },
+  },
+};
+const adminResponseSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["aggregate", "metadata"],
+  properties: { aggregate: adminAggregateSchema, metadata: metadataSchema },
+};
+const publicOpportunitySchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "slug",
+    "title",
+    "role",
+    "category",
+    "recruitmentStatus",
+    "company",
+    "forecast",
+    "recruitments",
+    "preparationNotes",
+    "updatedAt",
+  ],
+  properties: {
+    slug: { type: "string" },
+    title: { type: "string" },
+    role: { type: "string" },
+    category: { type: "string" },
+    recruitmentStatus: { type: "string", enum: careerRecruitmentStatuses },
+    company: publicCompanySchema,
+    forecast: nullable(forecastSchema),
+    recruitments: { type: "array", items: recruitmentSchema },
+    preparationNotes: { type: "array", items: { type: "string" } },
+    updatedAt: dateTime,
+  },
+};
+const publicDetailSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["opportunity"],
+  properties: { opportunity: publicOpportunitySchema },
+};
+const summarySchema = {
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "slug",
+    "title",
+    "role",
+    "category",
+    "recruitmentStatus",
+    "company",
+    "forecast",
+    "updatedAt",
+  ],
+  properties: {
+    slug: { type: "string" },
+    title: { type: "string" },
+    role: { type: "string" },
+    category: { type: "string" },
+    recruitmentStatus: { type: "string", enum: careerRecruitmentStatuses },
+    company: publicCompanySchema,
+    forecast: nullable({
       type: "object",
       additionalProperties: false,
-      required: ["predictedStatus", "confidence", "rationale"],
+      required: ["expectedOpenFrom", "expectedOpenTo", "confidence"],
       properties: {
-        predictedStatus: { type: "string", enum: careerActualStatuses },
+        expectedOpenFrom: nullable(date),
+        expectedOpenTo: nullable(date),
         confidence: { type: "string", enum: careerForecastConfidences },
-        windowStart: { type: "string", format: "date" },
-        windowEnd: { type: "string", format: "date" },
-        rationale: { type: "string", minLength: 1, maxLength: 2000 },
       },
-    },
-    sources: {
-      type: "array",
-      minItems: 1,
-      maxItems: 100,
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["key", "label", "url", "retrievedAt", "relationship"],
-        properties: {
-          key: { type: "string", pattern: "^[a-z0-9][a-z0-9_-]*$" },
-          label: { type: "string", minLength: 1, maxLength: 240 },
-          publisher: { type: "string", minLength: 1, maxLength: 500 },
-          url: { type: "string", format: "uri", maxLength: 2048 },
-          publishedAt: { type: "string", format: "date-time" },
-          retrievedAt: { type: "string", format: "date-time" },
-          relationship: { type: "string", enum: careerSourceRelationships },
-          historyKey: { type: "string", minLength: 1, maxLength: 120 },
-          note: { type: "string", minLength: 1, maxLength: 500 },
-        },
-      },
-    },
+    }),
+    updatedAt: dateTime,
   },
+};
+const listSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["items", "count", "updatedAt"],
+  properties: {
+    items: { type: "array", items: summarySchema },
+    count: { type: "integer" },
+    updatedAt: nullable(dateTime),
+  },
+};
+const paramsSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["slug"],
+  properties: { slug: { type: "string" } },
 };
 
 export function registerCareerRoutes(
   app: FastifyInstance,
-  options: RegisterCareerRoutesOptions,
+  options: Options,
 ): void {
-  app.get<{ Querystring: CareerListQuery }>(
+  app.get<{ Querystring: Query }>(
     "/career/opportunities",
     {
       schema: {
-        tags: publicTags,
+        tags: ["careers"],
         summary: "List published Career Radar opportunities",
         querystring: {
           type: "object",
           additionalProperties: false,
           properties: {
             limit: { type: "integer", minimum: 1, maximum: 50 },
-            company: { type: "string", minLength: 1, maxLength: 160 },
-            actualStatus: { type: "string", enum: careerActualStatuses },
+            company: { type: "string" },
+            recruitmentStatus: {
+              type: "string",
+              enum: careerRecruitmentStatuses,
+            },
           },
         },
+        response: { 200: listSchema },
       },
     },
     async (request, reply) => {
-      const aggregates = await options.careerService.listPublic(request.query);
-      const items = aggregates.map(toPublicSummary);
-      const payload = {
-        opportunities: items,
+      const items = (await options.careerService.listPublic(request.query)).map(
+        toPublicSummary,
+      );
+      return sendCacheable(request, reply, {
+        items,
         count: items.length,
         updatedAt: latestUpdatedAt(items),
-      };
-      return sendCacheable(request, reply, payload);
+      });
     },
   );
 
-  app.get<{ Params: CareerSlugParams }>(
+  app.get<{ Params: Params }>(
     "/career/opportunities/:slug",
     {
       schema: {
-        tags: publicTags,
+        tags: ["careers"],
         summary: "Read one published Career Radar opportunity",
-        params: slugParamsSchema,
+        params: paramsSchema,
+        response: { 200: publicDetailSchema },
       },
     },
     async (request, reply) => {
       const aggregate = await options.careerService.getPublic(
         request.params.slug,
       );
-      if (!aggregate) {
+      if (!aggregate)
         return reply
           .status(404)
           .send({ error: "Career opportunity not found" });
-      }
-      return sendCacheable(request, reply, toPublicDetail(aggregate));
+      return sendCacheable(request, reply, {
+        opportunity: toPublicOpportunity(aggregate),
+      });
     },
   );
 
@@ -193,265 +377,271 @@ export function registerCareerRoutes(
     {
       onRequest: adminGuard(options.adminToken),
       schema: {
-        tags: adminTags,
+        tags: ["admin-careers"],
         summary: "Create a private Career Radar aggregate",
         security: [{ bearerAuth: [] }],
-        body: aggregateBodySchema,
+        body: adminBodySchema,
+        response: { 201: adminResponseSchema },
       },
     },
-    async (request, reply) => {
-      try {
-        const aggregate = await options.careerService.create(request.body);
-        reply.header("Cache-Control", "no-store");
-        return reply.status(201).send(toAdminDetail(aggregate));
-      } catch (error) {
-        return sendDomainError(reply, error);
-      }
-    },
+    async (request, reply) =>
+      handleWrite(reply, () => options.careerService.create(request.body), 201),
   );
 
-  app.get<{ Params: CareerSlugParams }>(
+  app.get<{ Params: Params }>(
     "/admin/career/opportunities/:slug",
     {
       onRequest: adminGuard(options.adminToken),
       schema: {
-        tags: adminTags,
-        summary: "Read a private or published Career Radar aggregate",
+        tags: ["admin-careers"],
+        summary: "Read a round-trip-safe Career Radar aggregate",
         security: [{ bearerAuth: [] }],
-        params: slugParamsSchema,
+        params: paramsSchema,
+        response: { 200: adminResponseSchema },
       },
     },
     async (request, reply) => {
       const aggregate = await options.careerService.getAdmin(
         request.params.slug,
       );
-      if (!aggregate) {
+      if (!aggregate)
         return reply
           .status(404)
           .send({ error: "Career opportunity not found" });
-      }
       reply.header("Cache-Control", "no-store");
       return toAdminDetail(aggregate);
     },
   );
 
-  app.put<{ Params: CareerSlugParams; Body: unknown }>(
+  app.put<{ Params: Params; Body: unknown }>(
     "/admin/career/opportunities/:slug",
     {
       onRequest: adminGuard(options.adminToken),
       schema: {
-        tags: adminTags,
-        summary: "Transactionally replace a Career Radar aggregate",
+        tags: ["admin-careers"],
+        summary:
+          "Transactionally replace a Career Radar aggregate; accepts an admin GET response unchanged",
         security: [{ bearerAuth: [] }],
-        params: slugParamsSchema,
-        body: aggregateBodySchema,
+        params: paramsSchema,
+        body: adminBodySchema,
+        response: { 200: adminResponseSchema },
       },
     },
-    async (request, reply) => {
-      try {
-        const aggregate = await options.careerService.update(
-          request.params.slug,
-          request.body,
-        );
-        if (!aggregate) {
-          return reply
-            .status(404)
-            .send({ error: "Career opportunity not found" });
-        }
-        reply.header("Cache-Control", "no-store");
-        return toAdminDetail(aggregate);
-      } catch (error) {
-        return sendDomainError(reply, error);
-      }
-    },
+    async (request, reply) =>
+      handleWrite(reply, () =>
+        options.careerService.update(request.params.slug, request.body),
+      ),
   );
 
-  app.post<{ Params: CareerSlugParams }>(
+  app.post<{ Params: Params }>(
     "/admin/career/opportunities/:slug/publish",
     {
       onRequest: adminGuard(options.adminToken),
       schema: {
-        tags: adminTags,
+        tags: ["admin-careers"],
         summary: "Publish a validated Career Radar aggregate",
         security: [{ bearerAuth: [] }],
-        params: slugParamsSchema,
+        params: paramsSchema,
+        response: { 200: adminResponseSchema },
       },
     },
-    async (request, reply) => {
-      try {
-        const aggregate = await options.careerService.publish(
-          request.params.slug,
-        );
-        if (!aggregate) {
-          return reply
-            .status(404)
-            .send({ error: "Career opportunity not found" });
-        }
-        reply.header("Cache-Control", "no-store");
-        return toAdminDetail(aggregate);
-      } catch (error) {
-        return sendDomainError(reply, error);
-      }
-    },
+    async (request, reply) =>
+      handleWrite(reply, () =>
+        options.careerService.publish(request.params.slug),
+      ),
   );
+}
+
+async function handleWrite(
+  reply: FastifyReply,
+  operation: () => Promise<CareerAggregate | null>,
+  status = 200,
+) {
+  try {
+    const aggregate = await operation();
+    if (!aggregate)
+      return reply.status(404).send({ error: "Career opportunity not found" });
+    reply.header("Cache-Control", "no-store");
+    return reply.status(status).send(toAdminDetail(aggregate));
+  } catch (error) {
+    if (error instanceof CareerValidationError)
+      return reply
+        .status(400)
+        .send({ error: error.message, issues: error.issues });
+    if (error instanceof CareerConflictError)
+      return reply.status(409).send({ error: error.message });
+    throw error;
+  }
+}
+
+function toSource(source: CareerAggregate["statusSources"][number]["source"]) {
+  return {
+    id: source.id,
+    type: source.type,
+    title: source.title,
+    url: source.url,
+    ...(source.publisher ? { publisher: source.publisher } : {}),
+    ...(source.publishedAt
+      ? { publishedAt: source.publishedAt.toISOString() }
+      : {}),
+    accessedAt: source.accessedAt.toISOString(),
+  };
+}
+function toForecast(aggregate: CareerAggregate, includeSources = false) {
+  if (!aggregate.forecast) return null;
+  const value = {
+    ...(aggregate.forecast.expectedOpenFrom
+      ? { expectedOpenFrom: toDate(aggregate.forecast.expectedOpenFrom) }
+      : {}),
+    ...(aggregate.forecast.expectedOpenTo
+      ? { expectedOpenTo: toDate(aggregate.forecast.expectedOpenTo) }
+      : {}),
+    confidence: aggregate.forecast.confidence,
+    reasons: aggregate.forecast.reasons.map((reason) => reason.text),
+    basedOnRecruitmentCount: aggregate.forecast.basedOnRecruitmentCount,
+    methodVersion: aggregate.forecast.methodVersion,
+    analyzedAt: aggregate.forecast.analyzedAt.toISOString(),
+  };
+  return includeSources
+    ? {
+        ...value,
+        sources: aggregate.forecast.sources.map((link) =>
+          toSource(link.source),
+        ),
+      }
+    : value;
+}
+function toRecruitments(aggregate: CareerAggregate) {
+  return aggregate.recruitments.map((item) => ({
+    id: item.id,
+    year: item.year,
+    title: item.title,
+    ...(item.openDate ? { openDate: toDate(item.openDate) } : {}),
+    ...(item.closeDate ? { closeDate: toDate(item.closeDate) } : {}),
+    ...(item.employmentType ? { employmentType: item.employmentType } : {}),
+    eligibility: item.eligibility.map((entry) => entry.text),
+    process: item.process.map(({ order, type, label }) => ({
+      order,
+      type,
+      label,
+    })),
+    sources: item.sources.map((link) => toSource(link.source)),
+  }));
+}
+function toCompany(aggregate: CareerAggregate) {
+  return {
+    slug: aggregate.company.slug,
+    name: aggregate.company.name,
+    ...(aggregate.company.englishName
+      ? { englishName: aggregate.company.englishName }
+      : {}),
+    ...(aggregate.company.careersUrl
+      ? { careersUrl: aggregate.company.careersUrl }
+      : {}),
+  };
+}
+function toPublicOpportunity(aggregate: CareerAggregate) {
+  return {
+    slug: aggregate.slug,
+    title: aggregate.title,
+    role: aggregate.role,
+    category: aggregate.category,
+    recruitmentStatus: aggregate.recruitmentStatus,
+    company: toCompany(aggregate),
+    forecast: toForecast(aggregate),
+    recruitments: toRecruitments(aggregate),
+    preparationNotes: aggregate.preparationNotes.map((note) => note.text),
+    updatedAt: aggregate.updatedAt.toISOString(),
+  };
+}
+function toPublicSummary(aggregate: CareerAggregate) {
+  const forecast = aggregate.forecast
+    ? {
+        ...(aggregate.forecast.expectedOpenFrom
+          ? { expectedOpenFrom: toDate(aggregate.forecast.expectedOpenFrom) }
+          : {}),
+        ...(aggregate.forecast.expectedOpenTo
+          ? { expectedOpenTo: toDate(aggregate.forecast.expectedOpenTo) }
+          : {}),
+        confidence: aggregate.forecast.confidence,
+      }
+    : null;
+  return {
+    slug: aggregate.slug,
+    title: aggregate.title,
+    role: aggregate.role,
+    category: aggregate.category,
+    recruitmentStatus: aggregate.recruitmentStatus,
+    company: toCompany(aggregate),
+    forecast,
+    updatedAt: aggregate.updatedAt.toISOString(),
+  };
+}
+function toAdminDetail(aggregate: CareerAggregate) {
+  return {
+    aggregate: {
+      company: toCompany(aggregate),
+      opportunity: {
+        slug: aggregate.slug,
+        title: aggregate.title,
+        role: aggregate.role,
+        category: aggregate.category,
+        recruitmentStatus: aggregate.recruitmentStatus,
+        ...(aggregate.actualStatusAsOf
+          ? { actualStatusAsOf: aggregate.actualStatusAsOf.toISOString() }
+          : {}),
+      },
+      forecast: toForecast(aggregate, true),
+      recruitments: toRecruitments(aggregate),
+      preparationNotes: aggregate.preparationNotes.map((note) => note.text),
+      statusSources: aggregate.statusSources.map((link) =>
+        toSource(link.source),
+      ),
+    },
+    metadata: {
+      visibility: aggregate.visibility,
+      publishedAt: aggregate.publishedAt?.toISOString() ?? null,
+      createdAt: aggregate.createdAt.toISOString(),
+      updatedAt: aggregate.updatedAt.toISOString(),
+    },
+  };
 }
 
 function adminGuard(adminToken: string | undefined) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     const authorization = request.headers.authorization;
     const token = authorization?.startsWith("Bearer ")
-      ? authorization.slice("Bearer ".length).trim()
+      ? authorization.slice(7).trim()
       : undefined;
-    if (!adminToken || !token || !safeEqual(token, adminToken)) {
+    if (!adminToken || !token || !safeEqual(token, adminToken))
       return reply.status(401).send({ error: "Unauthorized admin request" });
-    }
   };
 }
-
-function safeEqual(left: string, right: string): boolean {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-  return (
-    leftBuffer.length === rightBuffer.length &&
-    timingSafeEqual(leftBuffer, rightBuffer)
-  );
+function safeEqual(left: string, right: string) {
+  const a = Buffer.from(left);
+  const b = Buffer.from(right);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
-
-function sendDomainError(reply: FastifyReply, error: unknown) {
-  if (error instanceof CareerValidationError) {
-    return reply
-      .status(400)
-      .send({ error: error.message, issues: error.issues });
-  }
-  if (error instanceof CareerConflictError) {
-    return reply.status(409).send({ error: error.message });
-  }
-  throw error;
-}
-
-function toPublicSummary(aggregate: CareerAggregate) {
-  return {
-    slug: aggregate.slug,
-    title: aggregate.title,
-    employmentType: aggregate.employmentType,
-    actualStatus: aggregate.actualStatus,
-    actualStatusAsOf: aggregate.actualStatusAsOf?.toISOString() ?? null,
-    location: aggregate.location,
-    summary: aggregate.summary,
-    applicationUrl: aggregate.applicationUrl,
-    company: {
-      slug: aggregate.company.slug,
-      name: aggregate.company.name,
-      website: aggregate.company.website,
-      summary: aggregate.company.summary,
-      logoUrl: aggregate.company.logoUrl,
-    },
-    forecast: aggregate.forecast
-      ? {
-          predictedStatus: aggregate.forecast.predictedStatus,
-          confidence: aggregate.forecast.confidence,
-          windowStart: toDateOnly(aggregate.forecast.windowStart),
-          windowEnd: toDateOnly(aggregate.forecast.windowEnd),
-          rationale: aggregate.forecast.rationale,
-        }
-      : null,
-    publishedAt: aggregate.publishedAt?.toISOString() ?? null,
-    updatedAt: aggregate.updatedAt.toISOString(),
-  };
-}
-
-function toPublicDetail(aggregate: CareerAggregate) {
-  return {
-    ...toPublicSummary(aggregate),
-    description: aggregate.description,
-    recruitmentHistory: aggregate.history.map((entry) => ({
-      key: entry.key,
-      openedOn: toDateOnly(entry.openedOn),
-      closedOn: toDateOnly(entry.closedOn),
-      actualStatus: entry.actualStatus,
-      note: entry.note,
-    })),
-    sources: [...aggregate.sourceLinks]
-      .sort((left, right) =>
-        `${left.relationship}:${left.source.key}`.localeCompare(
-          `${right.relationship}:${right.source.key}`,
-        ),
-      )
-      .map((link) => ({
-        key: link.source.key,
-        label: link.source.label,
-        publisher: link.source.publisher,
-        url: link.source.url,
-        publishedAt: link.source.publishedAt?.toISOString() ?? null,
-        retrievedAt: link.source.retrievedAt.toISOString(),
-        relationship: link.relationship,
-        historyKey: link.recruitmentHistory?.key ?? null,
-      })),
-  };
-}
-
-function toAdminDetail(aggregate: CareerAggregate) {
-  const detail = toPublicDetail(aggregate);
-  return {
-    ...detail,
-    visibility: aggregate.visibility,
-    createdAt: aggregate.createdAt.toISOString(),
-    sources: detail.sources.map((source) => {
-      const link = aggregate.sourceLinks.find(
-        (candidate) =>
-          candidate.source.key === source.key &&
-          candidate.relationship === source.relationship &&
-          (candidate.recruitmentHistory?.key ?? null) === source.historyKey,
-      );
-      return { ...source, note: link?.note ?? null };
-    }),
-  };
-}
-
 function sendCacheable(
   request: FastifyRequest,
   reply: FastifyReply,
   payload: unknown,
 ) {
-  const etag = makeEtag(payload);
-  reply.header("Cache-Control", publicCacheControl);
-  reply.header("ETag", etag);
-  if (matchesEtag(request.headers["if-none-match"], etag)) {
-    return reply.status(304).send();
-  }
-  return reply.send(payload);
-}
-
-function makeEtag(value: unknown): string {
-  const digest = createHash("sha256")
-    .update(JSON.stringify(value))
-    .digest("base64url")
-    .slice(0, 24);
-  return `"${digest}"`;
-}
-
-function matchesEtag(header: string | undefined, etag: string): boolean {
-  if (!header) return false;
-  return header
-    .split(",")
+  const etag = `"${createHash("sha256").update(JSON.stringify(payload)).digest("base64url").slice(0, 24)}"`;
+  reply.header("Cache-Control", cacheControl).header("ETag", etag);
+  const matches = request.headers["if-none-match"]
+    ?.split(",")
     .map((value) => value.trim().replace(/^W\//, ""))
     .some((value) => value === "*" || value === etag);
+  return matches ? reply.status(304).send() : reply.send(payload);
 }
-
-function latestUpdatedAt(items: Array<{ updatedAt: string }>): string | null {
+function latestUpdatedAt(items: Array<{ updatedAt: string }>) {
   return items.reduce<string | null>(
     (latest, item) =>
       !latest || item.updatedAt > latest ? item.updatedAt : latest,
     null,
   );
 }
-
-function toDateOnly(value: Date | null): string | null {
-  return value?.toISOString().slice(0, 10) ?? null;
+function toDate(value: Date) {
+  return value.toISOString().slice(0, 10);
 }
-
-export const careerOpenApiSchemas = {
-  nullableString,
-  nullableDateTime,
-  nullableDate,
-};

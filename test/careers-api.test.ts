@@ -7,354 +7,328 @@ import type { ArticleService } from "../src/services/articles.js";
 import type { CareerService } from "../src/services/careers.js";
 import type { CommunityService } from "../src/services/community.js";
 
-const observedAt = new Date("2026-09-19T01:00:00.000Z");
+const at = new Date("2026-09-19T01:00:00.000Z");
+const opportunityId = "11111111-1111-4111-8111-111111111111";
+const companyId = "22222222-2222-4222-8222-222222222222";
+const recruitmentId = "33333333-3333-4333-8333-333333333333";
+const sourceId = "44444444-4444-4444-8444-444444444444";
 
-function fixture(overrides: Partial<CareerAggregate> = {}): CareerAggregate {
+interface OpenApiDocument {
+  paths: Record<
+    string,
+    {
+      get?: {
+        responses?: Record<
+          string,
+          {
+            content?: Record<
+              string,
+              {
+                schema?: {
+                  required?: string[];
+                  properties?: Record<string, { required?: string[] }>;
+                };
+              }
+            >;
+          }
+        >;
+      };
+      put?: { summary?: string };
+    }
+  >;
+}
+
+function source(id = sourceId) {
   return {
-    id: "11111111-1111-1111-1111-111111111111",
-    companyId: "22222222-2222-2222-2222-222222222222",
+    id,
+    type: "OFFICIAL",
+    title: "Illustrative official source",
+    url: "https://example.com/jobs",
+    publisher: "Example Company",
+    publishedAt: null,
+    accessedAt: at,
+    createdAt: at,
+    updatedAt: at,
+  };
+}
+function fixture(overrides: Partial<CareerAggregate> = {}): CareerAggregate {
+  const statusSource = source();
+  return {
+    id: opportunityId,
+    companyId,
     slug: "example-internship",
     title: "Backend Internship",
-    employmentType: "INTERNSHIP",
-    actualStatus: "CLOSED",
-    actualStatusAsOf: observedAt,
-    location: "Seoul",
-    summary: "Evidence-backed opportunity summary",
-    description: "Public description",
-    applicationUrl: "https://example.com/jobs/backend-intern",
+    role: "Backend Engineer",
+    category: "Engineering",
+    recruitmentStatus: "CLOSED",
+    actualStatusAsOf: at,
     visibility: "PUBLISHED",
-    publishedAt: observedAt,
-    createdAt: observedAt,
-    updatedAt: observedAt,
+    publishedAt: at,
+    createdAt: at,
+    updatedAt: at,
     company: {
-      id: "22222222-2222-2222-2222-222222222222",
+      id: companyId,
       slug: "example-company",
       name: "Example Company",
-      website: "https://example.com",
-      summary: "Company summary",
-      logoUrl: null,
-      createdAt: observedAt,
-      updatedAt: observedAt,
+      englishName: "Example Company",
+      careersUrl: "https://example.com/careers",
+      createdAt: at,
+      updatedAt: at,
     },
-    history: [
+    recruitments: [
       {
-        id: "33333333-3333-3333-3333-333333333333",
-        opportunityId: "11111111-1111-1111-1111-111111111111",
-        key: "2025-cycle",
-        openedOn: new Date("2025-09-01T00:00:00.000Z"),
-        closedOn: new Date("2025-09-30T00:00:00.000Z"),
-        actualStatus: "CLOSED",
-        note: "Observed historical cycle",
-        createdAt: observedAt,
-        updatedAt: observedAt,
+        id: recruitmentId,
+        opportunityId,
+        year: 2025,
+        title: "2025 Backend Internship",
+        openDate: new Date("2025-09-01T00:00:00Z"),
+        closeDate: new Date("2025-09-30T00:00:00Z"),
+        employmentType: "INTERNSHIP",
+        createdAt: at,
+        updatedAt: at,
+        eligibility: [
+          {
+            id: "55555555-5555-4555-8555-555555555555",
+            recruitmentId,
+            sortOrder: 0,
+            text: "Illustrative eligibility",
+          },
+        ],
+        process: [
+          {
+            id: "66666666-6666-4666-8666-666666666666",
+            recruitmentId,
+            order: 1,
+            type: "DOCUMENT",
+            label: "Document review",
+          },
+        ],
+        sources: [
+          { recruitmentId, sourceId, sortOrder: 0, source: statusSource },
+        ],
       },
     ],
     forecast: {
-      id: "44444444-4444-4444-4444-444444444444",
-      opportunityId: "11111111-1111-1111-1111-111111111111",
-      predictedStatus: "UPCOMING",
+      id: "77777777-7777-4777-8777-777777777777",
+      opportunityId,
+      expectedOpenFrom: new Date("2026-10-01T00:00:00Z"),
+      expectedOpenTo: new Date("2026-10-31T00:00:00Z"),
       confidence: "LOW",
-      windowStart: new Date("2026-10-01T00:00:00.000Z"),
-      windowEnd: new Date("2026-10-31T00:00:00.000Z"),
-      rationale: "A forecast, not current status.",
-      createdAt: observedAt,
-      updatedAt: observedAt,
-    },
-    sourceLinks: [
-      {
-        id: "55555555-5555-5555-5555-555555555555",
-        opportunityId: "11111111-1111-1111-1111-111111111111",
-        sourceId: "66666666-6666-6666-6666-666666666666",
-        recruitmentHistoryId: null,
-        forecastId: null,
-        relationship: "ACTUAL_STATUS",
-        note: "admin-only link note",
-        createdAt: observedAt,
-        source: {
-          id: "66666666-6666-6666-6666-666666666666",
-          key: "official-status",
-          label: "Official careers page",
-          publisher: "Example Company",
-          url: "https://example.com/jobs",
-          publishedAt: null,
-          retrievedAt: observedAt,
-          createdAt: observedAt,
-          updatedAt: observedAt,
+      basedOnRecruitmentCount: 1,
+      methodVersion: "illustrative-v1",
+      analyzedAt: at,
+      createdAt: at,
+      updatedAt: at,
+      reasons: [
+        {
+          id: "88888888-8888-4888-8888-888888888888",
+          forecastId: "77777777-7777-4777-8777-777777777777",
+          sortOrder: 0,
+          text: "Illustrative historical pattern",
         },
-        recruitmentHistory: null,
-        forecast: null,
+      ],
+      sources: [
+        {
+          forecastId: "77777777-7777-4777-8777-777777777777",
+          sourceId,
+          sortOrder: 0,
+          source: statusSource,
+        },
+      ],
+    },
+    preparationNotes: [
+      {
+        id: "99999999-9999-4999-8999-999999999999",
+        opportunityId,
+        sortOrder: 0,
+        text: "Review fundamentals",
       },
+    ],
+    statusSources: [
+      { opportunityId, sourceId, sortOrder: 0, source: statusSource },
     ],
     ...overrides,
   };
 }
-
-function injectedApp(
-  careerService: Partial<CareerService>,
-  adminToken = "secret",
-) {
-  const disconnect = vi.fn();
-  return {
-    disconnect,
-    app: buildApp({
-      adminToken,
-      careerService: careerService as CareerService,
-      articleService: {} as ArticleService,
-      communityService: {} as CommunityService,
-      prisma: { $disconnect: disconnect } as unknown as PrismaClient,
-    }),
-  };
+function appWith(careerService: Partial<CareerService>) {
+  return buildApp({
+    adminToken: "secret",
+    careerService: careerService as CareerService,
+    articleService: {} as ArticleService,
+    communityService: {} as CommunityService,
+    prisma: { $disconnect: vi.fn() } as unknown as PrismaClient,
+  });
 }
 
-describe("Career Radar API", () => {
-  it("lists published summaries with deterministic cache validators", async () => {
+describe("Career Radar API contract", () => {
+  it("returns {items,count,updatedAt} summaries and keeps ETag in the header", async () => {
     const listPublic = vi.fn().mockResolvedValue([fixture()]);
-    const { app: appPromise, disconnect } = injectedApp({ listPublic });
-    const app = await appPromise;
-
+    const app = await appWith({ listPublic });
     const first = await app.inject({
       method: "GET",
-      url: "/career/opportunities?limit=5",
+      url: "/career/opportunities?recruitmentStatus=CLOSED",
     });
-    const second = await app.inject({
-      method: "GET",
-      url: "/career/opportunities?limit=5",
-    });
-
     expect(first.statusCode).toBe(200);
-    expect(first.headers["cache-control"]).toContain("stale-while-revalidate");
-    expect(first.headers.etag).toBe(second.headers.etag);
-    expect(first.json()).toMatchObject({
-      count: 1,
-      opportunities: [
+    expect(first.json()).toEqual({
+      items: [
         {
-          actualStatus: "CLOSED",
-          forecast: { predictedStatus: "UPCOMING", confidence: "LOW" },
+          slug: "example-internship",
+          title: "Backend Internship",
+          role: "Backend Engineer",
+          category: "Engineering",
+          recruitmentStatus: "CLOSED",
+          company: {
+            slug: "example-company",
+            name: "Example Company",
+            englishName: "Example Company",
+            careersUrl: "https://example.com/careers",
+          },
+          forecast: {
+            expectedOpenFrom: "2026-10-01",
+            expectedOpenTo: "2026-10-31",
+            confidence: "LOW",
+          },
+          updatedAt: at.toISOString(),
         },
       ],
+      count: 1,
+      updatedAt: at.toISOString(),
     });
-    expect(listPublic).toHaveBeenCalledWith({ limit: 5 });
-
+    expect(first.headers.etag).toMatch(/^"/);
+    expect(first.body).not.toContain("etag");
     const cached = await app.inject({
       method: "GET",
-      url: "/career/opportunities?limit=5",
+      url: "/career/opportunities?recruitmentStatus=CLOSED",
       headers: { "if-none-match": `W/${String(first.headers.etag)}` },
     });
     expect(cached.statusCode).toBe(304);
-    expect(cached.body).toBe("");
-
+    expect(listPublic).toHaveBeenCalledWith({ recruitmentStatus: "CLOSED" });
     await app.close();
-    expect(disconnect).not.toHaveBeenCalled();
   });
 
-  it("returns a private-safe public detail without database ids or admin notes", async () => {
-    const getPublic = vi.fn().mockResolvedValue(fixture());
-    const { app: appPromise } = injectedApp({ getPublic });
-    const app = await appPromise;
-
+  it("returns the exact public detail envelope and does not confuse status with confidence", async () => {
+    const app = await appWith({
+      getPublic: vi.fn().mockResolvedValue(fixture()),
+    });
     const response = await app.inject({
       method: "GET",
       url: "/career/opportunities/example-internship",
     });
-
     expect(response.statusCode).toBe(200);
-    expect(response.body).not.toContain("11111111-1111-1111-1111-111111111111");
-    expect(response.body).not.toContain("admin-only link note");
-    expect(response.body).not.toContain('"visibility"');
-    expect(response.json()).toMatchObject({
-      actualStatus: "CLOSED",
-      recruitmentHistory: [{ key: "2025-cycle" }],
-      sources: [
-        {
-          key: "official-status",
-          relationship: "ACTUAL_STATUS",
-          url: "https://example.com/jobs",
+    expect(response.json()).toEqual({
+      opportunity: {
+        slug: "example-internship",
+        title: "Backend Internship",
+        role: "Backend Engineer",
+        category: "Engineering",
+        recruitmentStatus: "CLOSED",
+        company: {
+          slug: "example-company",
+          name: "Example Company",
+          englishName: "Example Company",
+          careersUrl: "https://example.com/careers",
         },
-      ],
+        forecast: {
+          expectedOpenFrom: "2026-10-01",
+          expectedOpenTo: "2026-10-31",
+          confidence: "LOW",
+          reasons: ["Illustrative historical pattern"],
+          basedOnRecruitmentCount: 1,
+          methodVersion: "illustrative-v1",
+          analyzedAt: at.toISOString(),
+        },
+        recruitments: [
+          {
+            id: recruitmentId,
+            year: 2025,
+            title: "2025 Backend Internship",
+            openDate: "2025-09-01",
+            closeDate: "2025-09-30",
+            employmentType: "INTERNSHIP",
+            eligibility: ["Illustrative eligibility"],
+            process: [{ order: 1, type: "DOCUMENT", label: "Document review" }],
+            sources: [
+              {
+                id: sourceId,
+                type: "OFFICIAL",
+                title: "Illustrative official source",
+                url: "https://example.com/jobs",
+                publisher: "Example Company",
+                accessedAt: at.toISOString(),
+              },
+            ],
+          },
+        ],
+        preparationNotes: ["Review fundamentals"],
+        updatedAt: at.toISOString(),
+      },
     });
+    expect(response.body).not.toContain("visibility");
+    expect(response.body).not.toContain("actualStatusAsOf");
     await app.close();
   });
 
-  it("does not expose draft or missing opportunities", async () => {
-    const getPublic = vi.fn().mockResolvedValue(null);
-    const { app: appPromise } = injectedApp({ getPublic });
-    const app = await appPromise;
-
-    const response = await app.inject({
-      method: "GET",
-      url: "/career/opportunities/private-draft",
-    });
-
-    expect(response.statusCode).toBe(404);
-    await app.close();
-  });
-
-  it("requires a bearer token for every admin aggregate route", async () => {
-    const create = vi.fn();
-    const { app: appPromise } = injectedApp({ create });
-    const app = await appPromise;
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/admin/career/opportunities",
-      payload: {},
-    });
-
-    expect(response.statusCode).toBe(401);
-    expect(create).not.toHaveBeenCalled();
-    await app.close();
-  });
-
-  it("reads complete aggregates only for an authorized admin with no-store caching", async () => {
-    const getAdmin = vi.fn().mockResolvedValue(fixture());
-    const { app: appPromise } = injectedApp({ getAdmin });
-    const app = await appPromise;
-
-    const response = await app.inject({
+  it("makes admin GET directly round-tripable through PUT", async () => {
+    const aggregate = fixture();
+    const getAdmin = vi.fn().mockResolvedValue(aggregate);
+    const update = vi.fn().mockResolvedValue(aggregate);
+    const app = await appWith({ getAdmin, update });
+    const headers = { authorization: "Bearer secret" };
+    const read = await app.inject({
       method: "GET",
       url: "/admin/career/opportunities/example-internship",
-      headers: { authorization: "Bearer secret" },
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.headers["cache-control"]).toBe("no-store");
-    expect(response.json()).toMatchObject({
-      visibility: "PUBLISHED",
-      sources: [{ note: "admin-only link note" }],
-    });
-    await app.close();
-  });
-
-  it("creates, updates, and publishes the illustrative Daangn frontend internship concept", async () => {
-    const aggregate = fixture({
-      slug: "daangn-frontend-internship",
-      title: "Daangn Frontend Internship (illustrative)",
-      actualStatus: "UNKNOWN",
-      actualStatusAsOf: null,
-      visibility: "DRAFT",
-      publishedAt: null,
-      company: {
-        ...fixture().company,
-        slug: "daangn-illustrative",
-        name: "Daangn (illustrative fixture)",
-      },
-    });
-    const create = vi.fn().mockResolvedValue(aggregate);
-    const update = vi.fn().mockResolvedValue(aggregate);
-    const publish = vi.fn().mockResolvedValue({
-      ...aggregate,
-      visibility: "PUBLISHED",
-      publishedAt: observedAt,
-    });
-    const { app: appPromise } = injectedApp({ create, update, publish });
-    const app = await appPromise;
-    const headers = { authorization: "Bearer secret" };
-    // This payload proves the first product concept without asserting real dates,
-    // recruitment state, or a production Daangn source.
-    const payload = {
-      company: {
-        slug: "daangn-illustrative",
-        name: "Daangn (illustrative fixture)",
-      },
-      opportunity: {
-        slug: "daangn-frontend-internship",
-        title: "Daangn Frontend Internship (illustrative)",
-        employmentType: "INTERNSHIP",
-        actualStatus: "UNKNOWN",
-        summary: "Non-production contract fixture; not a real job listing.",
-      },
-      sources: [
-        {
-          key: "illustrative-status-source",
-          label: "Illustrative source (not production evidence)",
-          url: "https://example.com/illustrative-daangn-careers",
-          retrievedAt: "2026-09-19T01:00:00.000Z",
-          relationship: "ACTUAL_STATUS",
-        },
-      ],
-    };
-
-    const created = await app.inject({
-      method: "POST",
-      url: "/admin/career/opportunities",
       headers,
-      payload,
     });
-    const updated = await app.inject({
+    const body = read.json<Record<string, unknown>>();
+    const replaced = await app.inject({
       method: "PUT",
-      url: "/admin/career/opportunities/daangn-frontend-internship",
+      url: "/admin/career/opportunities/example-internship",
       headers,
-      payload,
+      payload: body,
     });
-    const published = await app.inject({
-      method: "POST",
-      url: "/admin/career/opportunities/daangn-frontend-internship/publish",
-      headers,
-    });
-
-    expect(created.statusCode).toBe(201);
-    expect(updated.statusCode).toBe(200);
-    expect(published.statusCode).toBe(200);
-    const normalizedPayload = { ...payload, history: [] };
-    expect(create).toHaveBeenCalledWith(normalizedPayload);
-    expect(update).toHaveBeenCalledWith(
-      "daangn-frontend-internship",
-      normalizedPayload,
-    );
-    expect(publish).toHaveBeenCalledWith("daangn-frontend-internship");
-    expect(published.json()).toMatchObject({
-      slug: "daangn-frontend-internship",
-      actualStatus: "UNKNOWN",
-      visibility: "PUBLISHED",
-    });
+    expect(read.statusCode).toBe(200);
+    expect(replaced.statusCode).toBe(200);
+    expect(read.headers["cache-control"]).toBe("no-store");
+    expect(body).toHaveProperty("aggregate.statusSources");
+    expect(body).toHaveProperty("metadata.visibility", "PUBLISHED");
+    expect(update).toHaveBeenCalledWith("example-internship", body);
     await app.close();
   });
 
-  it("rejects malformed aggregate bodies before calling the service", async () => {
+  it("protects admin routes and documents exact response schemas", async () => {
     const create = vi.fn();
-    const { app: appPromise } = injectedApp({ create });
-    const app = await appPromise;
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/admin/career/opportunities",
-      headers: { authorization: "Bearer secret" },
-      payload: { company: {}, opportunity: {}, sources: [] },
-    });
-
-    expect(response.statusCode).toBe(400);
-    expect(create).not.toHaveBeenCalled();
-    await app.close();
-  });
-
-  it("publishes the public and bearer-admin contracts in OpenAPI", async () => {
-    const { app: appPromise } = injectedApp({});
-    const app = await appPromise;
-
-    const response = await app.inject({ method: "GET", url: "/openapi.json" });
-    const document = response.json<{
-      paths: Record<string, Record<string, unknown>>;
-      components: { securitySchemes: Record<string, unknown> };
-    }>();
-
-    expect(response.statusCode).toBe(200);
-    expect(document.paths["/career/opportunities"]).toHaveProperty("get");
-    expect(document.paths["/career/opportunities/{slug}"]).toHaveProperty(
-      "get",
-    );
-    expect(document.paths["/admin/career/opportunities"]).toHaveProperty(
-      "post",
-    );
-    expect(document.paths["/admin/career/opportunities/{slug}"]).toHaveProperty(
-      "get",
-    );
-    expect(document.paths["/admin/career/opportunities/{slug}"]).toHaveProperty(
-      "put",
+    const app = await appWith({ create });
+    expect(
+      (
+        await app.inject({
+          method: "POST",
+          url: "/admin/career/opportunities",
+          payload: {},
+        })
+      ).statusCode,
+    ).toBe(401);
+    const openapi = (
+      await app.inject({ method: "GET", url: "/openapi.json" })
+    ).json<OpenApiDocument>();
+    const listSchema =
+      openapi.paths["/career/opportunities"]?.get?.responses?.["200"]
+        ?.content?.["application/json"]?.schema;
+    expect(listSchema?.required).toEqual(["items", "count", "updatedAt"]);
+    const detailSchema =
+      openapi.paths["/career/opportunities/{slug}"]?.get?.responses?.["200"]
+        ?.content?.["application/json"]?.schema;
+    expect(detailSchema?.required).toEqual(["opportunity"]);
+    expect(detailSchema?.properties?.opportunity?.required).toContain(
+      "recruitments",
     );
     expect(
-      document.paths["/admin/career/opportunities/{slug}/publish"],
-    ).toHaveProperty("post");
-    expect(document.components.securitySchemes).toHaveProperty("bearerAuth");
+      openapi.paths["/admin/career/opportunities/{slug}"]?.put?.summary,
+    ).toContain("accepts an admin GET response unchanged");
+    const adminReadSchema =
+      openapi.paths["/admin/career/opportunities/{slug}"]?.get?.responses?.[
+        "200"
+      ]?.content?.["application/json"]?.schema;
+    expect(adminReadSchema?.required).toEqual(["aggregate", "metadata"]);
     await app.close();
   });
 });

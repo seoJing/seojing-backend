@@ -1,75 +1,83 @@
 import type {
-  CareerActualStatus,
   CareerEmploymentType,
   CareerForecastConfidence,
-  CareerSourceRelationship,
+  CareerRecruitmentStatus,
   CareerVisibility,
   Prisma,
 } from "@prisma/client";
 
-export interface CareerCompanyInput {
-  slug: string;
-  name: string;
-  website?: string;
-  summary?: string;
-  logoUrl?: string;
-}
-
-export interface CareerOpportunityInput {
-  slug: string;
-  title: string;
-  employmentType: CareerEmploymentType;
-  actualStatus: CareerActualStatus;
-  actualStatusAsOf?: Date;
-  location?: string;
-  summary: string;
-  description?: string;
-  applicationUrl?: string;
-}
-
-export interface CareerHistoryInput {
-  key: string;
-  openedOn?: Date;
-  closedOn?: Date;
-  actualStatus: CareerActualStatus;
-  note?: string;
-}
-
-export interface CareerForecastInput {
-  predictedStatus: CareerActualStatus;
-  confidence: CareerForecastConfidence;
-  windowStart?: Date;
-  windowEnd?: Date;
-  rationale: string;
-}
-
 export interface CareerSourceInput {
-  key: string;
-  label: string;
-  publisher?: string;
+  id?: string;
+  type: string;
+  title: string;
   url: string;
+  publisher?: string;
   publishedAt?: Date;
-  retrievedAt: Date;
-  relationship: CareerSourceRelationship;
-  historyKey?: string;
-  note?: string;
+  accessedAt: Date;
+}
+
+export interface CareerRecruitmentInput {
+  id?: string;
+  year: number;
+  title: string;
+  openDate?: Date;
+  closeDate?: Date;
+  employmentType?: CareerEmploymentType;
+  eligibility: string[];
+  process: Array<{ order: number; type: string; label: string }>;
+  sources: CareerSourceInput[];
 }
 
 export interface CareerAggregateInput {
-  company: CareerCompanyInput;
-  opportunity: CareerOpportunityInput;
-  history: CareerHistoryInput[];
-  forecast?: CareerForecastInput;
-  sources: CareerSourceInput[];
+  company: {
+    slug: string;
+    name: string;
+    englishName?: string;
+    careersUrl?: string;
+  };
+  opportunity: {
+    slug: string;
+    title: string;
+    role: string;
+    category: string;
+    recruitmentStatus: CareerRecruitmentStatus;
+    actualStatusAsOf?: Date;
+  };
+  forecast?: {
+    expectedOpenFrom?: Date;
+    expectedOpenTo?: Date;
+    confidence: CareerForecastConfidence;
+    reasons: string[];
+    basedOnRecruitmentCount: number;
+    methodVersion: string;
+    analyzedAt: Date;
+    sources: CareerSourceInput[];
+  };
+  recruitments: CareerRecruitmentInput[];
+  preparationNotes: string[];
+  statusSources: CareerSourceInput[];
 }
 
 const careerAggregateInclude = {
   company: true,
-  history: { orderBy: [{ openedOn: "desc" }, { key: "asc" }] },
-  forecast: true,
-  sourceLinks: {
-    orderBy: { createdAt: "asc" },
-    include: { source: true, recruitmentHistory: true, forecast: true },
+  recruitments: {
+    orderBy: [{ year: "desc" }, { title: "asc" }],
+    include: {
+      eligibility: { orderBy: { sortOrder: "asc" } },
+      process: { orderBy: { order: "asc" } },
+      sources: { orderBy: { sortOrder: "asc" }, include: { source: true } },
+    },
+  },
+  forecast: {
+    include: {
+      reasons: { orderBy: { sortOrder: "asc" } },
+      sources: { orderBy: { sortOrder: "asc" }, include: { source: true } },
+    },
+  },
+  preparationNotes: { orderBy: { sortOrder: "asc" } },
+  statusSources: {
+    orderBy: { sortOrder: "asc" },
+    include: { source: true },
   },
 } satisfies Prisma.CareerOpportunityInclude;
 
@@ -80,7 +88,7 @@ export type CareerAggregate = Prisma.CareerOpportunityGetPayload<{
 export interface CareerListFilter {
   limit?: number;
   company?: string;
-  actualStatus?: CareerActualStatus;
+  recruitmentStatus?: CareerRecruitmentStatus;
 }
 
 type CareerRepositoryTx = Prisma.TransactionClient;
@@ -95,11 +103,10 @@ export class CareerRepository {
   constructor(private readonly db: CareerRepositoryDb) {}
 
   async listPublished(filter: CareerListFilter): Promise<CareerAggregate[]> {
-    const limit = Math.min(Math.max(filter.limit ?? 20, 1), 50);
     return this.db.careerOpportunity.findMany({
       where: {
         visibility: "PUBLISHED",
-        actualStatus: filter.actualStatus,
+        recruitmentStatus: filter.recruitmentStatus,
         company: filter.company ? { slug: filter.company } : undefined,
       },
       orderBy: [
@@ -107,7 +114,7 @@ export class CareerRepository {
         { updatedAt: "desc" },
         { slug: "asc" },
       ],
-      take: limit,
+      take: Math.min(Math.max(filter.limit ?? 20, 1), 50),
       include: careerAggregateInclude,
     });
   }
@@ -150,15 +157,17 @@ export class CareerRepository {
         where: { slug },
       });
       if (!current) return null;
-
       const company = await upsertCompany(tx, input.company);
-      await tx.careerSourceLink.deleteMany({
+      await tx.careerStatusSource.deleteMany({
         where: { opportunityId: current.id },
       });
-      await tx.careerRecruitmentHistory.deleteMany({
+      await tx.careerRecruitment.deleteMany({
         where: { opportunityId: current.id },
       });
       await tx.careerForecast.deleteMany({
+        where: { opportunityId: current.id },
+      });
+      await tx.careerPreparationNote.deleteMany({
         where: { opportunityId: current.id },
       });
       await tx.careerOpportunity.update({
@@ -198,18 +207,35 @@ export class CareerRepository {
 
 async function upsertCompany(
   tx: CareerRepositoryTx,
-  input: CareerCompanyInput,
+  input: CareerAggregateInput["company"],
 ) {
   return tx.careerCompany.upsert({
     where: { slug: input.slug },
     create: input,
     update: {
       name: input.name,
-      website: input.website,
-      summary: input.summary,
-      logoUrl: input.logoUrl,
+      englishName: input.englishName,
+      careersUrl: input.careersUrl,
     },
   });
+}
+
+async function createSource(tx: CareerRepositoryTx, input: CareerSourceInput) {
+  const data = {
+    type: input.type,
+    title: input.title,
+    url: input.url,
+    publisher: input.publisher,
+    publishedAt: input.publishedAt,
+    accessedAt: input.accessedAt,
+  };
+  return input.id
+    ? tx.careerSource.upsert({
+        where: { id: input.id },
+        create: { id: input.id, ...data },
+        update: data,
+      })
+    : tx.careerSource.create({ data });
 }
 
 async function writeChildren(
@@ -217,50 +243,64 @@ async function writeChildren(
   opportunityId: string,
   input: CareerAggregateInput,
 ): Promise<void> {
-  if (input.history.length > 0) {
-    await tx.careerRecruitmentHistory.createMany({
-      data: input.history.map((entry) => ({ opportunityId, ...entry })),
+  for (const [index, note] of input.preparationNotes.entries()) {
+    await tx.careerPreparationNote.create({
+      data: { opportunityId, sortOrder: index, text: note },
     });
   }
-
-  const history = await tx.careerRecruitmentHistory.findMany({
-    where: { opportunityId },
-    select: { id: true, key: true },
-  });
-  const historyIds = new Map(history.map((entry) => [entry.key, entry.id]));
-
-  const forecast = input.forecast
-    ? await tx.careerForecast.create({
-        data: { opportunityId, ...input.forecast },
-      })
-    : undefined;
-
-  for (const sourceInput of input.sources) {
-    const { relationship, historyKey, note, ...source } = sourceInput;
-    const persistedSource = await tx.careerSource.upsert({
-      where: { key: source.key },
-      create: source,
-      update: {
-        label: source.label,
-        publisher: source.publisher,
-        url: source.url,
-        publishedAt: source.publishedAt,
-        retrievedAt: source.retrievedAt,
-      },
+  for (const [index, sourceInput] of input.statusSources.entries()) {
+    const source = await createSource(tx, sourceInput);
+    await tx.careerStatusSource.create({
+      data: { opportunityId, sourceId: source.id, sortOrder: index },
     });
-    await tx.careerSourceLink.create({
-      data: {
-        opportunityId,
-        sourceId: persistedSource.id,
-        relationship,
-        recruitmentHistoryId:
-          relationship === "RECRUITMENT_HISTORY" && historyKey
-            ? historyIds.get(historyKey)
-            : undefined,
-        forecastId: relationship === "FORECAST" ? forecast?.id : undefined,
-        note,
-      },
+  }
+  for (const recruitmentInput of input.recruitments) {
+    const { id, eligibility, process, sources, ...recruitmentData } =
+      recruitmentInput;
+    const recruitment = await tx.careerRecruitment.create({
+      data: { ...(id ? { id } : {}), opportunityId, ...recruitmentData },
     });
+    if (eligibility.length)
+      await tx.careerEligibilityItem.createMany({
+        data: eligibility.map((text, sortOrder) => ({
+          recruitmentId: recruitment.id,
+          sortOrder,
+          text,
+        })),
+      });
+    if (process.length)
+      await tx.careerProcessStep.createMany({
+        data: process.map((step) => ({
+          recruitmentId: recruitment.id,
+          ...step,
+        })),
+      });
+    for (const [sortOrder, sourceInput] of sources.entries()) {
+      const source = await createSource(tx, sourceInput);
+      await tx.careerRecruitmentSource.create({
+        data: { recruitmentId: recruitment.id, sourceId: source.id, sortOrder },
+      });
+    }
+  }
+  if (input.forecast) {
+    const { reasons, sources, ...forecastData } = input.forecast;
+    const forecast = await tx.careerForecast.create({
+      data: { opportunityId, ...forecastData },
+    });
+    if (reasons.length)
+      await tx.careerForecastReason.createMany({
+        data: reasons.map((text, sortOrder) => ({
+          forecastId: forecast.id,
+          sortOrder,
+          text,
+        })),
+      });
+    for (const [sortOrder, sourceInput] of sources.entries()) {
+      const source = await createSource(tx, sourceInput);
+      await tx.careerForecastSource.create({
+        data: { forecastId: forecast.id, sourceId: source.id, sortOrder },
+      });
+    }
   }
 }
 
@@ -272,8 +312,7 @@ async function readAggregate(
     where: { id },
     include: careerAggregateInclude,
   });
-  if (!aggregate) {
+  if (!aggregate)
     throw new Error(`Career opportunity disappeared during write: ${id}`);
-  }
   return aggregate;
 }
