@@ -204,3 +204,163 @@ model ArticleComment {
   @@index([parentId])
   @@map("article_comments")
 }
+
+enum CareerVisibility {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("career_visibility")
+}
+
+enum CareerActualStatus {
+  OPEN
+  CLOSED
+  UPCOMING
+  UNKNOWN
+
+  @@map("career_actual_status")
+}
+
+enum CareerEmploymentType {
+  INTERNSHIP
+  FULL_TIME
+  CONTRACT
+  PART_TIME
+  OTHER
+
+  @@map("career_employment_type")
+}
+
+enum CareerForecastConfidence {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("career_forecast_confidence")
+}
+
+enum CareerSourceRelationship {
+  GENERAL
+  ACTUAL_STATUS
+  RECRUITMENT_HISTORY
+  FORECAST
+
+  @@map("career_source_relationship")
+}
+
+model CareerCompany {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique
+  name      String
+  website   String?
+  summary   String?
+  logoUrl   String?  @map("logo_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  opportunities CareerOpportunity[]
+
+  @@map("career_companies")
+}
+
+model CareerOpportunity {
+  id               String               @id @default(uuid()) @db.Uuid
+  companyId        String               @map("company_id") @db.Uuid
+  slug             String               @unique
+  title            String
+  employmentType   CareerEmploymentType @map("employment_type")
+  actualStatus     CareerActualStatus   @default(UNKNOWN) @map("actual_status")
+  actualStatusAsOf DateTime?            @map("actual_status_as_of")
+  location         String?
+  summary          String
+  description      String?
+  applicationUrl   String?              @map("application_url")
+  visibility       CareerVisibility     @default(DRAFT)
+  publishedAt      DateTime?            @map("published_at")
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+
+  company     CareerCompany              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  history     CareerRecruitmentHistory[]
+  forecast    CareerForecast?
+  sourceLinks CareerSourceLink[]
+
+  @@index([visibility, publishedAt])
+  @@index([companyId, actualStatus])
+  @@map("career_opportunities")
+}
+
+model CareerRecruitmentHistory {
+  id            String             @id @default(uuid()) @db.Uuid
+  opportunityId String             @map("opportunity_id") @db.Uuid
+  key           String
+  openedOn      DateTime?          @map("opened_on") @db.Date
+  closedOn      DateTime?          @map("closed_on") @db.Date
+  actualStatus  CareerActualStatus @map("actual_status")
+  note          String?
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  opportunity CareerOpportunity  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  sourceLinks CareerSourceLink[]
+
+  @@unique([opportunityId, key])
+  @@index([opportunityId, openedOn])
+  @@map("career_recruitment_history")
+}
+
+model CareerForecast {
+  id              String                   @id @default(uuid()) @db.Uuid
+  opportunityId   String                   @unique @map("opportunity_id") @db.Uuid
+  predictedStatus CareerActualStatus       @map("predicted_status")
+  confidence      CareerForecastConfidence
+  windowStart     DateTime?                @map("window_start") @db.Date
+  windowEnd       DateTime?                @map("window_end") @db.Date
+  rationale       String
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  opportunity CareerOpportunity  @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  sourceLinks CareerSourceLink[]
+
+  @@map("career_forecasts")
+}
+
+model CareerSource {
+  id          String    @id @default(uuid()) @db.Uuid
+  key         String    @unique
+  label       String
+  publisher   String?
+  url         String
+  publishedAt DateTime? @map("published_at")
+  retrievedAt DateTime  @map("retrieved_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  links CareerSourceLink[]
+
+  @@map("career_sources")
+}
+
+model CareerSourceLink {
+  id                   String                   @id @default(uuid()) @db.Uuid
+  opportunityId        String                   @map("opportunity_id") @db.Uuid
+  sourceId             String                   @map("source_id") @db.Uuid
+  recruitmentHistoryId String?                  @map("recruitment_history_id") @db.Uuid
+  forecastId           String?                  @map("forecast_id") @db.Uuid
+  relationship         CareerSourceRelationship
+  note                 String?
+  createdAt            DateTime                 @default(now()) @map("created_at")
+
+  opportunity        CareerOpportunity         @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  source             CareerSource              @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  recruitmentHistory CareerRecruitmentHistory? @relation(fields: [recruitmentHistoryId], references: [id], onDelete: Cascade)
+  forecast           CareerForecast?           @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+
+  @@unique([opportunityId, sourceId, relationship, recruitmentHistoryId, forecastId])
+  @@index([sourceId])
+  @@index([recruitmentHistoryId])
+  @@index([forecastId])
+  @@map("career_source_links")
+}
