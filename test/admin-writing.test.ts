@@ -38,12 +38,21 @@ function articleFixture(
     id: "22222222-2222-2222-2222-222222222222",
     articleId: "11111111-1111-1111-1111-111111111111",
     revisionNumber: 2,
+    title: "Admin Draft",
+    description: "Writing UX fixture",
+    category: "SEOJing",
     sourceFormat: "MDX" as const,
     sourceText: "# Admin Draft\n\n<ArticleQuiz />",
     renderedHtml: "<h1>Admin Draft</h1>",
     changeSummary: "Admin editor revision",
     authorName: "OkayJing",
     createdAt: baseDate,
+  };
+  const effectiveRevision = {
+    ...revision,
+    sourceFormat: overrides.sourceFormat ?? revision.sourceFormat,
+    sourceText: overrides.sourceText ?? revision.sourceText,
+    renderedHtml: overrides.renderedHtml ?? revision.renderedHtml,
   };
 
   return {
@@ -60,8 +69,8 @@ function articleFixture(
     publishedAt: null,
     createdAt: baseDate,
     updatedAt: baseDate,
-    currentRevision: revision,
-    revisions: [revision],
+    currentRevision: effectiveRevision,
+    revisions: [effectiveRevision],
     blocks: [],
     assets: [],
     ...overrides,
@@ -197,6 +206,57 @@ describe("admin writing API", () => {
     const publishPayload = JSON.parse(publishResponse.body) as EditorPayload;
     expect(publishPayload.article.status).toBe("PUBLISHED");
 
+    await app.close();
+  });
+
+  it("opens a pending edit separately from the published revision and restores history", async () => {
+    const published = articleFixture({ status: "PUBLISHED" });
+    const current = published.currentRevision!;
+    const pending = {
+      ...current,
+      id: "33333333-3333-3333-3333-333333333333",
+      revisionNumber: current.revisionNumber + 1,
+      title: "Pending title",
+      sourceText: "# Pending title\n\nNew text",
+      renderedHtml: "<h1>Pending title</h1><p>New text</p>",
+    };
+    const article = articleFixture({
+      status: "PUBLISHED",
+      currentRevision: current,
+      revisions: [pending, current],
+    });
+    const getArticleBySlug = vi.fn().mockResolvedValue(article);
+    const restoreRevision = vi.fn().mockResolvedValue(article);
+    const app = await appWithArticleService({
+      getArticleBySlug,
+      restoreRevision,
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/admin/articles/admin-draft/editor",
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(response.statusCode).toBe(200);
+    const editorPayload = response.json<EditorPayload>();
+    expect(editorPayload.article).toMatchObject({
+      title: "Pending title",
+      sourceText: pending.sourceText,
+      currentRevisionNumber: current.revisionNumber,
+      editingRevisionNumber: pending.revisionNumber,
+      hasUnpublishedChanges: true,
+    });
+
+    const restored = await app.inject({
+      method: "POST",
+      url: `/admin/articles/admin-draft/revisions/${current.revisionNumber}/restore`,
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(restored.statusCode).toBe(201);
+    expect(restoreRevision).toHaveBeenCalledWith(
+      "admin-draft",
+      current.revisionNumber,
+    );
     await app.close();
   });
 
