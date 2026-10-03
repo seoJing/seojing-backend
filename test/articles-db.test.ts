@@ -126,6 +126,8 @@ describeDb("Article database integration", () => {
     await service.publishCurrentRevision(publishedEditSlug);
 
     const privateEdit = await service.createEditorRevision(publishedEditSlug, {
+      title: "Updated Published Edit Flow",
+      description: "Updated description after publish",
       sourceText: "# Published Edit Flow\n\nNew public body after publish",
       renderedHtml:
         "<h1>Published Edit Flow</h1><p>New public body after publish</p>",
@@ -140,6 +142,10 @@ describeDb("Article database integration", () => {
     expect(privateEdit?.revisions[0]?.revisionNumber).toBe(2);
     expect(beforePublish?.currentRevision?.revisionNumber).toBe(1);
     expect(beforePublish?.renderedHtml).toContain("Old public body");
+    expect(beforePublish?.title).toBe("Published Edit Flow");
+    expect(privateEdit?.revisions[0]?.title).toBe(
+      "Updated Published Edit Flow",
+    );
 
     const published = await service.publishCurrentRevision(publishedEditSlug);
     const publicReadback =
@@ -149,5 +155,22 @@ describeDb("Article database integration", () => {
     expect(publicReadback?.renderedHtml).toContain(
       "New public body after publish",
     );
+    expect(publicReadback?.title).toBe("Updated Published Edit Flow");
+    expect(publicReadback?.description).toBe(
+      "Updated description after publish",
+    );
+
+    const restored = await service.restoreRevision(publishedEditSlug, 1);
+    const beforeRestorePublish =
+      await service.getPublicArticleBySlug(publishedEditSlug);
+    expect(restored?.revisions[0]?.revisionNumber).toBe(3);
+    expect(restored?.revisions[0]?.sourceText).toContain("Old public body");
+    expect(beforeRestorePublish?.renderedHtml).toContain(
+      "New public body after publish",
+    );
+    await service.publishCurrentRevision(publishedEditSlug);
+    const afterRestorePublish =
+      await service.getPublicArticleBySlug(publishedEditSlug);
+    expect(afterRestorePublish?.renderedHtml).toContain("Old public body");
   });
 });

@@ -173,7 +173,12 @@ export class ArticleRepository {
         tx,
         article.id,
         nextRevisionNumber,
-        input,
+        {
+          ...input,
+          title: input.title ?? article.title,
+          description: input.description ?? article.description ?? undefined,
+          category: input.category ?? article.category,
+        },
       );
       await this.createRevisionContent(tx, article.id, revision.id, input);
 
@@ -218,10 +223,58 @@ export class ArticleRepository {
           sourceFormat: revision.sourceFormat,
           sourceText: revision.sourceText,
           renderedHtml: revision.renderedHtml,
+          title: revision.title ?? article.title,
+          description: revision.description ?? article.description,
+          category: revision.category ?? article.category,
         },
       });
 
       return this.readCreatedArticle(tx, article.id);
+    });
+  }
+
+  async restoreRevision(
+    slug: string,
+    revisionNumber: number,
+  ): Promise<ArticleWithContent | null> {
+    const article = await this.findBySlug(slug);
+    if (!article) return null;
+    const revision = article.revisions.find(
+      (item) => item.revisionNumber === revisionNumber,
+    );
+    if (!revision) return null;
+
+    return this.createEditorRevision({
+      slug,
+      title: revision.title ?? article.title,
+      description: revision.description ?? article.description ?? undefined,
+      category: revision.category ?? article.category,
+      sourceFormat: revision.sourceFormat,
+      sourceText: revision.sourceText,
+      renderedHtml: revision.renderedHtml ?? undefined,
+      changeSummary: `Restore revision ${revisionNumber}`,
+      blocks: article.blocks
+        .filter((block) => block.revisionId === revision.id)
+        .map((block) => ({
+          type: block.type,
+          sortOrder: block.sortOrder,
+          content: block.content as Prisma.InputJsonValue,
+          plainText: block.plainText ?? undefined,
+          metadata: block.metadata ?? undefined,
+        })),
+      assets: article.assets
+        .filter((asset) => asset.revisionId === revision.id)
+        .map((asset) => ({
+          kind: asset.kind,
+          url: asset.url,
+          storageKey: asset.storageKey ?? undefined,
+          altText: asset.altText ?? undefined,
+          mimeType: asset.mimeType ?? undefined,
+          sizeBytes: asset.sizeBytes ?? undefined,
+          width: asset.width ?? undefined,
+          height: asset.height ?? undefined,
+          metadata: asset.metadata ?? undefined,
+        })),
     });
   }
 
@@ -250,6 +303,9 @@ export class ArticleRepository {
     input: Pick<
       CreateArticleDraftInput,
       | "sourceFormat"
+      | "title"
+      | "description"
+      | "category"
       | "sourceText"
       | "renderedHtml"
       | "changeSummary"
@@ -260,6 +316,9 @@ export class ArticleRepository {
       data: {
         articleId,
         revisionNumber,
+        title: input.title,
+        description: input.description,
+        category: input.category,
         sourceFormat: input.sourceFormat,
         sourceText: input.sourceText,
         renderedHtml: input.renderedHtml,
