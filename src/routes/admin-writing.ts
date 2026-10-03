@@ -25,6 +25,10 @@ interface ArticleBlockParams extends ArticleSlugParams {
   blockId: string;
 }
 
+interface ArticleRevisionParams extends ArticleSlugParams {
+  revisionNumber: string;
+}
+
 interface WildcardArticleParams {
   "*": string;
 }
@@ -455,6 +459,35 @@ export function registerAdminWritingRoutes(
         return reply.status(404).send({ error: "Article not found" });
       }
 
+      return reply.status(201).send(toEditorPayload(article));
+    },
+  );
+
+  app.post<{ Params: ArticleRevisionParams }>(
+    "/admin/articles/:slug/revisions/:revisionNumber/restore",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary:
+          "Copy an earlier article revision into a new unpublished revision",
+        params: {
+          type: "object",
+          required: ["slug", "revisionNumber"],
+          properties: {
+            slug: { type: "string" },
+            revisionNumber: { type: "string", pattern: "^[1-9][0-9]*$" },
+          },
+        },
+      }),
+    },
+    async (request, reply) => {
+      const article = await options.articleService.restoreRevision(
+        request.params.slug,
+        Number(request.params.revisionNumber),
+      );
+      if (!article) {
+        return reply.status(404).send({ error: "Article revision not found" });
+      }
       return reply.status(201).send(toEditorPayload(article));
     },
   );
@@ -893,9 +926,9 @@ function requiredBlocks(
 }
 
 function toEditorPayload(article: ArticleWithContent) {
-  const revision = article.currentRevision;
+  const revision = article.revisions[0] ?? article.currentRevision;
   const blocks = article.blocks
-    .filter((block) => block.revisionId === article.currentRevisionId)
+    .filter((block) => block.revisionId === revision?.id)
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((block) => ({
       id: block.id,
@@ -909,23 +942,35 @@ function toEditorPayload(article: ArticleWithContent) {
     article: {
       id: article.id,
       slug: article.slug,
-      title: article.title,
-      description: article.description,
-      category: article.category,
+      title: revision?.title ?? article.title,
+      description: revision?.description ?? article.description,
+      category: revision?.category ?? article.category,
       status: article.status,
-      sourceFormat: article.sourceFormat,
+      sourceFormat: revision?.sourceFormat ?? article.sourceFormat,
       sourceText: revision?.sourceText ?? article.sourceText,
-      renderedHtml: revision?.renderedHtml ?? article.renderedHtml,
+      renderedHtml: revision ? revision.renderedHtml : article.renderedHtml,
       blocks,
       currentRevisionId: article.currentRevisionId,
-      currentRevisionNumber: revision?.revisionNumber ?? null,
+      currentRevisionNumber: article.currentRevision?.revisionNumber ?? null,
+      editingRevisionNumber: revision?.revisionNumber ?? null,
+      hasUnpublishedChanges: Boolean(
+        revision && revision.id !== article.currentRevisionId,
+      ),
+      revisions: article.revisions.map((item) => ({
+        revisionNumber: item.revisionNumber,
+        changeSummary: item.changeSummary,
+        createdAt: item.createdAt.toISOString(),
+        isPublished:
+          item.id === article.currentRevisionId &&
+          article.status === "PUBLISHED",
+      })),
       publishedAt: article.publishedAt?.toISOString() ?? null,
       updatedAt: article.updatedAt.toISOString(),
     },
     editor: {
-      mode: article.sourceFormat === "BLOCKS" ? "blocks" : "mdx",
+      mode: revision?.sourceFormat === "BLOCKS" ? "blocks" : "mdx",
       autosaveTarget:
-        article.sourceFormat === "BLOCKS"
+        revision?.sourceFormat === "BLOCKS"
           ? `/admin/articles/${article.slug}/blocks`
           : `/admin/articles/${article.slug}/revisions`,
       publishTarget: `/admin/articles/${article.slug}/publish`,

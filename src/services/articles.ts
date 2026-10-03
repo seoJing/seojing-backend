@@ -245,6 +245,16 @@ export class ArticleService {
     return this.repository.publishLatestRevision(normalizeSlug(slug));
   }
 
+  async restoreRevision(
+    slug: string,
+    revisionNumber: number,
+  ): Promise<ArticleWithContent | null> {
+    if (!Number.isInteger(revisionNumber) || revisionNumber < 1) {
+      throw new Error("A valid article revision number is required.");
+    }
+    return this.repository.restoreRevision(normalizeSlug(slug), revisionNumber);
+  }
+
   async unpublishArticle(slug: string): Promise<ArticleWithContent | null> {
     return this.repository.setArticleStatus(normalizeSlug(slug), "DRAFT");
   }
