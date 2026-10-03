@@ -14,6 +14,7 @@ import { registerArticleRoutes } from "./routes/articles.js";
 import { registerCareerRoutes } from "./routes/careers.js";
 import { registerCommunityRoutes } from "./routes/community.js";
 import { registerHealthRoutes } from "./routes/health.js";
+import { registerReadmeRoutes } from "./routes/readme.js";
 import { registerTtsRoutes } from "./routes/tts.js";
 import { ArticleQaService } from "./services/article-qa.js";
 import { ArticleService } from "./services/articles.js";
@@ -90,6 +91,10 @@ export async function buildApp(
           description: "Published, source-backed Career Radar opportunities",
         },
         {
+          name: "readme",
+          description: "Synthetic README reading preview",
+        },
+        {
           name: "admin-careers",
           description: "Admin-only Career Radar aggregate workflow",
         },
@@ -124,6 +129,7 @@ export async function buildApp(
   });
 
   registerHealthRoutes(app, { pythonWorkerClient: options.pythonWorkerClient });
+  registerReadmeRoutes(app);
   registerTtsRoutes(app, {
     ttsService: new TtsService(options.pythonWorkerClient, {
       audioRoot: options.ttsAudioRoot,

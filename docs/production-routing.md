@@ -14,7 +14,7 @@ The Mac mini uses these user launchd agents (all in `~/Library/LaunchAgents`):
 
 The canonical checkout is `/Users/seojing/Projects/seojing-backend`; the old `.hermes` working directory no longer exists. The backend uses `seojing_backend` in the existing local PostgreSQL cluster and publishes through `https://api.seojing.com`. The plist files are mode `0600`; keep runtime credentials out of this document and the repository. As restored on 2026-09-29, only the public content API environment was recovered; optional admin-token, GitHub OAuth, and Python-worker integrations were not re-enabled.
 
-Before replacing the compiled server, verify the intended source commit and build it. The current checkout's `pnpm-workspace.yaml` lacks a `packages` entry, so `pnpm build` fails; `./node_modules/.bin/tsc -p tsconfig.json` compiled successfully during recovery. Do not use a build from an unreviewed branch as a silent production upgrade.
+Before replacing the compiled server, verify the intended source commit and build it. The restored 2026-09-29 checkout lacked a `packages` entry in `pnpm-workspace.yaml`; the README development branch adds it so the package-owned `pnpm build` command can run again. Do not use a build from an unreviewed branch as a silent production upgrade.
 
 The old `com.seojing.api` FastAPI sidecar on `127.0.0.1:9101` is retired. SEOJing public routes (`/articles`, `/community`, `/tts`, `/article-qa`, `/docs`, `/openapi.json`) are owned by this Node service. Any remaining Python process must be treated as an internal worker dependency only; it must not be the public API boundary and must not be routed by Cloudflare Tunnel.
 
