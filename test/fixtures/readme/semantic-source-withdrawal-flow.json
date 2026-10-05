@@ -1,0 +1,11 @@
+{
+  "synthetic": true,
+  "human_reviewed": false,
+  "job_text": "담당업무: 전자기기 부품 교체. 해당 업무를 직접 수행할 담당자를 모집합니다.",
+  "text": "저는 고장 난 전원 단자를 분리하고 새 단자로 직접 교체했습니다. 앞서 직접 교체했다고 쓴 것은 정정합니다: 실제 교체는 정비사가 했고 저는 부품명을 견적서에 입력했습니다.",
+  "checks": [
+    "Original evidence persists unchanged.",
+    "A later observation links the first claim and explicit author correction.",
+    "Report distinguishes technician replacement from applicant estimate entry."
+  ]
+}

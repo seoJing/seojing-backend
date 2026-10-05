@@ -1,0 +1,41 @@
+{
+  "synthetic": true,
+  "human_reviewed": false,
+  "label_status": "provisional_agent_authored",
+  "purpose": "Frozen actual sequential-profile adjacent role cases before any new completion correction.",
+  "cases": [
+    {
+      "id": "short_role_adjacent_profile",
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "프로그램의 대상·성격과 그 운영에서 본인이 실제 맡아 수행한 구체적인 부분이 설명되어 있다.",
+      "insufficient": "프로그램에 참여했다는 사실이나 기관명만 있고 본인의 운영 역할이 없다.",
+      "units": [
+        "# 한지우 · 청소년 프로그램 운영 지원",
+        "## 경력",
+        "### 새빛구 청소년문화의집 · 프로그램 보조 (2024.03–2025.02)",
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 참여자 40명의 일정 조정과 회차별 안내문 작성을 직접 맡았습니다."
+      ],
+      "origin_index": 3,
+      "current_index": 4,
+      "expected": ["complete"]
+    },
+    {
+      "id": "long_role_adjacent_profile",
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "청소년 대상 프로그램이라는 맥락과 본인이 실제 맡아 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "프로그램 소개나 팀 전체 업무만 있고 본인 담당이 드러나지 않는다.",
+      "units": [
+        "# 합성 지원자 · 청소년 프로그램 운영",
+        "## 새봄 청소년문화센터 · 운영 보조",
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 참여자 48명의 일정 조정과 보호자 안내문 작성을 직접 맡았습니다."
+      ],
+      "origin_index": 2,
+      "current_index": 3,
+      "expected": ["complete"]
+    }
+  ]
+}

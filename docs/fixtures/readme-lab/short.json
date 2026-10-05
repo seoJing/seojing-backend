@@ -1,0 +1,727 @@
+{
+  "synthetic": true,
+  "fixture": true,
+  "authored": true,
+  "prepare_ms": 0,
+  "total_ms": 0,
+  "prepare": {
+    "prepare_id": "fixture-short-prepare",
+    "input_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "status": "ready",
+    "document": {
+      "doc_id": "b1aab6db31368f6f609109ae",
+      "source_kind": "md",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "지역 행사 운영을 지원했습니다. 참여자 일정 조정과 안내문 작성을 담당했습니다. 참여자 만족도를 높였습니다.",
+          "id": "b1",
+          "unit_ids": ["u1", "u2", "u3"]
+        }
+      ],
+      "units": [
+        {
+          "id": "u1",
+          "block_id": "b1",
+          "order": 0,
+          "start": 0,
+          "end": 17,
+          "text": "지역 행사 운영을 지원했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u2",
+          "block_id": "b1",
+          "order": 1,
+          "start": 17,
+          "end": 44,
+          "text": " 참여자 일정 조정과 안내문 작성을 담당했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u3",
+          "block_id": "b1",
+          "order": 2,
+          "start": 44,
+          "end": 60,
+          "text": " 참여자 만족도를 높였습니다.",
+          "scope_id": "b1"
+        }
+      ],
+      "warnings": [],
+      "truncated": false
+    },
+    "job": {
+      "source": "user_paste",
+      "text": "필수: 참여자 일정 조정, 안내문 작성, 프로그램 결과 보고서 작성 경험. 우대: 협력 기관과 업무 조율 경험.",
+      "requirements": [
+        {
+          "id": "r1",
+          "kind": "required",
+          "label": "일정 조정",
+          "quote": "참여자 일정 조정",
+          "start": 4,
+          "end": 13
+        },
+        {
+          "id": "r2",
+          "kind": "required",
+          "label": "안내문 작성",
+          "quote": "안내문 작성",
+          "start": 15,
+          "end": 21
+        },
+        {
+          "id": "r3",
+          "kind": "required",
+          "label": "결과 보고",
+          "quote": "프로그램 결과 보고서 작성 경험",
+          "start": 23,
+          "end": 40
+        },
+        {
+          "id": "r4",
+          "kind": "preferred",
+          "label": "기관 간 조율",
+          "quote": "협력 기관과 업무 조율 경험",
+          "start": 46,
+          "end": 61
+        }
+      ],
+      "warnings": []
+    },
+    "expires_at": "2100-01-01T00:00:00.000Z"
+  },
+  "snapshots": [
+    {
+      "job_id": "fixture-short-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w1",
+          "unit_ids": ["u1"],
+          "seq": 1
+        }
+      ],
+      "next_seq": 1,
+      "progress": {
+        "read_unit_count": 0,
+        "total_unit_count": 3,
+        "current_window": "w1"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-short-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n1",
+            "unit_id": "u1",
+            "span": { "block_id": "b1", "start": 0, "end": 17 },
+            "kind": "question",
+            "text": "행사 운영에서 직접 맡은 업무는 무엇이었을까?",
+            "question_id": "q1",
+            "evidence_unit_ids": ["u1"],
+            "requirement_ids": ["r1", "r2"],
+            "review_required": true
+          },
+          "seq": 2
+        }
+      ],
+      "next_seq": 2,
+      "progress": {
+        "read_unit_count": 0,
+        "total_unit_count": 3,
+        "current_window": "w1"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-short-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w1",
+          "unit_ids": ["u1"],
+          "seq": 3
+        }
+      ],
+      "next_seq": 3,
+      "progress": {
+        "read_unit_count": 1,
+        "total_unit_count": 3,
+        "current_window": "w1"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-short-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w2",
+          "unit_ids": ["u2"],
+          "seq": 4
+        }
+      ],
+      "next_seq": 4,
+      "progress": {
+        "read_unit_count": 1,
+        "total_unit_count": 3,
+        "current_window": "w2"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-short-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n2",
+            "unit_id": "u2",
+            "span": { "block_id": "b1", "start": 17, "end": 44 },
+            "kind": "hold",
+            "text": "일정 조정과 안내문 작성이 담당 업무로 나온다. 앞선 역할 질문에 답하는 설명 후보다.",
+            "question_id": "q1",
+            "evidence_unit_ids": ["u1", "u2"],
+            "requirement_ids": ["r1", "r2"],
+            "review_required": true
+          },
+          "seq": 5
+        }
+      ],
+      "next_seq": 5,
+      "progress": {
+        "read_unit_count": 1,
+        "total_unit_count": 3,
+        "current_window": "w2"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-short-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w2",
+          "unit_ids": ["u2"],
+          "seq": 6
+        }
+      ],
+      "next_seq": 6,
+      "progress": {
+        "read_unit_count": 2,
+        "total_unit_count": 3,
+        "current_window": "w2"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-short-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w3",
+          "unit_ids": ["u3"],
+          "seq": 7
+        }
+      ],
+      "next_seq": 7,
+      "progress": {
+        "read_unit_count": 2,
+        "total_unit_count": 3,
+        "current_window": "w3"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-short-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n3",
+            "unit_id": "u3",
+            "span": { "block_id": "b1", "start": 44, "end": 60 },
+            "kind": "question",
+            "text": "어떤 조사와 비교 자료로 만족도가 높아졌다고 판단했을까?",
+            "question_id": "q2",
+            "evidence_unit_ids": ["u3"],
+            "requirement_ids": ["r3"],
+            "review_required": true
+          },
+          "seq": 8
+        }
+      ],
+      "next_seq": 8,
+      "progress": {
+        "read_unit_count": 2,
+        "total_unit_count": 3,
+        "current_window": "w3"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-short-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w3",
+          "unit_ids": ["u3"],
+          "seq": 9
+        }
+      ],
+      "next_seq": 9,
+      "progress": {
+        "read_unit_count": 3,
+        "total_unit_count": 3,
+        "current_window": "w3"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-short-job",
+      "status": "reporting",
+      "events": [{ "type": "reading_completed", "seq": 10 }],
+      "next_seq": 10,
+      "progress": {
+        "read_unit_count": 3,
+        "total_unit_count": 3,
+        "current_window": null
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-short-job",
+      "status": "completed",
+      "events": [{ "type": "report_completed", "seq": 11 }],
+      "next_seq": 11,
+      "progress": {
+        "read_unit_count": 3,
+        "total_unit_count": 3,
+        "current_window": null
+      },
+      "report": {
+        "items": [
+          {
+            "id": "report1",
+            "category": "open",
+            "text": "행사에서 맡은 두 가지 업무가 뒤 문장에 제시돼 있습니다.",
+            "reason": "일정 조정과 안내문 작성은 앞선 역할 질문에 답하는 후보입니다. 현재 계약에서는 해소 확정 없이 연결을 보여줍니다.",
+            "note_ids": ["n1", "n2"],
+            "requirement_ids": ["r1", "r2"],
+            "citations": [
+              { "unit_id": "u1", "block_id": "b1", "start": 0, "end": 17 },
+              { "unit_id": "u2", "block_id": "b1", "start": 17, "end": 44 }
+            ]
+          },
+          {
+            "id": "report2",
+            "category": "improve",
+            "text": "만족도 변화의 조사 방식과 비교 결과를 보완할 수 있습니다.",
+            "reason": "만족도를 높였다는 문장 뒤에는 이를 확인한 자료가 나오지 않습니다. 실제 자료가 있다면 조사 시점과 비교 기준을 덧붙여 주세요.",
+            "note_ids": ["n3"],
+            "requirement_ids": ["r3"],
+            "citations": [
+              { "unit_id": "u3", "block_id": "b1", "start": 44, "end": 60 }
+            ]
+          }
+        ],
+        "questions": [
+          {
+            "id": "q1",
+            "unit_id": "u1",
+            "scope_id": "b1",
+            "text": "행사 운영에서 직접 맡은 업무는 무엇이었을까?",
+            "status": "held",
+            "candidate_unit_ids": ["u2"]
+          },
+          {
+            "id": "q2",
+            "unit_id": "u3",
+            "scope_id": "b1",
+            "text": "어떤 조사와 비교 자료로 만족도가 높아졌다고 판단했을까?",
+            "status": "open_at_end",
+            "candidate_unit_ids": []
+          }
+        ],
+        "limitations": [
+          "디자인 검증을 위해 사람이 작성한 합성 예시입니다. 모델 실행·학습·정확도 증거가 아닙니다.",
+          "이 예시에서는 뒤에서 찾은 설명을 답변 후보로만 표시했습니다. 질문이 해소됐다고 확정한 결과는 아닙니다."
+        ]
+      },
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    }
+  ],
+  "final": {
+    "job_id": "fixture-short-job",
+    "status": "completed",
+    "events": [
+      {
+        "type": "window_started",
+        "window_id": "w1",
+        "unit_ids": ["u1"],
+        "seq": 1
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n1",
+          "unit_id": "u1",
+          "span": { "block_id": "b1", "start": 0, "end": 17 },
+          "kind": "question",
+          "text": "행사 운영에서 직접 맡은 업무는 무엇이었을까?",
+          "question_id": "q1",
+          "evidence_unit_ids": ["u1"],
+          "requirement_ids": ["r1", "r2"],
+          "review_required": true
+        },
+        "seq": 2
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w1",
+        "unit_ids": ["u1"],
+        "seq": 3
+      },
+      {
+        "type": "window_started",
+        "window_id": "w2",
+        "unit_ids": ["u2"],
+        "seq": 4
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n2",
+          "unit_id": "u2",
+          "span": { "block_id": "b1", "start": 17, "end": 44 },
+          "kind": "hold",
+          "text": "일정 조정과 안내문 작성이 담당 업무로 나온다. 앞선 역할 질문에 답하는 설명 후보다.",
+          "question_id": "q1",
+          "evidence_unit_ids": ["u1", "u2"],
+          "requirement_ids": ["r1", "r2"],
+          "review_required": true
+        },
+        "seq": 5
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w2",
+        "unit_ids": ["u2"],
+        "seq": 6
+      },
+      {
+        "type": "window_started",
+        "window_id": "w3",
+        "unit_ids": ["u3"],
+        "seq": 7
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n3",
+          "unit_id": "u3",
+          "span": { "block_id": "b1", "start": 44, "end": 60 },
+          "kind": "question",
+          "text": "어떤 조사와 비교 자료로 만족도가 높아졌다고 판단했을까?",
+          "question_id": "q2",
+          "evidence_unit_ids": ["u3"],
+          "requirement_ids": ["r3"],
+          "review_required": true
+        },
+        "seq": 8
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w3",
+        "unit_ids": ["u3"],
+        "seq": 9
+      },
+      { "type": "reading_completed", "seq": 10 },
+      { "type": "report_completed", "seq": 11 }
+    ],
+    "next_seq": 11,
+    "progress": {
+      "read_unit_count": 3,
+      "total_unit_count": 3,
+      "current_window": null
+    },
+    "report": {
+      "items": [
+        {
+          "id": "report1",
+          "category": "open",
+          "text": "행사에서 맡은 두 가지 업무가 뒤 문장에 제시돼 있습니다.",
+          "reason": "일정 조정과 안내문 작성은 앞선 역할 질문에 답하는 후보입니다. 현재 계약에서는 해소 확정 없이 연결을 보여줍니다.",
+          "note_ids": ["n1", "n2"],
+          "requirement_ids": ["r1", "r2"],
+          "citations": [
+            { "unit_id": "u1", "block_id": "b1", "start": 0, "end": 17 },
+            { "unit_id": "u2", "block_id": "b1", "start": 17, "end": 44 }
+          ]
+        },
+        {
+          "id": "report2",
+          "category": "improve",
+          "text": "만족도 변화의 조사 방식과 비교 결과를 보완할 수 있습니다.",
+          "reason": "만족도를 높였다는 문장 뒤에는 이를 확인한 자료가 나오지 않습니다. 실제 자료가 있다면 조사 시점과 비교 기준을 덧붙여 주세요.",
+          "note_ids": ["n3"],
+          "requirement_ids": ["r3"],
+          "citations": [
+            { "unit_id": "u3", "block_id": "b1", "start": 44, "end": 60 }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "unit_id": "u1",
+          "scope_id": "b1",
+          "text": "행사 운영에서 직접 맡은 업무는 무엇이었을까?",
+          "status": "held",
+          "candidate_unit_ids": ["u2"]
+        },
+        {
+          "id": "q2",
+          "unit_id": "u3",
+          "scope_id": "b1",
+          "text": "어떤 조사와 비교 자료로 만족도가 높아졌다고 판단했을까?",
+          "status": "open_at_end",
+          "candidate_unit_ids": []
+        }
+      ],
+      "limitations": [
+        "디자인 검증을 위해 사람이 작성한 합성 예시입니다. 모델 실행·학습·정확도 증거가 아닙니다.",
+        "이 예시에서는 뒤에서 찾은 설명을 답변 후보로만 표시했습니다. 질문이 해소됐다고 확정한 결과는 아닙니다."
+      ]
+    },
+    "error": null,
+    "expires_at": "2100-01-01T00:00:00.000Z",
+    "generation": {
+      "engine": "laya",
+      "policy_version": "readme-prefix-v1",
+      "prepare_engine": "codex_cli",
+      "report_engine": "codex_cli",
+      "codex_model": "synthetic_fixture",
+      "model": {
+        "model": "convaiinnovations/laya-multilingual",
+        "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "sdk": "0.3.25",
+        "device": "synthetic_fixture",
+        "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "finetuned": false,
+        "calibrated_for_readme": false
+      }
+    }
+  }
+}

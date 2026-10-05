@@ -1,0 +1,47 @@
+{
+  "synthetic": true,
+  "human_reviewed": false,
+  "label_status": "provisional_agent_authored",
+  "purpose": "Current-unit trigger diagnostic with explicit already-read context; not a full sequential or independent human evaluation",
+  "cases": [
+    {
+      "id": "satisfaction_comparison",
+      "prefix": ["참여자 만족도를 크게 높였습니다."],
+      "expected_question": true
+    },
+    {
+      "id": "time_comparison",
+      "prefix": ["문의 응대 시간을 줄였습니다."],
+      "expected_question": true
+    },
+    {
+      "id": "survey_work",
+      "prefix": ["참여자 만족도 조사 결과를 정리했습니다."],
+      "expected_question": false
+    },
+    {
+      "id": "absolute_count",
+      "prefix": ["참여자 40명의 일정을 조정했습니다."],
+      "expected_question": false
+    },
+    {
+      "id": "future_goal",
+      "prefix": ["다음에는 참여자 만족도를 크게 높일 계획입니다."],
+      "expected_question": false
+    },
+    {
+      "id": "absolute_survey",
+      "prefix": ["행사 후 응답자 62명 중 57명이 재참여 의사를 밝혔습니다."],
+      "expected_question": false
+    },
+    {
+      "id": "already_supported",
+      "prefix": [
+        "같은 프로그램의 같은 유형 문의를 전후 각각 30건씩 비교했습니다.",
+        "동일한 접수부터 답변까지의 시간을 기록해 변경 전인 3월과 변경 후인 4월의 평균 응대 시간이 12분에서 10분으로 줄었음을 확인했습니다.",
+        "이 프로그램의 문의 응대 시간을 줄였습니다."
+      ],
+      "expected_question": false
+    }
+  ]
+}

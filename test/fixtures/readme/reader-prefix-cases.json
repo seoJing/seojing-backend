@@ -1,0 +1,88 @@
+{
+  "synthetic": true,
+  "human_reviewed": false,
+  "label_status": "provisional_agent_authored",
+  "cases": [
+    {
+      "id": "personal-role",
+      "group": "event-a",
+      "text": "문화 행사 운영을 지원했습니다. 이 행사에서 저는 참가자 안내문을 직접 작성했습니다.",
+      "facet": "role",
+      "expected": ["complete"],
+      "question": "이 행사에서 본인이 맡은 역할은 무엇인가요?",
+      "sufficient": "같은 행사에서 직접 맡은 업무를 설명",
+      "insufficient": "팀 성과나 다른 경험만 설명"
+    },
+    {
+      "id": "team-only",
+      "group": "event-b",
+      "text": "지역 행사를 운영했습니다. 이 행사에서는 팀이 함께 안내문을 작성했으며 제 담당 구간은 구분해 적지 않았습니다.",
+      "facet": "role",
+      "expected": ["partial"],
+      "question": "이 행사에서 본인이 맡은 역할은 무엇인가요?",
+      "sufficient": "본인이 직접 맡은 구체적 업무",
+      "insufficient": "팀 전체가 작성했다는 설명만 있음"
+    },
+    {
+      "id": "different-project",
+      "group": "event-c",
+      "text": "문화의집 축제 운영에 기여했습니다. 이 축제와 별개인 도서관 행사에서 저는 안내문을 작성했습니다.",
+      "facet": "role",
+      "expected": ["unrelated"],
+      "question": "문화의집 축제에서 본인이 맡은 업무는 무엇인가요?",
+      "sufficient": "문화의집 축제에서 직접 맡은 업무",
+      "insufficient": "별도 도서관 행사 경험"
+    },
+    {
+      "id": "future-plan",
+      "group": "event-d",
+      "text": "지난 행사 운영을 지원했습니다. 다음 행사부터 안내문 작성을 맡을 계획이며 지난 행사에서는 작성하지 않았습니다.",
+      "facet": "role",
+      "expected": ["partial", "unknown"],
+      "question": "지난 행사에서 본인이 맡은 역할은 무엇인가요?",
+      "sufficient": "지난 행사에서 수행한 업무를 설명",
+      "insufficient": "다음 행사의 계획이나 하지 않은 일만 설명"
+    },
+    {
+      "id": "measurement-complete",
+      "group": "api-a",
+      "text": "API 응답 시간을 30% 줄였습니다. 같은 서버에서 변경 전후 각각 천 번 측정한 평균이 100밀리초와 70밀리초였습니다.",
+      "facet": "basis",
+      "expected": ["complete"],
+      "question": "30% 개선의 비교 기준과 측정 근거는 무엇인가요?",
+      "sufficient": "동일 대상과 조건의 변경 전후 측정값과 방법",
+      "insufficient": "개선 수치만 반복하거나 비교 대상이 다름"
+    },
+    {
+      "id": "measurement-partial",
+      "group": "api-b",
+      "text": "API 응답 시간을 30% 줄였습니다. 변경 후 응답 시간은 평균 70밀리초였고 변경 전 측정값과 조건은 기록하지 않았습니다.",
+      "facet": "basis",
+      "expected": ["partial"],
+      "question": "30% 개선의 비교 기준과 측정 근거는 무엇인가요?",
+      "sufficient": "동일 대상과 조건의 변경 전후 측정값과 방법",
+      "insufficient": "변경 후 수치만 있음"
+    },
+    {
+      "id": "unrelated-number",
+      "group": "api-c",
+      "text": "API 응답 시간을 30% 줄였습니다. 이후 팀 회의는 30분 동안 진행됐습니다.",
+      "facet": "basis",
+      "expected": ["unrelated"],
+      "question": "응답 시간 30% 개선의 측정 방법은 무엇인가요?",
+      "sufficient": "API 응답 시간 측정과 비교 방법",
+      "insufficient": "회의 소요 시간 같은 다른 수치"
+    },
+    {
+      "id": "later-correction",
+      "group": "report-a",
+      "text": "제가 행사 보고서 전체를 작성했습니다. 저는 이 보고서의 모든 항목을 직접 작성했습니다. 앞선 설명을 정정하며 보고서는 팀장이 작성했고 저는 표지 편집만 맡았습니다.",
+      "facet": "role",
+      "expected": ["conflict"],
+      "question": "행사 보고서에서 본인이 작성한 범위는 어디인가요?",
+      "sufficient": "같은 보고서의 직접 작성 범위",
+      "insufficient": "팀의 작성 범위를 본인 역할로 확대",
+      "previously_resolved": true
+    }
+  ]
+}

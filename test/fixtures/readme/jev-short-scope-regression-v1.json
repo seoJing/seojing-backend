@@ -1,0 +1,35 @@
+{
+  "synthetic": true,
+  "human_reviewed": false,
+  "label_status": "provisional_agent_authored",
+  "purpose": "Frozen short HTTP cross-experience regression before repair; classification expected from source headings, not model output.",
+  "cases": [
+    {
+      "id": "short_center_basis_festival_survey",
+      "facet": "basis",
+      "question": "이 개선 결과는 무엇과 비교했으며, 변화는 어떻게 확인했나요?",
+      "sufficient": "단순 수치는 집계 대상·범위와 해당 기간이 설명되어 있고, 비교 성과는 동일 지표의 전후 값 또는 계산 관계, 대상·범위, 비교 기간이 설명되어 있다.",
+      "insufficient": "인원이나 개선율만 있고 집계 범위가 불명확하거나 비교 대상·기간을 알 수 없다.",
+      "units": [
+        "# 한지우 · 청소년 프로그램 운영 지원",
+        "## 경력",
+        "### 새빛구 청소년문화의집 · 프로그램 보조 (2024.03–2025.02)",
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 참여자 40명의 일정 조정과 회차별 안내문 작성을 직접 맡았습니다.",
+        "- 운영 일지와 출석 기록을 엑셀로 정리했습니다.",
+        "- 참여자 만족도를 크게 높였습니다.",
+        "### 다온지역아동센터 · 학습 지원 자원봉사 (2023.06–2023.12)",
+        "- 학습 지원 프로그램에 참여했습니다.",
+        "- 아동들의 숙제 지도를 도왔습니다.",
+        "## 프로젝트",
+        "### 마을 축제 체험 부스 (팀 4명, 2024.10)",
+        "팀원들과 체험 부스를 기획해 방문객 300명을 모았습니다.",
+        " 저는 사전 신청 폼과 당일 대기 순서표를 만들고 현장 안내를 맡았습니다.",
+        "행사 후 설문에서 응답자 62명 중 57명이 다시 참여하겠다고 답했습니다."
+      ],
+      "origin_index": 6,
+      "current_index": 14,
+      "expected": ["unrelated"]
+    }
+  ]
+}

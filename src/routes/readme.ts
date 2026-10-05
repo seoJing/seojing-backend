@@ -6,8 +6,10 @@ import {
   type ReadmeUploadInput,
 } from "../services/readme-upload.js";
 import { analyzeReadmeInWorker } from "../services/readme-worker.js";
+import { registerReadmeLabRoutes } from "./readme-lab.js";
 
 export function registerReadmeRoutes(app: FastifyInstance): void {
+  registerReadmeLabRoutes(app);
   const uploadBuckets = new Map<string, { count: number; resetAt: number }>();
   let activeAnalyzes = 0;
   app.post<{ Body: { case_id: "social-program-operator" } }>(

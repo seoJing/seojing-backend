@@ -1,0 +1,354 @@
+{
+  "synthetic": true,
+  "human_reviewed": false,
+  "label_status": "provisional_agent_authored",
+  "split": "development",
+  "policy": "role-contract-v1",
+  "purpose": "Frozen before candidate edits; role explanation excludes method depth and qualification. Twelve explicit positives and twelve attribution/actuality/scope controls. Labels allow abstention on negatives; report positive recall separately.",
+  "cases": [
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "actual_no_method",
+      "units": [
+        "제품 설명서 개편을 지원했습니다.",
+        "제가 기존 설명서의 오탈자를 수정했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "implicit_actor",
+      "units": [
+        "물류 창고 운영에 참여했습니다.",
+        "반품 상자에 붙일 배송 라벨을 출력했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "no_numbers",
+      "units": [
+        "사내 교육 운영을 도왔습니다.",
+        "신입 직원에게 배포할 교육 안내문을 작성했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "판촉 기획, 예산 수립, 안내문 작성, 성과 분석 중 본인이 실제 수행한 구체적 역할이 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "one_of_many_duties",
+      "units": [
+        "매장 판촉 행사를 도왔습니다.",
+        "저는 행사 안내문을 작성했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "delegation_concrete",
+      "units": [
+        "지점 이전 업무를 지원했습니다.",
+        "제가 이사 업체 두 곳에 견적을 요청하고 방문 일정을 조율했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "split_reference",
+      "units": [
+        "워크숍 준비를 지원했습니다.",
+        "준비 업무에는 참석자 명단 정리가 있었습니다.",
+        "그 명단은 제가 정리했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "narrowed_still_actual",
+      "units": [
+        "사내 행사 운영을 도왔습니다.",
+        "제가 안내문 작성과 배포를 했습니다.",
+        "정확히는 초안은 동료가 썼고 저는 문구를 수정해 배포했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "new_after_retraction",
+      "units": [
+        "온라인 강의 제작을 도왔습니다.",
+        "제가 편집을 했다고 적었지만 실제 편집자는 동료였습니다.",
+        "제가 실제로 한 일은 자막의 오탈자 수정입니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "return_to_original",
+      "units": [
+        "본사 안전 교육을 지원했습니다.",
+        "별도로 지점 송년회에서는 사진 촬영을 맡았습니다.",
+        "앞서 말한 본사 안전 교육에서는 제가 출석 명단을 정리했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "joint_work_personal_slice",
+      "units": [
+        "제품 포장 작업에 참여했습니다.",
+        "동료와 함께 작업했으며 저는 완성된 상자에 배송 라벨을 붙였습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "no_success_claim_required",
+      "units": [
+        "고객 응대 개선 활동에 참여했습니다.",
+        "저는 문의 내용을 유형별로 분류해 표로 정리했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "negative_then_actual",
+      "units": [
+        "자료 이전 작업을 지원했습니다.",
+        "자동 이전 프로그램은 제가 만들지 않았고, 저는 이전 후 누락된 파일을 대조해 목록으로 만들었습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "team_without_personal",
+      "units": [
+        "제품 설명서 개편을 지원했습니다.",
+        "팀에서 오탈자 수정과 고객 안내문 작성을 완료했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "colleague_named",
+      "units": [
+        "물류 창고 운영에 참여했습니다.",
+        "배송 라벨은 동료 민수가 출력했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "plan_specific",
+      "units": [
+        "사내 교육 운영을 도왔습니다.",
+        "다음 교육에서는 제가 안내문을 작성할 예정입니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "hypothetical_framing",
+      "units": [
+        "매장 행사를 도왔습니다.",
+        "다음 문장은 실제 업무가 아닌 작성 예시입니다.",
+        "저는 행사 안내문을 작성했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "actual_vague_planned_concrete",
+      "units": [
+        "지점 이전 업무를 지원했습니다.",
+        "저는 현장에서 열심히 도왔으며, 다음번에는 이사 업체에 견적을 요청할 계획입니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "actor_mixing_one_source",
+      "units": [
+        "워크숍 준비를 지원했습니다.",
+        "저는 준비에 참여했고 참석자 명단 정리는 동료가 했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "actor_mixing_two_sources",
+      "units": [
+        "사내 행사 운영을 도왔습니다.",
+        "저는 운영에 성실하게 참여했습니다.",
+        "구체적으로 안내문을 작성한 사람은 동료입니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "all_withdrawn",
+      "units": [
+        "온라인 강의 제작을 도왔습니다.",
+        "제가 자막을 작성했습니다.",
+        "정정합니다. 자막은 동료가 작성했고 저는 실제로 담당한 업무가 없었습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["conflict", "partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "different_employer",
+      "units": [
+        "본사 안전 교육을 지원했습니다.",
+        "## 별도 아르바이트: 서점",
+        "이 서점에서는 제가 출석 명단을 정리했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["unrelated", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "unassigned_example",
+      "units": [
+        "제품 포장 작업에 참여했습니다.",
+        "배송 라벨 부착 같은 업무가 있었지만 누가 했는지는 적지 않았습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "explicit_not_performed",
+      "units": [
+        "고객 응대 개선 활동에 참여했습니다.",
+        "문의 분류는 제 업무로 배정되었지만 실제로 수행하지 못했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 수행한 구체적 업무가 설명되어 있다.",
+      "insufficient": "팀 전체 성과나 참여 사실만 있고 본인이 수행한 업무가 없다.",
+      "id": "experience_unidentifiable",
+      "units": [
+        "자료 이전 작업을 지원했습니다.",
+        "파일 대조를 제가 했다는 기록은 있지만 어느 프로젝트에서 한 것인지는 확인할 수 없습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["unknown"]
+    }
+  ]
+}

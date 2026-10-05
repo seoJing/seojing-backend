@@ -1,0 +1,62 @@
+{
+  "synthetic": true,
+  "fixture": true,
+  "authored": true,
+  "prepare": {
+    "prepare_id": "fixture-empty-requirements",
+    "input_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "status": "ready",
+    "document": {
+      "doc_id": "b1aab6db31368f6f609109ae",
+      "source_kind": "md",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "지역 행사 운영을 지원했습니다. 참여자 일정 조정과 안내문 작성을 담당했습니다. 참여자 만족도를 높였습니다.",
+          "id": "b1",
+          "unit_ids": ["u1", "u2", "u3"]
+        }
+      ],
+      "units": [
+        {
+          "id": "u1",
+          "block_id": "b1",
+          "order": 0,
+          "start": 0,
+          "end": 17,
+          "text": "지역 행사 운영을 지원했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u2",
+          "block_id": "b1",
+          "order": 1,
+          "start": 17,
+          "end": 44,
+          "text": " 참여자 일정 조정과 안내문 작성을 담당했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u3",
+          "block_id": "b1",
+          "order": 2,
+          "start": 44,
+          "end": 60,
+          "text": " 참여자 만족도를 높였습니다.",
+          "scope_id": "b1"
+        }
+      ],
+      "warnings": [],
+      "truncated": false
+    },
+    "job": {
+      "source": "user_paste",
+      "text": "지역 활동을 함께할 분을 모집합니다.",
+      "requirements": [],
+      "warnings": [
+        "공고에서 명시된 요건을 찾지 못했습니다. 요건 연결 없이 서술만 점검합니다."
+      ]
+    },
+    "expires_at": "2100-01-01T00:00:00.000Z"
+  }
+}

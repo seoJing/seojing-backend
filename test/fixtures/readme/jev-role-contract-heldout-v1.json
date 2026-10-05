@@ -1,0 +1,304 @@
+{
+  "synthetic": true,
+  "human_reviewed": false,
+  "label_status": "provisional_agent_authored",
+  "split": "held_out_once",
+  "policy": "role-contract-v1",
+  "purpose": "Eight independently authored unseen scenarios, sixteen prefix checkpoints. Strict negative labels separate from abstention safety. Frozen before running candidate on these cases; never use suffix as input.",
+  "cases": [
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "재고 관리·운송사 응대·출고 준비 중 본인이 수행한 구체적 역할이 설명됨",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "warehouse_one_duty_1",
+      "scenario": "warehouse_one_duty",
+      "units": [
+        "물류창고의 출고 준비 업무에 참여했습니다.",
+        "저는 출하 대기품의 바코드를 확인하고 주문별 상자에 분류했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "garment_actor_plan_mix_1",
+      "scenario": "garment_actor_plan_mix",
+      "units": [
+        "봉제라인 업무에 참여했습니다.",
+        "원단 재단은 동료가 끝냈고, 저는 다음 주부터 원단 검수를 맡기로 했지만 아직 시작하지 않았습니다.",
+        "이후 제가 실제로 원단의 얼룩 위치에 표시 스티커를 붙여 검수표를 완성했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial"],
+      "expected_state": "not_resolved",
+      "require_current_evidence": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "garment_actor_plan_mix_2",
+      "scenario": "garment_actor_plan_mix",
+      "units": [
+        "봉제라인 업무에 참여했습니다.",
+        "원단 재단은 동료가 끝냈고, 저는 다음 주부터 원단 검수를 맡기로 했지만 아직 시작하지 않았습니다.",
+        "이후 제가 실제로 원단의 얼룩 위치에 표시 스티커를 붙여 검수표를 완성했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "subtitle_distributed_completion_1",
+      "scenario": "subtitle_distributed_completion",
+      "units": [
+        "독립영화 자막 제작에 참여했습니다.",
+        "최종 자막 파일의 맞춤법 검수를 제가 맡을 예정이었습니다.",
+        "계획대로 제가 직접 이 작업을 마치고 고친 파일을 편집자에게 넘겼습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial"],
+      "expected_state": "not_resolved",
+      "require_current_evidence": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "subtitle_distributed_completion_2",
+      "scenario": "subtitle_distributed_completion",
+      "units": [
+        "독립영화 자막 제작에 참여했습니다.",
+        "최종 자막 파일의 맞춤법 검수를 제가 맡을 예정이었습니다.",
+        "계획대로 제가 직접 이 작업을 마치고 고친 파일을 편집자에게 넘겼습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "instrument_retraction_recovery_1",
+      "scenario": "instrument_retraction_recovery",
+      "units": [
+        "현악기 수리점의 수리 보조에 참여했습니다.",
+        "제가 바이올린 줄을 직접 교체했습니다.",
+        "줄을 교체한 사람은 정비사였으며, 저는 그 작업을 수행하지 않았습니다.",
+        "같은 바이올린 수리 건에서 저는 연주자의 요청 사항을 접수대장에 직접 정리했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "instrument_retraction_recovery_2",
+      "scenario": "instrument_retraction_recovery",
+      "units": [
+        "현악기 수리점의 수리 보조에 참여했습니다.",
+        "제가 바이올린 줄을 직접 교체했습니다.",
+        "줄을 교체한 사람은 정비사였으며, 저는 그 작업을 수행하지 않았습니다.",
+        "같은 바이올린 수리 건에서 저는 연주자의 요청 사항을 접수대장에 직접 정리했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["conflict"],
+      "expected_state": "reopened",
+      "require_current_evidence": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "instrument_retraction_recovery_3",
+      "scenario": "instrument_retraction_recovery",
+      "units": [
+        "현악기 수리점의 수리 보조에 참여했습니다.",
+        "제가 바이올린 줄을 직접 교체했습니다.",
+        "줄을 교체한 사람은 정비사였으며, 저는 그 작업을 수행하지 않았습니다.",
+        "같은 바이올린 수리 건에서 저는 연주자의 요청 사항을 접수대장에 직접 정리했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 3,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "accounting_client_return_1",
+      "scenario": "accounting_client_return",
+      "units": [
+        "가온상사의 월말 정산 업무를 도왔습니다.",
+        "별도 고객인 누리유통의 정산에서는 제가 거래명세서 항목을 직접 분류했습니다.",
+        "가온상사 정산으로 돌아가면, 제가 입금 내역과 세금계산서 번호를 대조했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["unrelated"],
+      "expected_state": "not_resolved",
+      "require_current_evidence": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "accounting_client_return_2",
+      "scenario": "accounting_client_return",
+      "units": [
+        "가온상사의 월말 정산 업무를 도왔습니다.",
+        "별도 고객인 누리유통의 정산에서는 제가 거래명세서 항목을 직접 분류했습니다.",
+        "가온상사 정산으로 돌아가면, 제가 입금 내역과 세금계산서 번호를 대조했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "app_report_scope_refinement_1",
+      "scenario": "app_report_scope_refinement",
+      "units": [
+        "3월 2일 모바일 앱 출시 검증에 참여했습니다.",
+        "저는 발견한 오류의 결함 보고서를 직접 작성했습니다.",
+        "보고서에서는 재현 조건과 앱 버전 항목을 제가 작성했고, 원인 분석 항목은 개발자가 작성했습니다.",
+        "앞서 적은 검증일은 3월 2일이 아니라 3월 3일입니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "app_report_scope_refinement_2",
+      "scenario": "app_report_scope_refinement",
+      "units": [
+        "3월 2일 모바일 앱 출시 검증에 참여했습니다.",
+        "저는 발견한 오류의 결함 보고서를 직접 작성했습니다.",
+        "보고서에서는 재현 조건과 앱 버전 항목을 제가 작성했고, 원인 분석 항목은 개발자가 작성했습니다.",
+        "앞서 적은 검증일은 3월 2일이 아니라 3월 3일입니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "app_report_scope_refinement_3",
+      "scenario": "app_report_scope_refinement",
+      "units": [
+        "3월 2일 모바일 앱 출시 검증에 참여했습니다.",
+        "저는 발견한 오류의 결함 보고서를 직접 작성했습니다.",
+        "보고서에서는 재현 조건과 앱 버전 항목을 제가 작성했고, 원인 분석 항목은 개발자가 작성했습니다.",
+        "앞서 적은 검증일은 3월 2일이 아니라 3월 3일입니다."
+      ],
+      "origin_index": 0,
+      "current_index": 3,
+      "expected": ["unrelated"],
+      "expected_state": "resolved",
+      "require_current_evidence": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "network_training_actual_task_1",
+      "scenario": "network_training_actual_task",
+      "units": [
+        "학교의 가상 네트워크 실습에 참여했습니다.",
+        "실습용 가상 장비에서 제가 라우팅 설정표를 작성하고 연결 결과를 기록했습니다.",
+        "실제 업체의 네트워크에 접속하거나 설정을 변경한 경험은 없습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "network_training_actual_task_2",
+      "scenario": "network_training_actual_task",
+      "units": [
+        "학교의 가상 네트워크 실습에 참여했습니다.",
+        "실습용 가상 장비에서 제가 라우팅 설정표를 작성하고 연결 결과를 기록했습니다.",
+        "실제 업체의 네트워크에 접속하거나 설정을 변경한 경험은 없습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete", "partial", "unrelated", "unknown"],
+      "expected_state": "resolved",
+      "require_current_evidence": false,
+      "state_only": true
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "garden_unidentified_site_2",
+      "scenario": "garden_unidentified_site",
+      "units": [
+        "가람아파트 옥상 정원 정비를 지원했습니다.",
+        "별도로 해솔아파트의 정원 정비에도 참여했습니다.",
+        "제가 화분 위치표를 직접 정리했지만, 두 현장 중 어느 곳의 작업인지는 확인할 수 없습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["unknown"],
+      "expected_state": "not_resolved",
+      "require_current_evidence": false
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "synthetic": true,
+  "human_reviewed": false,
+  "label_status": "provisional_agent_authored",
+  "purpose": "Development regression of user-reported adjacent role answer with negative controls. Not held-out human accuracy.",
+  "cases": [
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 맡아 수행한 구체적인 업무가 설명됨",
+      "insufficient": "단순 참여, 팀이나 다른 사람의 업무만 설명, 미래 계획만 설명",
+      "id": "next_sentence_role",
+      "units": [
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 참여자 40명의 일정 조정과 회차별 안내문 작성을 직접 맡았습니다."
+      ],
+      "current_index": 1,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 맡아 수행한 구체적인 업무가 설명됨",
+      "insufficient": "단순 참여, 팀이나 다른 사람의 업무만 설명, 미래 계획만 설명",
+      "id": "implicit_first_person",
+      "units": [
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 참여자 일정 조정과 회차별 안내문 작성을 맡아 진행했습니다."
+      ],
+      "current_index": 1,
+      "expected": ["complete"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 맡아 수행한 구체적인 업무가 설명됨",
+      "insufficient": "단순 참여, 팀이나 다른 사람의 업무만 설명, 미래 계획만 설명",
+      "id": "team_only",
+      "units": [
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 팀은 참여자 일정 조정과 회차별 안내문 작성을 맡았습니다."
+      ],
+      "current_index": 1,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 맡아 수행한 구체적인 업무가 설명됨",
+      "insufficient": "단순 참여, 팀이나 다른 사람의 업무만 설명, 미래 계획만 설명",
+      "id": "colleague_only",
+      "units": [
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 동료가 참여자 40명의 일정 조정과 회차별 안내문 작성을 직접 맡았습니다."
+      ],
+      "current_index": 1,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 맡아 수행한 구체적인 업무가 설명됨",
+      "insufficient": "단순 참여, 팀이나 다른 사람의 업무만 설명, 미래 계획만 설명",
+      "id": "planned_only",
+      "units": [
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 다음 기회에는 참여자 일정 조정과 회차별 안내문 작성을 직접 맡을 예정입니다."
+      ],
+      "current_index": 1,
+      "expected": ["partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 맡아 수행한 구체적인 업무가 설명됨",
+      "insufficient": "단순 참여, 팀이나 다른 사람의 업무만 설명, 미래 계획만 설명",
+      "id": "different_experience",
+      "units": [
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 다른 청소년센터 행사에서는 제가 안내문 작성을 직접 맡았습니다."
+      ],
+      "current_index": 1,
+      "expected": ["unrelated", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 본인이 실제 맡아 수행한 구체적인 업무가 설명됨",
+      "insufficient": "단순 참여, 팀이나 다른 사람의 업무만 설명, 미래 계획만 설명",
+      "id": "retracted_role",
+      "units": [
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 참여자 일정 조정과 안내문 작성을 직접 맡았습니다.",
+        "- 정정합니다. 저는 두 업무를 하지 않았고 동료가 모두 담당했습니다."
+      ],
+      "current_index": 2,
+      "expected": ["conflict", "partial", "unknown"]
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "참여자 모집과 일정 조정, 안내문 작성 경험에서 본인이 수행한 구체적인 역할이 설명됨",
+      "insufficient": "단순 참여, 팀이나 다른 사람의 업무만 설명, 미래 계획만 설명",
+      "id": "compound_requirement",
+      "units": [
+        "- 주말 청소년 진로 프로그램 운영을 지원했습니다.",
+        "- 회차별 안내문 작성을 직접 맡았습니다."
+      ],
+      "current_index": 1,
+      "expected": ["complete"]
+    }
+  ]
+}

@@ -106,7 +106,7 @@ function normalizeText(text: string, maxChars: number): string {
   return normalized;
 }
 
-function validateEncodedFile(input: ReadmeUploadInput): Buffer {
+export function validateEncodedFile(input: ReadmeUploadInput): Buffer {
   const encoded = input.resume_base64;
   if (encoded.length > Math.ceil(MAX_FILE_BYTES / 3) * 4 + 4) {
     throw new ReadmeInputError(
@@ -132,7 +132,9 @@ function validateEncodedFile(input: ReadmeUploadInput): Buffer {
   return bytes;
 }
 
-function detectExtension(filename: string): "txt" | "md" | "pdf" | "docx" {
+export function detectExtension(
+  filename: string,
+): "txt" | "md" | "pdf" | "docx" {
   if (
     filename.length > 120 ||
     /[/\\]/.test(filename) ||
@@ -156,7 +158,7 @@ function detectExtension(filename: string): "txt" | "md" | "pdf" | "docx" {
   return extension;
 }
 
-function checkDocxExpandedSize(bytes: Buffer): void {
+export function checkDocxExpandedSize(bytes: Buffer): void {
   // Verify real expansion, not just attacker-controlled central-directory sizes.
   let eocd = -1;
   for (
