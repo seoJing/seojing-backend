@@ -89,7 +89,17 @@ const profileAuditSchema = z
   .strict();
 
 const postingScope =
-  "담당업무(duty), 자격요건(required), 우대사항(preferred)의 명시 항목을 모두 보존한다. 중요도나 개수로 일부만 선별하지 않는다. 서로 다른 요건을 한 인용에 무리하게 합치지 않는다. 인턴의 보조·일부 업무, 선택 가능한 기술, 필수/우대, 예외·조건을 보존한다. 인턴 범위가 전체 업무에 적용되면 각 업무 label에도 그 범위를 표시한다. 고용형태·근무기간·지원자에게 요구하는 제출 서류와 제출 방법은 other로 보존하되 역량 평가나 독해 질문으로 만들지 않는다. 업무 범위를 한정하는 문장도 other로 보존한다. 회사 소개·미션·복지·일반 전형 순서·조기마감 안내는 원문에 남겨 두며 요건으로 추출하지 않는다. 이 배경 설명이 requirements에 없다는 이유로 누락이라고 하지 않는다. ";
+  "담당업무(duty), 자격요건(required), 우대사항(preferred)의 명시 항목을 모두 보존한다. 중요도나 개수로 일부만 선별하지 않는다. 서로 다른 요건을 한 인용에 무리하게 합치지 않는다. 인턴의 보조·일부 업무, 선택 가능한 기술, 필수/우대, 예외·조건을 보존한다. 인턴 범위가 전체 업무에 적용되면 각 업무 label에도 그 범위를 표시한다. 자기소개서 문항의 내용 요구(지원동기·학습·경험·계획 설명)는 제출 방법이 아니므로 required로 보존하고 label에 문항의 설명 요구임을 명시한다. 한 문항이 서로 독립적인 설명 대상을 요구하면 각 대상을 원문의 서로 다른 구절로 구분하되 같은 뜻을 중복 추출하지 않는다. 선택·있으면 같은 조건은 label/quote에 보존하며 필수 경력으로 바꾸지 않는다. 선택 문항에 내용이 없다는 이유로 결함을 만들지 않는다. 분량·파일형식·제출 서류·제출 방법은 other이다. 고용형태·근무기간·지원자에게 요구하는 제출 서류와 제출 방법은 other로 보존하되 역량 평가나 독해 질문으로 만들지 않는다. 업무 범위를 한정하는 문장도 other로 보존한다. 회사 소개·미션·복지·일반 전형 순서·조기마감 안내는 원문에 남겨 두며 요건으로 추출하지 않는다. 이 배경 설명이 requirements에 없다는 이유로 누락이라고 하지 않는다. ";
+
+// Match the fixed own-role contract used by the reader. Generated conditions
+// must not be audited as if method detail or sustained effort were role gates.
+const roleExplanationContract = {
+  sufficient:
+    "같은 경험에서 지원자 본인이 실제로 수행한 구체적인 업무 한 가지가 설명됨. 수행 방법, 성과, 수치나 공고의 모든 업무 수행은 필수가 아님.",
+  insufficient:
+    "단순 참여, 팀이나 타인의 업무만 설명, 미래 계획, 가상 예시 또는 실제 수행 부정. 서로 다른 사람·행동의 사실을 합쳐 본인 역할로 만들지 않음.",
+  question: "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+};
 
 const profileSchema = z
   .object({
@@ -350,7 +360,7 @@ export class CodexReasoner implements Reasoner {
     }) => void,
     // Explicit synthetic-evaluation hook; normal serving never records drafts.
     private readonly onReview?: (event: {
-      stage: "reader" | "report";
+      stage: "profile" | "reader" | "report";
       at_unit_id?: string;
       attempt: number;
       reason: string;
@@ -456,14 +466,82 @@ export class CodexReasoner implements Reasoner {
     }
   }
   async profile(text: string, signal: AbortSignal): Promise<JobPosting> {
+    let correction: unknown;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let draft: Awaited<ReturnType<CodexReasoner["profileDraft"]>>;
+      try {
+        draft = await this.profileDraft(text, signal, correction);
+      } catch (error) {
+        // Structural and semantic repairs share this one retry. Batch cleanup
+        // has already settled; never retry cancellation or arbitrary CLI errors.
+        if (
+          !(error instanceof LabError) ||
+          error.code !== "engine_output_invalid" ||
+          signal.aborted ||
+          attempt === 1 ||
+          ![
+            "reader_profile_invalid",
+            "reader_criterion_reference_invalid",
+            "reader_criterion_missing",
+          ].includes(error.validationReason ?? "")
+        )
+          throw error;
+        correction = {
+          validation_reason: error.validationReason,
+          issues: [
+            "각 요건 ID는 한 번씩만 참조하고 요건 내 facet은 중복하지 않는다. 독립 설명 대상은 원문의 서로 다른 구절로 요건을 분리하거나 해당 check를 한 가지 대상으로 좁힌다. 새 요건을 발명하거나 원문 요건을 누락하지 않는다.",
+          ],
+        };
+        this.onReview?.({
+          stage: "profile",
+          attempt: attempt + 1,
+          reason: error.validationReason!,
+          draft: null,
+        });
+        continue;
+      }
+      const { job, audit } = draft;
+      if (audit.valid && !audit.issues.length) return job;
+      this.onReview?.({
+        stage: "profile",
+        attempt: attempt + 1,
+        reason: "profile_entailment_rejected",
+        draft: job,
+        audit,
+      });
+      // One bounded correction against the full original posting. The failed
+      // draft is feedback, never ground truth; re-extract and re-audit it.
+      correction = {
+        issues: audit.issues,
+        previous_requirements: job.requirements,
+        previous_reader_profile: job.reader_profile,
+      };
+    }
+    throw new LabError(
+      "engine_output_invalid",
+      503,
+      "profile_semantic_review_failed",
+    );
+  }
+  private async profileDraft(
+    text: string,
+    signal: AbortSignal,
+    semanticCorrection?: unknown,
+  ): Promise<{ job: JobPosting; audit: z.infer<typeof profileAuditSchema> }> {
     let job: JobPosting | undefined;
     let extractionCorrection: string | null = null;
     for (let attempt = 0; attempt < 2; attempt++) {
       const candidate = await this.ask(
         profileSchema,
         postingScope +
-          `공고 전체를 읽고 모든 해당 항목을 추출한다. ${MAX_JOB_REQUIREMENTS}개는 안전 상한이며 요건을 생략하거나 합쳐서 상한에 맞추지 않는다. quote는 원문에서 공백까지 완전히 일치하는 연속 구절이어야 한다. 각 항목에 해당하는 구체적인 구절을 인용하고, 서로 다른 항목에 전체 문장이나 전체 공고를 동일하게 반복 인용하지 않는다. 부정·인턴 범위·조건은 보존한다. 요건과 지원 안내가 없으면 빈 배열을 반환한다. validation_correction이 있으면 원문으로 돌아가 인용 오류를 수정한다.`,
-        { job_text: text, validation_correction: extractionCorrection },
+          `공고 전체를 읽고 모든 해당 항목을 추출한다. ${MAX_JOB_REQUIREMENTS}개는 안전 상한이며 요건을 생략하거나 합쳐서 상한에 맞추지 않는다. quote는 원문에서 공백까지 완전히 일치하는 연속 구절이어야 한다. 각 항목에 해당하는 구체적인 구절을 인용하고, 서로 다른 항목에 전체 문장이나 전체 공고를 동일하게 반복 인용하지 않는다. 부정·인턴 범위·조건은 보존한다. 요건과 지원 안내가 없으면 빈 배열을 반환한다. validation_correction이나 semantic_correction이 있으면 원문으로 돌아가 인용·종류·범위·조건의 오류를 수정한다. 이전 초안은 정답이 아니다.`,
+        {
+          job_text: text,
+          validation_correction: extractionCorrection,
+          ...(semanticCorrection
+            ? { semantic_correction: semanticCorrection }
+            : {}),
+        },
         signal,
       );
       try {
@@ -525,12 +603,28 @@ export class CodexReasoner implements Reasoner {
               }),
               explanationBoundary +
                 postingScope +
-                "이번 requirements 각각에만 독해 확인 조건을 만든다. job_text는 범위·조건 확인용이며 여기서 새 요건을 추가하지 않는다. 한국어로 간결하게 쓴다. 요건당 실제로 필요한 확인 조건만 1~2개 작성한다. 개발·운영·고객응대·기획 등 직무 종류를 가정하지 말고 이 공고의 업무·경력 수준만 따른다. method는 공고가 요구하는 수행 방식이나 판단 기준, result는 해당 활동의 결과·반응·산출물 설명이며 정성 결과도 인정한다. method/result에는 질문이 실제 필요할 때 사용할 question을 한국어 의문문으로 작성하고 trigger/sufficient와 정확히 같은 범위로 한정한다. 도구·숫자·리더십·성과를 모든 직무에 요구하지 않는다. role은 해당 경험을 주장할 때의 본인 수행 설명, basis는 해당 경험의 수치·비교 성과를 주장할 때만 적용한다. 성과를 주장하지 않은 문장이나 성장 의지·성향·계획에 실제 경험·수치·결과를 요구하지 않는다. 충분한 서술의 조건과 팀 성과/계획/다른 경험/키워드만 있음 같은 반례를 구분한다. 인턴에게 전체 업무 주도를 요구하지 않는다.",
-              { requirements, job_text: text },
+                "semantic_correction이 있으면 이전 reader_profile의 오류와 issues를 원문에 대조해 수정한다. 이전 초안의 requirement_id를 그대로 복사하지 말고 이번 requirements의 인용과 범위에 맞춰 다시 작성한다. 이번 requirements 각각에만 독해 확인 조건을 만든다. job_text는 범위·조건 확인용이며 여기서 새 요건을 추가하지 않는다. 한국어로 간결하게 쓴다. 요건당 실제로 필요한 확인 조건만 1~2개 작성하고 같은 facet은 한 요건에서 한 번만 사용한다. 같은 facet의 독립 질문 둘이 필요해도 중복 생성하지 말고 한 가지 읽기 대상으로 좁힌다. 각 check의 trigger/sufficient/question은 한 가지 설명 대상을 공유해야 한다. 지원동기·강점·보완점처럼 별개의 설명을 한 질문에 묶거나 requirement 전체를 그대로 다시 묻지 않는다. 문항의 설명 요구는 실제 직무 경력·성과 의무로 바꾸지 않는다. 학습·준비·의향을 요구한 문항은 해당 서술을 그 범위로 인정한다. 개발·운영·고객응대·기획 등 직무 종류를 가정하지 말고 이 공고의 업무·경력 수준만 따른다. method는 공고가 요구하는 수행 방식이나 판단 기준, result는 해당 활동의 결과·반응·산출물 설명이며 정성 결과도 인정한다. method/result에는 질문이 실제 필요할 때 사용할 question을 한국어 의문문으로 작성하고 trigger/sufficient와 정확히 같은 범위로 한정한다. 도구·숫자·리더십·성과를 모든 직무에 요구하지 않는다. role은 해당 경험에서 본인의 실제 수행 여부를 묻는 경우만 선택하고 제공된 role_contract와 trigger의 대상이 일치해야 한다. 목표 설정 이유·지원동기·학습 방식 자체를 묻는 조건을 role로 분류하지 말고 method로 다룬다. 실제 달성한 목표는 result로 구분한다. role은 해당 경험을 주장할 때의 본인 수행 설명, basis는 해당 경험의 수치·비교 성과를 주장할 때만 적용한다. 성과를 주장하지 않은 문장이나 성장 의지·성향·계획에 실제 경험·수치·결과를 요구하지 않는다. 충분한 서술의 조건과 팀 성과/계획/다른 경험/키워드만 있음 같은 반례를 구분한다. 인턴에게 전체 업무 주도를 요구하지 않는다.",
+              {
+                requirements,
+                job_text: text,
+                role_contract: roleExplanationContract,
+                ...(semanticCorrection
+                  ? { semantic_correction: semanticCorrection }
+                  : {}),
+              },
               batchSignal,
             );
-            return validateReaderProfile(value, { ...job, requirements })
-              .criteria;
+            return validateReaderProfile(value, {
+              ...job,
+              requirements,
+            }).criteria.map((criterion) => ({
+              ...criterion,
+              checks: criterion.checks.map((check) =>
+                check.facet === "role"
+                  ? { ...check, ...roleExplanationContract }
+                  : check,
+              ),
+            }));
           } catch (error) {
             firstFailure ??= { error };
             controller.abort();
@@ -554,7 +648,7 @@ export class CodexReasoner implements Reasoner {
         profileAuditSchema,
         explanationBoundary +
           postingScope +
-          "공고 전체와 추출 요건·독해 기준을 대조한다. 명시된 업무·필수·우대 요건의 누락, 종류 변경, 인턴 범위·선택지·예외의 왜곡은 valid=false. other의 고용·제출 안내는 평가 기준이 아니므로 reader_profile에 없어야 한다. 독해 조건은 해당 경험이나 성과를 주장할 때만 적용하며 새로운 자격·경력·기술·수치 의무를 추가하면 안 된다. 모든 facet이 있을 필요는 없다. question도 trigger/sufficient와 같은 범위이며 공고에 없는 기술·수치·경력·세부 절차를 요구하지 않아야 한다. 인용이 존재하는 것만으로 의미나 전체 범위가 맞다고 판단하지 않는다. 문제없으면 valid=true, issues=[]로 반환한다.",
+          "공고 전체와 추출 요건·독해 기준을 대조한다. 명시된 업무·필수·우대 요건의 누락, 종류 변경, 인턴 범위·선택지·예외의 왜곡은 valid=false. other의 고용·제출 안내는 평가 기준이 아니므로 reader_profile에 없어야 한다. 독해 조건은 해당 경험이나 성과를 주장할 때만 적용하며 새로운 자격·경력·기술·수치 의무를 추가하면 안 된다. 모든 facet이 있을 필요는 없다. question도 trigger/sufficient와 같은 범위이며 공고에 없는 기술·수치·경력·세부 절차를 요구하지 않아야 한다. role의 trigger가 실제 본인 수행 여부 대신 목표 설정 이유·지원동기·학습 방식을 묻는다면 고정 역할 질문과 다른 대상이므로 valid=false이다. 한 check가 독립적으로 답할 수 있는 서로 다른 설명 대상을 동시에 묻고 모두 충족하도록 요구하면 valid=false로 반려한다. 교정 안내도 요건당 최대 2개, 요건 내 facet 중복 금지를 지켜야 한다. 같은 facet의 check 여러 개로 분리하라고 하지 말고, 한 설명 대상으로 좁히거나 원문 구절에 따라 별도 요건으로 분리하도록 한다. 특히 이유·판단 기준·실제 노력·결과를 하나의 method 질문에 묶지 않는다. 같은 행동의 기준과 절차처럼 하나의 수행 방식을 설명하는 연결된 요소는 허용한다. 전체 요구사항을 질문 한 개에 재현할 필요는 없으며, 질문은 해당 요건 중 한 가지 읽기상의 궁금증으로 좁혀야 한다. 인용이 존재하는 것만으로 의미나 전체 범위가 맞다고 판단하지 않는다. 문제없으면 valid=true, issues=[]로 반환한다.",
         {
           job_text: text,
           requirements: job.requirements,
@@ -563,13 +657,7 @@ export class CodexReasoner implements Reasoner {
         signal,
       ),
     );
-    if (!audit.valid || audit.issues.length)
-      throw new LabError(
-        "engine_output_invalid",
-        503,
-        "profile_semantic_review_failed",
-      );
-    return job;
+    return { job, audit };
   }
   // Offline same-prefix baseline; not automatically installed as a serving verifier.
   readonly reassessRole: RoleReassessor = async (
@@ -851,7 +939,7 @@ export class CodexReasoner implements Reasoner {
         explanationBoundary +
         revisionReportPolicy +
         "각 항목의 인용은 최대 8개다. 선택한 수정 방향을 이해하는 데 필요한 구체적인 사실과 경험·행위자·측정 기간의 근거를 함께 연결한다. 인용 한도 안에서 지지할 수 없는 포괄적 요약은 범위를 좁힌다. " +
-        "전체 원문과 누적 독해 기록으로 수정에 도움이 되는 최종 피드백을 작성한다. correction.rejected_draft가 있으면 거절된 초안이므로 오류를 고치되 그 초안을 사실의 근거로 삼지 않는다. 메모가 없는 문장도 직접 검토한다. 공고의 업무와 연결해 어떤 경험이 전달됐는지 설명하되 채용 담당자의 속마음·성격·합격 가능성은 추정하지 않는다. note_retractions와 retracted_note_id가 가리키는 이전 근거는 당시 독해 기록이며 현재의 지지 근거 또는 note_ids로 사용하지 않는다. 뒤의 정정과 독립된 새 설명을 보존한다. 각 항목은 observation(원문에 실제 적힌 내용), gap(필요할 때 문서의 미설명), suggestion(지원자가 글을 보완할 구체적인 방법)으로 나눈다. 각 필드는 짧고 완결된 문장과 마침표로 끝낸다. observation/gap은 각각 160자, suggestion은 180자 이내다. 길면 선택한 방향의 핵심 주장으로 좁히며 문장 중간을 자르지 않는다. observation의 모든 사실은 해당 항목 evidence의 인용문 자체로 뒷받침돼야 한다. 다른 항목의 인용이나 인용하지 않은 원문에만 있는 사실을 섞지 않는다. 사용자에게 보이는 세 문장 필드에는 내부 ID(q1/r1/u1 등), 상태 코드(held/resolved 등), 개발자에게 하는 상태 갱신 지시를 쓰지 않는다. 일반적인 원문 확인 안내를 반복하지 않는다. 모든 사실·미설명 판단의 근거 구절을 evidence에 정확히 인용한다. 부정/계획/팀과 개인/가상과 실제/비교 대상·기간을 보존한다. 미기재를 능력 부재로 단정하지 않는다. 질문 상태는 서버가 관리하므로 별도로 재판정하지 않는다. 최종 원문에서 새로 발견한 설명을 과거 독해에서 찾았다고 쓰지 않는다. requirement_ids는 실제 관련된 duty/required/preferred 요건만 쓴다. other는 제한 조건을 이해하는 문맥으로 읽되 requirement_ids에 연결하지 않는다. 각 note_id의 evidence_unit_ids 중 하나 이상을 같은 항목의 evidence에서 정확히 인용해야 한다. 그렇지 않은 note_id는 제외하고, 직접 연결할 메모가 없으면 빈 배열로 둔다. explained는 원문에 설명이 있다는 뜻으로만 쓰며 검증된 역량이 아니다. 역할·방법 같은 facet마다 항목 수를 채우지 않는다. 하나의 구체적인 행동이 본인 역할과 방법을 함께 설명하면 한 항목으로 합친다. 선택한 수정 방향에 필요한 사실과 제안은 보존하되 의미와 제안이 완전히 같은 항목은 반복하지 않는다.";
+        "전체 원문과 누적 독해 기록으로 수정에 도움이 되는 최종 피드백을 작성한다. correction.rejected_draft가 있으면 거절된 초안이므로 오류를 고치되 그 초안을 사실의 근거로 삼지 않는다. 메모가 없는 문장도 직접 검토한다. 공고의 업무와 연결해 어떤 경험이 전달됐는지 설명하되 채용 담당자의 속마음·성격·합격 가능성은 추정하지 않는다. note_retractions와 retracted_note_id가 가리키는 이전 근거는 당시 독해 기록이며 현재의 지지 근거 또는 note_ids로 사용하지 않는다. 뒤의 정정과 독립된 새 설명을 보존한다. 각 항목은 observation(원문에 실제 적힌 내용), gap(필요할 때 문서의 미설명), suggestion(지원자가 글을 보완할 구체적인 방법)으로 나눈다. 각 필드는 한국어로 서술하고 짧고 완결된 문장과 마침표로 끝낸다. 외국어 고유명사·기술명·원문 인용은 유지할 수 있지만 본문 분석과 제안 자체를 외국어로 쓰지 않는다. report_language_invalid가 있으면 지적된 필드를 한국어로 다시 쓰되 사실과 정확한 인용은 보존한다. observation/gap은 각각 160자, suggestion은 180자 이내다. 길면 선택한 방향의 핵심 주장으로 좁히며 문장 중간을 자르지 않는다. observation의 모든 사실은 해당 항목 evidence의 인용문 자체로 뒷받침돼야 한다. 다른 항목의 인용이나 인용하지 않은 원문에만 있는 사실을 섞지 않는다. 사용자에게 보이는 세 문장 필드에는 내부 ID(q1/r1/u1 등), 상태 코드(held/resolved 등), 개발자에게 하는 상태 갱신 지시를 쓰지 않는다. 일반적인 원문 확인 안내를 반복하지 않는다. 모든 사실·미설명 판단의 근거 구절을 evidence에 정확히 인용한다. 부정/계획/팀과 개인/가상과 실제/비교 대상·기간을 보존한다. 미기재를 능력 부재로 단정하지 않는다. 질문 상태는 서버가 관리하므로 별도로 재판정하지 않는다. 최종 원문에서 새로 발견한 설명을 과거 독해에서 찾았다고 쓰지 않는다. requirement_ids는 실제 관련된 duty/required/preferred 요건만 쓴다. other는 제한 조건을 이해하는 문맥으로 읽되 requirement_ids에 연결하지 않는다. 각 note_id의 evidence_unit_ids 중 하나 이상을 같은 항목의 evidence에서 정확히 인용해야 한다. 그렇지 않은 note_id는 제외하고, 직접 연결할 메모가 없으면 빈 배열로 둔다. explained는 원문에 설명이 있다는 뜻으로만 쓰며 검증된 역량이 아니다. 역할·방법 같은 facet마다 항목 수를 채우지 않는다. 하나의 구체적인 행동이 본인 역할과 방법을 함께 설명하면 한 항목으로 합친다. 선택한 수정 방향에 필요한 사실과 제안은 보존하되 의미와 제안이 완전히 같은 항목은 반복하지 않는다.";
       const draft: unknown = repair
         ? mergeGroundedRepairs(
             await this.ask(
@@ -992,7 +1080,7 @@ export class CodexReasoner implements Reasoner {
           entailmentSchema,
           explanationBoundary +
             "이는 전체 설명 목록이 아니라 우선순위를 둔 수정 계획이다. 모든 요건·메모를 출력하지 않았다는 이유로 반려하지 않는다. open/improve의 suggestion이 인용한 위치에서 실제로 할 수 있는 구체적 편집 행동인지 검사한다. 내용이 없으면 조건부 추가나 주장 축소여야 하며, 이미 있는 내용을 또 요구하거나 단순히 '보완하세요'라고만 한 제안은 issue=other로 반려한다. explained의 유지 제안은 새로운 의무가 아니다. " +
-            "초안을 원문과 대조한다. 각 항목 index를 빠짐없이 한 번씩 검사한다. 항목 사이의 유용성 중복도 검사한다. 동일 행동을 역할/방법 등 facet만 나눠 반복하고 고유 사실이나 보완 제안이 없다면 가장 명확한 한 항목만 남기고 나머지 반복 항목은 supported=false, issue=duplicate로 반려한다. 같은 인용을 사용한다는 이유만으로 반려하지 않는다. 고유 정보나 제안이 있는 부분적 겹침은 이 중복 반려 대상이 아니다. observation/gap은 제공된 근거와 전체 원문에 충실해야 한다. suggestion은 제안이어야 하고 없는 경험을 지어내면 안 된다. 개인/팀, 수행/계획, 가상/실제, 수치의 대상·기간, 인과 과장, 이미 있는 설명을 없다고 함, 질문 상태 변경, 공고 조건 추가를 검사한다. 단순히 인용 ID가 존재하는 것은 지지 근거가 아니다. 의심스러우면 supported=false와 해당 issue를 선택한다. 원문에 적혀 있음은 실제 사실 인증이 아니다.",
+            "초안을 원문과 대조한다. 각 항목 index를 빠짐없이 한 번씩 검사한다. 외국어 고유명사·기술명·원문 인용은 허용하지만 observation/gap/suggestion의 분석·제안 본문이 한국어가 아니면 supported=false, issue=other로 반려한다. 항목 사이의 유용성 중복도 검사한다. 동일 행동을 역할/방법 등 facet만 나눠 반복하고 고유 사실이나 보완 제안이 없다면 가장 명확한 한 항목만 남기고 나머지 반복 항목은 supported=false, issue=duplicate로 반려한다. 같은 인용을 사용한다는 이유만으로 반려하지 않는다. 고유 정보나 제안이 있는 부분적 겹침은 이 중복 반려 대상이 아니다. observation/gap은 제공된 근거와 전체 원문에 충실해야 한다. suggestion은 제안이어야 하고 없는 경험을 지어내면 안 된다. 개인/팀, 수행/계획, 가상/실제, 수치의 대상·기간, 인과 과장, 이미 있는 설명을 없다고 함, 질문 상태 변경, 공고 조건 추가를 검사한다. 단순히 인용 ID가 존재하는 것은 지지 근거가 아니다. 의심스러우면 supported=false와 해당 issue를 선택한다. 원문에 적혀 있음은 실제 사실 인증이 아니다.",
           { ...input, draft },
           signal,
         );

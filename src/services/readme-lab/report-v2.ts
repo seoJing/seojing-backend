@@ -50,6 +50,25 @@ export function validateRevisionPlan(value: unknown): void {
       503,
       "grounded_report_schema_invalid",
     );
+  for (const [itemIndex, item] of parsed.data.items.entries()) {
+    // The product's generated prose is Korean. Preserve foreign proper nouns,
+    // technical terms and exact source quotations inside Korean explanations.
+    const foreignOnly = (["observation", "gap", "suggestion"] as const).filter(
+      (field) => item[field].trim() && !/[가-힣]/u.test(item[field]),
+    );
+    if (foreignOnly.length)
+      throw new LabError(
+        "engine_output_invalid",
+        503,
+        "report_language_invalid",
+        {
+          item_index: itemIndex,
+          fields: foreignOnly,
+          required_language:
+            "Korean prose; preserve the original facts and exact source quotations",
+        },
+      );
+  }
   if (parsed.data.items.length > MAX_REVISION_ITEMS)
     throw new LabError(
       "engine_output_invalid",
@@ -467,7 +486,7 @@ export function validateGroundedReport(
       item.note_ids.some((id) => {
         const note = notes.find((n) => n.id === id);
         return (
-          note?.kind === "question" &&
+          note?.question_id &&
           questions.some(
             (q) => q.id === note.question_id && q.status !== "resolved",
           )

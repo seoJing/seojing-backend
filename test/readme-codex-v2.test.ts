@@ -804,6 +804,63 @@ describe("Codex v2 bounded verification", () => {
       rejected_draft: unfinished,
     });
   });
+  it("repairs foreign-language analysis and still verifies its citations and source", async () => {
+    const { document, job, draft } = fixture();
+    const foreign = structuredClone(draft);
+    foreign.items[0]!.observation = "日程を直接作成したと書かれています。";
+    foreign.items[0]!.suggestion = "作成した項目の例を追加できます。";
+    const ok = { checks: [{ index: 0, supported: true, issue: "none" }] };
+    outputs([foreign, draft, ok, ok]);
+    const report = await new CodexReasoner().report(
+      document,
+      job,
+      [],
+      [],
+      new AbortController().signal,
+    );
+    expect(report.items[0]!.text).toBe(draft.items[0]!.observation);
+    expect(runCommand).toHaveBeenCalledTimes(4);
+    const repair = JSON.parse(
+      vi
+        .mocked(runCommand)
+        .mock.calls[1]![0].input.split("UNTRUSTED_DATA_JSON:\n")[1]!,
+    ) as { correction: unknown };
+    expect(repair.correction).toMatchObject({
+      error: "report_language_invalid",
+      details: { item_index: 0, fields: ["observation", "suggestion"] },
+      rejected_draft: foreign,
+    });
+    const prompts = vi
+      .mocked(runCommand)
+      .mock.calls.map(([call]) => call.input);
+    expect(prompts[2]).toContain("unsupported_claims");
+    expect(prompts[3]).toContain("전체 원문");
+  });
+  it("bounds foreign-language repairs to the existing two writer attempts", async () => {
+    const { document, job, draft } = fixture();
+    draft.items[0]!.gap = "説明がありません。";
+    outputs([draft, draft]);
+    await expect(
+      new CodexReasoner().report(
+        document,
+        job,
+        [],
+        [],
+        new AbortController().signal,
+      ),
+    ).rejects.toMatchObject({
+      validationReason: "grounded_report_verification_failed",
+    });
+    expect(runCommand).toHaveBeenCalledTimes(2);
+  });
+  it("allows foreign technical names and quotations within Korean report prose", () => {
+    const { draft } = fixture();
+    draft.items[0]!.observation =
+      "SAS와 Python 학습 및 ‘3PL’ 협업 경험을 적었습니다.";
+    draft.items[0]!.suggestion =
+      "‘To be efficiently effective’와 연결되는 사례를 유지할 수 있습니다.";
+    expect(() => validateRevisionPlan(draft)).not.toThrow();
+  });
   it("fails closed after the second rejected draft without extra calls", async () => {
     const { document, job, draft } = fixture();
     const reject = { checks: [{ index: 0, supported: false, issue: "actor" }] };
@@ -907,7 +964,7 @@ describe("Codex v2 bounded verification", () => {
     ).rejects.toThrow("engine_output_invalid");
   });
   it("rejects a rubric that changes the posting meaning even when quotes exist", async () => {
-    outputs([
+    const attempt = [
       {
         requirements: [
           { kind: "required", label: "안내문 작성", quote: "안내문 작성" },
@@ -929,7 +986,8 @@ describe("Codex v2 bounded verification", () => {
         ],
       },
       { valid: false, issues: ["공고의 우대를 필수로 바꿨습니다."] },
-    ]);
+    ];
+    outputs([...attempt, ...structuredClone(attempt)]);
     await expect(
       new CodexReasoner().profile(
         "우대: 안내문 작성",
@@ -938,11 +996,237 @@ describe("Codex v2 bounded verification", () => {
     ).rejects.toMatchObject({
       validationReason: "profile_semantic_review_failed",
     });
-    expect(runCommand).toHaveBeenCalledTimes(3);
+    expect(runCommand).toHaveBeenCalledTimes(6);
+  });
+  it("audits the effective own-role contract while preserving the posting trigger", async () => {
+    outputs([
+      {
+        requirements: [
+          { kind: "duty", label: "안내문 작성", quote: "안내문 작성" },
+        ],
+      },
+      {
+        criteria: [
+          {
+            requirement_id: "r1",
+            checks: [
+              {
+                facet: "role",
+                trigger: "안내문을 작성한 경험을 주장함",
+                sufficient: "안내문을 작성하고 지속한 흐름과 성과까지 설명함",
+                insufficient: "성과 수치가 없음",
+                question: "작성한 안내문의 성과까지 설명했나요?",
+              },
+            ],
+          },
+        ],
+      },
+      { valid: true, issues: [] },
+    ]);
+    const job = await new CodexReasoner().profile(
+      "업무: 안내문 작성",
+      new AbortController().signal,
+    );
+    const check = job.reader_profile!.criteria[0]!.checks[0]!;
+    expect(check.trigger).toBe("안내문을 작성한 경험을 주장함");
+    expect(check.sufficient).toContain("한 가지");
+    expect(check.sufficient).toContain(
+      "수행 방법, 성과, 수치나 공고의 모든 업무 수행은 필수가 아님",
+    );
+    expect(check.insufficient).toContain("미래 계획");
+    expect(check.question).toBe(
+      "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+    );
+    const audit = JSON.parse(
+      vi
+        .mocked(runCommand)
+        .mock.calls[2]![0].input.split("UNTRUSTED_DATA_JSON:\n")[1]!,
+    ) as { reader_profile: typeof job.reader_profile };
+    expect(audit.reader_profile).toEqual(job.reader_profile);
   });
 });
 
 describe("whole posting coverage", () => {
+  const repairPosting = {
+    requirements: [
+      { kind: "required", label: "학습 방식 설명", quote: "학습 방식" },
+    ],
+  };
+  const repairCheck = {
+    facet: "method",
+    trigger: "학습 경험을 설명함",
+    sufficient: "학습 방식을 설명함",
+    insufficient: "배웠다고만 함",
+    question: "어떤 방식으로 학습했나요?",
+  };
+  const repairReader = {
+    criteria: [{ requirement_id: "r1", checks: [repairCheck] }],
+  };
+  const duplicateReader = {
+    criteria: [{ requirement_id: "r1", checks: [repairCheck, repairCheck] }],
+  };
+  it("rebuilds an invalid reader structure within the same single correction budget", async () => {
+    outputs([
+      repairPosting,
+      duplicateReader,
+      repairPosting,
+      repairReader,
+      { valid: true, issues: [] },
+    ]);
+    const review = vi.fn();
+    const job = await new CodexReasoner(
+      undefined,
+      undefined,
+      120000,
+      "low",
+      undefined,
+      review,
+    ).profile("학습 방식", new AbortController().signal);
+    expect(job.reader_profile!.criteria[0]!.checks).toHaveLength(1);
+    expect(runCommand).toHaveBeenCalledTimes(5);
+    const retry = JSON.parse(
+      vi
+        .mocked(runCommand)
+        .mock.calls[2]![0].input.split("UNTRUSTED_DATA_JSON:\n")[1]!,
+    ) as {
+      job_text: string;
+      semantic_correction: { validation_reason: string };
+    };
+    expect(retry.job_text).toBe("학습 방식");
+    expect(retry.semantic_correction.validation_reason).toBe(
+      "reader_criterion_reference_invalid",
+    );
+    expect(review).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stage: "profile",
+        reason: "reader_criterion_reference_invalid",
+        draft: null,
+      }),
+    );
+  });
+  it.each(["structure_then_semantic", "semantic_then_structure"])(
+    "shares the correction limit for %s and preserves the last failure",
+    async (order) => {
+      const invalid = {
+        valid: false,
+        issues: ["학습 계획에 실제 업무 수행을 요구했습니다."],
+      };
+      outputs(
+        order === "structure_then_semantic"
+          ? [
+              repairPosting,
+              duplicateReader,
+              repairPosting,
+              repairReader,
+              invalid,
+            ]
+          : [
+              repairPosting,
+              repairReader,
+              invalid,
+              repairPosting,
+              duplicateReader,
+            ],
+      );
+      await expect(
+        new CodexReasoner().profile("학습 방식", new AbortController().signal),
+      ).rejects.toMatchObject({
+        validationReason:
+          order === "structure_then_semantic"
+            ? "profile_semantic_review_failed"
+            : "reader_criterion_reference_invalid",
+      });
+      expect(runCommand).toHaveBeenCalledTimes(5);
+    },
+  );
+  it.each(["engine_output_invalid", "cancelled"] as const)(
+    "does not retry unclassified %s as a reader structure error",
+    async (code) => {
+      vi.mocked(runCommand).mockRejectedValue(new LabError(code));
+      await expect(
+        new CodexReasoner().profile("학습 방식", new AbortController().signal),
+      ).rejects.toMatchObject({ code });
+      expect(runCommand).toHaveBeenCalledTimes(1);
+    },
+  );
+  it("repairs a content-prompt classification once and independently audits the rebuilt profile", async () => {
+    const text =
+      "자기소개서 문항: 지원동기와 학습 계획을 설명하세요. 제출 형식: PDF.";
+    const wrong = {
+      requirements: [
+        {
+          kind: "other",
+          label: "문항 작성 안내",
+          quote: "지원동기와 학습 계획을 설명하세요.",
+        },
+        { kind: "other", label: "PDF 제출", quote: "제출 형식: PDF." },
+      ],
+    };
+    const corrected = structuredClone(wrong);
+    corrected.requirements[0]!.kind = "required";
+    corrected.requirements[0]!.label =
+      "자기소개서 문항: 지원동기와 학습 계획 설명";
+    outputs([
+      wrong,
+      {
+        valid: false,
+        issues: ["문항의 내용 요구를 제출 방법으로 분류했습니다."],
+      },
+      corrected,
+      {
+        criteria: [
+          {
+            requirement_id: "r1",
+            checks: [
+              {
+                facet: "method",
+                trigger: "학습 계획 서술",
+                sufficient: "무엇을 배우려는지 설명",
+                insufficient: "막연한 의지만 있음",
+                question: "어떤 내용을 배우려는 계획인가요?",
+              },
+            ],
+          },
+        ],
+      },
+      { valid: true, issues: [] },
+    ]);
+    const review = vi.fn();
+    const job = await new CodexReasoner(
+      undefined,
+      undefined,
+      120000,
+      "low",
+      undefined,
+      review,
+    ).profile(text, new AbortController().signal);
+    expect(job.requirements[0]!.kind).toBe("required");
+    expect(job.reader_profile!.criteria).toHaveLength(1);
+    expect(runCommand).toHaveBeenCalledTimes(5);
+    const retry = JSON.parse(
+      vi
+        .mocked(runCommand)
+        .mock.calls[2]![0].input.split("UNTRUSTED_DATA_JSON:\n")[1]!,
+    ) as {
+      job_text: string;
+      semantic_correction: { previous_requirements: { kind: string }[] };
+    };
+    expect(retry.job_text).toBe(text);
+    expect(retry.semantic_correction.previous_requirements[0]!.kind).toBe(
+      "other",
+    );
+    const readerRetry = JSON.parse(
+      vi
+        .mocked(runCommand)
+        .mock.calls[3]![0].input.split("UNTRUSTED_DATA_JSON:\n")[1]!,
+    ) as { semantic_correction: { issues: string[] } };
+    expect(readerRetry.semantic_correction.issues).toEqual([
+      "문항의 내용 요구를 제출 방법으로 분류했습니다.",
+    ]);
+    expect(review).toHaveBeenCalledWith(
+      expect.objectContaining({ stage: "profile", attempt: 1 }),
+    );
+  });
   it("repairs duplicate quotes once against the full posting and still performs the semantic audit", async () => {
     const text = "담당 업무: 문의 분류와 처리 절차 안내.";
     const duplicate = {
@@ -970,13 +1254,16 @@ describe("whole posting coverage", () => {
       corrected,
       checksFor([{ id: "r1" }, { id: "r2" }]),
       { valid: false, issues: ["조건이 공고보다 강합니다."] },
+      corrected,
+      checksFor([{ id: "r1" }, { id: "r2" }]),
+      { valid: false, issues: ["조건이 공고보다 강합니다."] },
     ]);
     await expect(
       new CodexReasoner().profile(text, new AbortController().signal),
     ).rejects.toMatchObject({
       validationReason: "profile_semantic_review_failed",
     });
-    expect(runCommand).toHaveBeenCalledTimes(4);
+    expect(runCommand).toHaveBeenCalledTimes(7);
     const retry: unknown = JSON.parse(
       vi
         .mocked(runCommand)
@@ -1089,8 +1376,9 @@ describe("whole posting coverage", () => {
     );
     expect(runCommand).toHaveBeenCalledTimes(5);
   });
-  it("preserves the original batch failure and waits for sibling cancellation before returning", async () => {
+  it("preserves the original batch failure and waits for sibling cleanup without repairing after caller cancellation", async () => {
     const f = posting(17);
+    const caller = new AbortController();
     let secondStarted!: () => void;
     const bothStarted = new Promise<void>((resolve) => {
       secondStarted = resolve;
@@ -1117,10 +1405,11 @@ describe("whole posting coverage", () => {
       );
       await new Promise((resolve) => setTimeout(resolve, 5));
       cleaned = true;
+      caller.abort();
       throw new LabError("cancelled");
     });
     await expect(
-      new CodexReasoner().profile(f.text, new AbortController().signal),
+      new CodexReasoner().profile(f.text, caller.signal),
     ).rejects.toMatchObject({ validationReason: "reader_criterion_missing" });
     expect(cleaned).toBe(true);
     expect(runCommand).toHaveBeenCalledTimes(3);

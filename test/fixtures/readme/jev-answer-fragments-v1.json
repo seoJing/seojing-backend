@@ -1,0 +1,119 @@
+{
+  "purpose": "Synthetic controlled memo-to-question routing evaluation; not full-pipeline accuracy.",
+  "cases": [
+    {
+      "id": "same_experience_own_action",
+      "units": [
+        "교육센터 행사 운영에 참여했습니다.",
+        "이 행사에서 저는 회차별 안내문을 직접 작성했습니다."
+      ],
+      "question": "이 행사에서 본인이 직접 한 일은 무엇인가요?",
+      "facet": "role",
+      "expected_partial": true
+    },
+    {
+      "id": "future_action",
+      "units": [
+        "교육센터 행사 운영에 참여했습니다.",
+        "다음 행사에서는 안내문을 직접 작성할 계획입니다."
+      ],
+      "question": "이 행사에서 본인이 직접 한 일은 무엇인가요?",
+      "facet": "role",
+      "expected_partial": false
+    },
+    {
+      "id": "other_actor",
+      "units": [
+        "교육센터 행사 운영에 참여했습니다.",
+        "이 행사의 안내문은 동료가 작성했고 저는 작성에 참여하지 않았습니다."
+      ],
+      "question": "이 행사에서 본인이 직접 한 일은 무엇인가요?",
+      "facet": "role",
+      "expected_partial": false
+    },
+    {
+      "id": "separate_experience",
+      "units": [
+        "교육센터 행사 운영에 참여했습니다.",
+        "별개의 도서관 행사에서는 제가 대출 안내문을 작성했습니다."
+      ],
+      "question": "이 교육센터 행사에서 본인이 직접 한 일은 무엇인가요?",
+      "facet": "role",
+      "expected_partial": false
+    },
+    {
+      "id": "retain_valid_prior_fragment",
+      "units": [
+        "교육센터의 반복 문의 안내 방식을 개선했습니다.",
+        "신청 순서에 대한 질문을 유형별로 묶었습니다.",
+        "이 질문 유형별로 안내문을 나누어 작성해 전달했습니다."
+      ],
+      "question": "반복 문의를 어떻게 정리하고 안내했나요?",
+      "facet": "method",
+      "sufficient": "같은 교육센터에서 반복 문의를 정리한 기준과 안내 방법이 설명됨",
+      "prior_evidence": ["u2"],
+      "expected_partial": true,
+      "required_proof": ["u1", "u2", "u3"]
+    },
+    {
+      "id": "do_not_retain_corrected_fragment",
+      "units": [
+        "교육센터의 반복 문의 안내 방식을 개선했습니다.",
+        "신청 순서에 대한 질문을 유형별로 묶었습니다.",
+        "정정합니다. 질문을 유형별로 묶은 사람은 동료이며 저는 관여하지 않았습니다.",
+        "저는 그 동료가 만든 분류에 맞춰 안내문을 작성해 전달했습니다."
+      ],
+      "question": "본인은 반복 문의를 어떻게 정리하고 안내했나요?",
+      "facet": "method",
+      "sufficient": "본인이 직접 한 문의 정리와 안내 방법이 설명됨",
+      "prior_evidence": ["u2"],
+      "expected_partial": false
+    },
+    {
+      "id": "same_fact_paraphrase",
+      "units": [
+        "교육센터 행사 안내문을 직접 작성했습니다.",
+        "그 교육센터 행사 안내문을 만든 사람은 저였습니다."
+      ],
+      "question": "이 행사에서 어떤 방식으로 안내문을 만들었나요?",
+      "facet": "method",
+      "sufficient": "안내문 구성 기준이나 제작 절차를 설명함",
+      "prior_note": true,
+      "expected_partial": false,
+      "expected_no_new_note": true
+    },
+    {
+      "id": "general_preparation_across_activities",
+      "units": [
+        "인사 관련 과목을 들으며 직무를 준비했습니다.",
+        "별도로 통계 수업을 수강하고 연습 문제를 풀고 있습니다."
+      ],
+      "question": "인사 직무를 준비하며 어떤 학습과 준비 활동을 하고 있나요?",
+      "facet": "method",
+      "sufficient": "직무를 준비하는 구체적인 개인 학습 활동이 설명됨. 실무 경력은 요구하지 않음",
+      "expected_partial": true
+    },
+    {
+      "id": "explicit_hr_preparation",
+      "units": [
+        "인사 직무에 관심을 가지고 준비해 왔습니다.",
+        "인사 데이터 분석 역량을 기르기 위해 통계 수업을 수강하고 연습 문제를 풀고 있습니다."
+      ],
+      "question": "인사 직무를 준비하며 어떤 학습과 준비 활동을 하고 있나요?",
+      "facet": "method",
+      "sufficient": "인사 직무를 준비하는 구체적인 개인 학습 활동이 설명됨. 실무 경력은 요구하지 않음",
+      "expected_partial": true
+    },
+    {
+      "id": "explicit_unrelated_learning",
+      "units": [
+        "인사 직무에 관심을 가지고 준비해 왔습니다.",
+        "이 직무 준비와는 무관한 개인 취미로 통계 수업을 수강하고 연습 문제를 풀고 있습니다."
+      ],
+      "question": "인사 직무를 준비하며 어떤 학습과 준비 활동을 하고 있나요?",
+      "facet": "method",
+      "sufficient": "인사 직무를 준비하는 구체적인 개인 학습 활동이 설명됨. 실무 경력은 요구하지 않음",
+      "expected_partial": false
+    }
+  ]
+}

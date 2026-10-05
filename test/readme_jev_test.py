@@ -27,10 +27,16 @@ class Fake:
     def __init__(self, rows):
         self.rows, self.calls = list(rows), []
         self.gap_label = 'not_explained'
+        self.explanation_scope = answer('no')
+        self.episode_scope = answer('unclear', .4)
 
     def ask(self, state, questions):
         self.calls.append((copy.deepcopy(state), copy.deepcopy(questions)))
-        if all('not_explained' in q['criteria'] for q in questions.values()):
+        if set(questions) == {'broad'}:
+            value = {'broad': self.explanation_scope}
+        elif set(questions) == {'episode_specific'}:
+            value = {'episode_specific': self.episode_scope}
+        elif all('not_explained' in q['criteria'] for q in questions.values()):
             value = {k: answer(self.gap_label) for k in questions}
         else:
             value = self.rows.pop(0)
@@ -46,6 +52,66 @@ class GroundedTests(unittest.TestCase):
             'current_index': 1, 'question': '본인이 한 업무는 무엇인가요?',
             'sufficient': '개인이 실제로 한 구체적 업무', 'insufficient': '팀 업무만 있음'}
         self.link = {'scope': answer('same'), 'topic': answer('related'), 'unlinked': answer('no')}
+
+    def test_general_preparation_can_have_partial_support_across_distinct_activities(self):
+        case={'facet':'method','units':['직무를 준비했습니다.','통계 과목을 공부했습니다.','부족한 법규 지식을 보완하려 교재 문제를 풀었습니다.'],
+            'current_index':2,'question':'지원 이유와 강점 및 보완 노력을 어떻게 설명할 수 있나요?',
+            'sufficient':'지원 이유, 강점의 사례와 보완 노력이 설명됨','insufficient':'일부 설명만 있음'}
+        raw={'approach_u0':answer('no'),'approach_u1':answer('yes'),'approach_u2':answer('yes'),
+             'withdraw_u0':answer('no'),'withdraw_u1':answer('no')}
+        for valid,expected in [('yes','partial'),('no','unknown')]:
+            fake=Fake([self.link,self.link,raw,{'complete':answer('no'),'valid':answer(valid)}]);fake.explanation_scope=answer('yes')
+            result=GroundedJev(fake).decide(case)
+            self.assertEqual(result['label'],expected)
+            self.assertEqual([s['id'] for s in result['evidence']],['u1','u2'] if valid=='yes' else [])
+            self.assertIn('requested personal explanation scope',next(h for _,heads in fake.calls for h in heads.values() if 'Source u1:' in h['instructions'])['instructions'])
+            self.assertEqual(sum(set(heads)=={'broad'} for _,heads in fake.calls),1)
+            self.assertEqual(result['calls'],len(fake.calls))
+            self.assertEqual(result['input_tokens'],len(fake.calls)*100)
+
+    def test_uncertain_general_scope_keeps_specific_experience_boundary(self):
+        case={**self.case,'facet':'method','sufficient':'질문한 행사에서의 안내 방식','insufficient':'다른 행사의 안내'}
+        fake=Fake([{**self.link,'scope':answer('different')}]);fake.explanation_scope=answer('yes',.74)
+        result=GroundedJev(fake).decide(case)
+        self.assertEqual(result['label'],'unrelated')
+        self.assertIn('Different organizations',fake.calls[-1][1]['scope']['instructions'])
+
+    def test_focused_scope_is_bounded_cached_and_never_widens_on_uncertainty(self):
+        case={**self.case,'facet':'method','question':'지원하게 된 사례와 이유는 무엇인가요?'}
+        for initial,focused,expected,count in [
+            (answer('no',.4),answer('no'),True,2),
+            (answer('no',.4),answer('no',.4),False,2),
+            (answer('yes',.4),answer('yes'),False,2),
+            (answer('no'),answer('no'),False,1),
+        ]:
+            fake=Fake([]);fake.explanation_scope=initial;fake.episode_scope=focused
+            reader=GroundedJev(fake)
+            self.assertEqual(reader.broad_explanation(case,'canonical'),expected)
+            self.assertEqual(reader.broad_explanation(case,'canonical'),expected)
+            self.assertEqual(len(fake.calls),count)
+            self.assertEqual(reader.calls,count)
+            self.assertEqual(reader.input_tokens,count*100)
+
+    def test_specific_future_activity_cannot_widen_merely_because_it_is_not_past(self):
+        case={**self.case,'facet':'method','question':'내년 A센터 캠프를 어떤 순서로 운영할 계획인가요?',
+              'sufficient':'A센터 캠프의 구체 운영 순서','units':['A센터 캠프를 계획하고 있습니다.','다른 B행사에서는 안내물을 만들 계획입니다.']}
+        fake=Fake([{**self.link,'scope':answer('different')}]);fake.explanation_scope=answer('no',.4);fake.episode_scope=answer('yes')
+        result=GroundedJev(fake).decide(case)
+        self.assertEqual(result['label'],'unrelated')
+        scoped=next(h['episode_specific'] for _,h in fake.calls if 'episode_specific' in h)
+        self.assertIn('planned or hypothetical',scoped['criteria']['yes'])
+        self.assertIn('Explicit personal',scoped['criteria']['no'])
+
+    def test_long_method_support_is_bounded_before_the_exact_partial_audit(self):
+        case={'facet':'method','units':[f'설명 문장 {i}입니다.' for i in range(8)],'current_index':7,
+              'question':'이 활동을 어떤 방식으로 진행했나요?','sufficient':'활동의 방식과 선택 이유를 설명','insufficient':'일부 방식만 있음'}
+        raw={f'approach_u{i}':answer('yes') for i in range(8)}
+        raw.update({f'withdraw_u{i}':answer('no') for i in range(7)})
+        fake=Fake([*[self.link]*7,raw,{'complete':answer('no'),'valid':answer('yes')}])
+        result=GroundedJev(fake).decide(case)
+        self.assertEqual(result['label'],'partial')
+        self.assertEqual([u['id'] for u in result['evidence']],['u0','u5','u6','u7'])
+        self.assertEqual(fake.calls[-1][0]['proposed_evidence'],result['evidence'])
 
     def test_role_contract_cannot_be_expanded_by_generated_method_requirements(self):
         self.case['sufficient'] = 'UNRELATED_METHOD_REQUIREMENT'

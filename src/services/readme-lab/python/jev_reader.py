@@ -10,7 +10,7 @@ from jev_grounded import GroundedJev, EN_BOUNDARY, ROLE_EXPLANATION_BOUNDARY, ac
 from runtime import choice
 from jev_understanding import observations
 
-READER_VERSION = "jev-reader-v9"
+READER_VERSION = "jev-reader-v13"
 # Internal request-size policy, not a provider head-count limit. Every chunk
 # sees the same full prefix; no criterion is dropped to fit a trigger request.
 TRIGGER_BATCH_SIZE = 32

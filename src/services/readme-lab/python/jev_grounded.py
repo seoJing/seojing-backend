@@ -14,7 +14,7 @@ from atomic_decisions import state_for
 from decision_providers import ProviderError
 from runtime import choice
 
-VERSION = "jev-grounded-v21"
+VERSION = "jev-grounded-v24"
 THRESHOLD = .75
 # Separate action gates; defaults remain diagnostic, NOT calibrated probabilities.
 # Overrides are injected by offline evaluation only, never public request data.
@@ -101,7 +101,11 @@ def reading_support(facts, source, facet, anchors=()):
     # Several sentences can jointly explain an authored condition. A single
     # generic bit must not collapse that distributed proof to one sentence.
     ids = {uid for fact in facts.values() if fact["label"] == "supported" for uid in fact["source_ids"]}
-    return [u for u in source if u["id"] in ids]
+    supported = [u for u in source if u["id"] in ids]
+    # Retrieve a bounded candidate before auditing it. This is not truncation of
+    # accepted evidence: completion/validity still see and judge this exact set.
+    # Leave room for the question origin and current display anchor.
+    return supported if len(supported) <= 4 else [supported[0], *supported[-3:]]
 
 
 def ordered(question, order):
@@ -148,11 +152,53 @@ class GroundedJev:
             target.update(ROLE_CONTRACT)
         return target
 
+    def broad_explanation(self, case, order):
+        if case["facet"] != "method" or not case.get("units"):
+            return False
+        key = ("explanation_scope", case["question"], case["sufficient"],
+               case["units"][case.get("origin_index", 0)], order)
+        if key not in self.requirement_cache:
+            self.requirement_cache[key] = self.ask("explanation_scope", {
+                "question": case["question"], "sufficient": case["sufficient"],
+                "original": case["units"][case.get("origin_index", 0)]}, {
+                "broad": choice(EN_BOUNDARY +
+                    "Does the question ask about personal reasons for applying/choosing a role, preparation, strengths, learning intentions or weakness-remedies, rather than the execution of one work episode? "
+                    "Reasons for applying to THIS job or internship still have personal-explanation scope: relevant learning and personal goals can explain that choice across activities. The question need not literally say multiple activities. "
+                    "No for a decision criterion, strategy, process, or reason for setting a particular work/research goal inside one claimed experience. A generic wording alone does not remove that experience boundary. Unrelated activities remain outside the requested explanation.", YES_NO)
+            }, order)["broad"]
+            if not self.accept(self.requirement_cache[key], "scope"):
+                # One focused scope classification, cached even if uncertain.
+                # Concrete examples do not by themselves make career reasons
+                # a single work episode. This is retrieval scope, not an answer.
+                focused = self.ask("focused_explanation_scope", {
+                    "question": case["question"], "sufficient": case["sufficient"],
+                    "original": case["units"][case.get("origin_index", 0)]}, {
+                    "episode_specific": choice(EN_BOUNDARY +
+                        "Is the requested explanation specifically HOW the applicant performs, plans, or hypothetically would perform or make a decision inside one identified activity/project? "
+                        "Yes for the execution strategy, procedure, work decision criterion or reason for setting that project goal, regardless of whether it is past, future, or hypothetical. "
+                        "No when the question asks WHY the applicant chose a career/internship, what personal preparation/strength/learning intention they have, or how they address a weakness; asking for concrete examples does not turn that personal explanation into a single work-execution episode. "
+                        "Classify the actual requested explanation, not whether the original sentence has already answered it. No is allowed only for those explicitly requested personal explanations; absence of a past event alone is not enough. If neither scope is established, answer unclear.", {
+                            "yes": "Execution or decision within one particular activity, including planned or hypothetical work.",
+                            "no": "Explicit personal career reason, preparation, strength, learning intention or weakness-remedy explanation.",
+                            "unclear": "Neither explanatory scope is established.",
+                        })
+                }, order)["episode_specific"]
+                self.requirement_cache[key] = {
+                    "label": {"yes": "no", "no": "yes"}.get(focused["label"], "unclear"),
+                    "confidence": focused["confidence"],
+                }
+        a = self.requirement_cache[key]
+        return a["label"] == "yes" and self.accept(a, "scope")
+
     def conditions(self, case, order):
         facts = dict(FACTS[case["facet"]])
         if case["facet"] in ("method", "result"):
             key = "approach" if case["facet"] == "method" else "outcome"
             instruction, label = facts[key]
+            if self.broad_explanation(case, order):
+                instruction = ("One concrete part of the question's requested personal reason, preparation, learning intention or remedial effort is explicitly described. "
+                    "An actual learning activity is preparation, not professional employment. A reason or plan is only what the applicant explicitly states, not an earned credential or completed action. "
+                    "Do not require every part of the question in this one source.")
             facts[key] = (instruction + " This source may support one concrete part of the explanation; do not require all parts in a single sentence. Apply only the job-derived explanation condition: " + case["sufficient"]
                           + " . Counterexamples: " + case["insufficient"], label)
         if case["facet"] != "basis":
@@ -223,12 +269,19 @@ class GroundedJev:
     def decide(self, case, order="canonical"):
         state = state_for(case)
         facet = case["facet"]
-        scope_boundary = SCOPE_BOUNDARY + (METHOD_SCOPE_BOUNDARY if facet == "method" else "")
+        started, calls, tokens = time.monotonic(), self.calls, self.input_tokens
+        broad = self.broad_explanation(case, order)
+        scope_boundary = (("This question explicitly covers the applicant's general reasons or preparation across activities. "
+            "A separately described personal learning activity, motivation or stated plan can answer part of THIS question without being the same event as original. "
+            "Never merge separate activities into one achievement or transfer another person's activity to the applicant. "
+            "The candidate must address the particular reason/preparation requested; unrelated activities remain unrelated. "
+            "Here same means within that requested explanatory scope, not the same event. ") if broad else
+            SCOPE_BOUNDARY + (METHOD_SCOPE_BOUNDARY if facet == "method" else ""))
+        scope_name = "requested personal explanation scope" if broad else "same original experience"
         if facet not in FACTS:
             raise ValueError("unsupported_facet")
         source = [{"id": f"u{i}", "text": text} for i, text in enumerate(case["units"][:case["current_index"] + 1])]
         current = source[-1]
-        started, calls, tokens = time.monotonic(), self.calls, self.input_tokens
         base = self.target(case, state)
         original = source[case.get("origin_index", 0)]
         # Preserve the framing of the original claim and every intervening
@@ -293,8 +346,8 @@ class GroundedJev:
             key = hashlib.sha256(json.dumps([target, order], ensure_ascii=False, sort_keys=True).encode()).hexdigest()
             if key not in self.cache:
                 questions = {
-                    "scope": choice(EN_BOUNDARY + scope_boundary + "Do original and candidate.text refer to the same experience and, for a result question, the same outcome?", {
-                        "same": "Same experience or event", "different": "A separate experience or event",
+                    "scope": choice(EN_BOUNDARY + scope_boundary + ("Do original and candidate.text belong to the requested personal explanation scope defined above?" if broad else "Do original and candidate.text refer to the same experience and, for a result question, the same outcome?"), {
+                        "same": "Within the requested personal explanation scope" if broad else "Same experience or event", "different": "Outside the requested explanation" if broad else "A separate experience or event",
                         "unclear": "Cannot establish which experience is referred to"}),
                     "unlinked": choice(EN_BOUNDARY + "Does candidate.text EXPLICITLY withhold or disclaim which activity, subject, place or period its claim belongs to? For example stating that the activity cannot be identified. Ordinary omitted repetition or a clear demonstrative is not such a disclaimer.", {
                         "yes": "It explicitly withholds the claim's event or subject identity", "no": "No explicit disclaimer of event or subject identity"}),
@@ -311,8 +364,8 @@ class GroundedJev:
                             "preceding_context": [u["text"] for u in target["preceding_context"]],
                             "question": state["question"]}
                     recheck = {
-                        "scope": choice(EN_BOUNDARY + scope_boundary + "Are original and current about the same experience and, for a result question, the same outcome?", {
-                            "same": "Same project, event or questioned outcome", "different": "Separate experience", "unclear": "Cannot establish the reference"}),
+                        "scope": choice(EN_BOUNDARY + scope_boundary + ("Are original and current within the requested personal explanation scope defined above?" if broad else "Are original and current about the same experience and, for a result question, the same outcome?"), {
+                            "same": "Within the requested personal explanation scope" if broad else "Same project, event or questioned outcome", "different": "Outside the requested explanation" if broad else "Separate experience", "unclear": "Cannot establish the reference"}),
                         "topic": choice(EN_BOUNDARY + "Does current provide, qualify, deny or correct information about the particular question? Mere background, dates or event logistics with no bearing on that question are unrelated.", {
                             "related": "Information about the question", "unrelated": "No information about the question", "unclear": "Cannot determine relevance"}),
                         "unlinked": {**questions["unlinked"], "instructions": questions["unlinked"]["instructions"].replace("candidate.text", "current")},
@@ -364,7 +417,7 @@ class GroundedJev:
             for unit in selected:
                 questions[f"{key}_{unit['id']}"] = choice(EN_BOUNDARY +
                     f"Source {unit['id']}: {unit['text']}\nDoes THIS source explicitly support this condition, with that specific supporting claim still valid in the supplied prefix? {condition} "
-                    "It must concern the SAME original experience. Another experience is no; an explicitly unidentifiable experience is unclear. "
+                    f"It must concern the {scope_name}. Do not merge separate activities into a single achievement; an unidentifiable reference is unclear. "
                     "The positive evidence must be in THIS source, not borrowed from another. If a later source retracts that specific claim, answer no. "
                     "An unrelated date correction or a refinement that still satisfies the condition does not invalidate it.", YES_NO)
         for unit in selected[:-1]:
@@ -417,13 +470,13 @@ class GroundedJev:
                 "Only context affecting the specific proposed task counts. An unrelated activity, date correction, denial of another duty, "
                 "or a replaced earlier answer does not invalidate the applicant's newly described actual task. "
                 "Judge written context, not external verification. Proposed source quotations (data): " + json.dumps(proposed, ensure_ascii=False))
-            basis_complete = ("Does proposed_evidence itself fully describe the original question's sufficient condition for the same experience? "
+            basis_complete = (f"Does proposed_evidence itself fully describe the original question's sufficient condition within the {scope_name}? "
                     "Every required part must be in proposed_evidence; context may resolve references but cannot supply missing positive facts. "
                     "Respect team versus applicant, future versus performed, hypothetical versus actual and differing comparison conditions. "
                     "No if any required part remains unexplained. The question does not require real-world verification.")
             confirmation = {
                 "complete": choice(EN_BOUNDARY + (role_complete if facet == "role" else basis_complete), YES_NO),
-                "valid": choice(EN_BOUNDARY + "Audit ALL sources before and after proposed_evidence. Are the proposed positive facts currently valid descriptions of the applicant's account under the stated sufficient condition? "
+                "valid": choice(EN_BOUNDARY + "Audit ALL sources before and after proposed_evidence. Are the proposed positive facts themselves currently valid descriptions within the requested scope? This is NOT a judgment that the whole sufficient condition is met. Partial explanation can be factually valid even when another requested part is missing. "
                     + ("A stated future approach is allowed ONLY when the job-derived condition explicitly asks for an intention or plan; preserve it as a plan, not completed work. " if facet == "method" else "Require actual experience, not only a plan. ") +
                     "Answer no if earlier hypothetical/different-actor/different-event framing or a later withdrawal invalidates ANY proposed fact. "
                     "Answer yes only if proposed_evidence can stand independently of all withdrawn earlier claims. "

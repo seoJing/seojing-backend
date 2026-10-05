@@ -36,7 +36,7 @@ class Provider:
         answers = {}
         for k in heads:
             label = self.trigger if k.startswith("trigger_") else "yes"
-            if k == "invalidated": label = "no"
+            if k in ("invalidated", "overclaims_answer", "duplicate"): label = "no"
             if k in ("n1", "withdrawn"): label = "yes" if self.withdraw else "no"
             if k == "grounded" and self.reject_audit: label = "no"
             answers[k] = {"label": label, "confidence": .95}
@@ -69,8 +69,41 @@ class UnderstandingTest(unittest.TestCase):
         self.assertTrue(result["evidence"][0]["text"].startswith("수행 방식:"))
         state,heads=p.payloads[-1]
         self.assertEqual(state["proposed_evidence"],result["evidence"][0]["evidence"])
-        self.assertEqual(state["proposed_text"],result["evidence"][0]["text"])
+        self.assertTrue(result["evidence"][0]["text"].startswith(state["proposed_text"] + " 공고의 "))
         self.assertNotIn("new", heads)  # No earlier note can be duplicated.
+
+    def test_self_contained_preparation_does_not_attach_application_question_as_factual_context(self):
+        p=self.focused("preparation"); original=p.ask
+        def ask(state,heads):
+            value=original(state,heads)
+            if "needs_context" in heads: value["answers"]["needs_context"]={"label":"no","confidence":.95}
+            return value
+        p.ask=ask;r=JevReader(p)
+        texts=["지원 이유와 준비 경험을 설명해 주세요.","통계 수업을 수강하고 연습 문제를 풀었습니다."]
+        r.step(inputs(texts[:1]))
+        result=r.step(inputs(texts))
+        card=result["evidence"][0]
+        self.assertIn("학습과 준비",card["text"])
+        self.assertIn("실무 수행 경력과는 구분",card["text"])
+        self.assertEqual([e["unit_id"] for e in card["evidence"]],["u2"])
+        self.assertFalse(any("context_u1" in heads for _,heads in p.payloads))
+
+    def test_pending_question_does_not_block_independent_source_but_overclaim_still_fails(self):
+        from jev_understanding import observations
+        from jev_reader import proof
+        for label,confidence,expected in [("no",.95,1),("yes",.95,0),("no",.74,0)]:
+            p=self.focused("role"); original=p.ask
+            def ask(state,heads):
+                value=original(state,heads)
+                if "overclaims_answer" in heads:value["answers"]["overclaims_answer"]={"label":label,"confidence":confidence}
+                if "needs_context" in heads:value["answers"]["needs_context"]={"label":"no","confidence":.95}
+                return value
+            p.ask=ask;data=inputs(["연구 목표가 있었습니다.","별개 봉사 활동에서 참여자에게 그리는 방법을 알려 주었습니다."])
+            data["questions"]=[{"id":"q1","status":"open","text":"그 연구 목표를 정한 이유가 무엇인가요?"}]
+            result={"questions":[],"updates":[],"evidence":[],"retractions":[]}
+            observations(data,p,result,proof,JevReader(p).diagnostics)
+            self.assertEqual(len(result["evidence"]),expected)
+            self.assertNotIn("consistent",p.payloads[-1][1])
 
     def test_plan_and_boundary_wording_keep_their_limits(self):
         for focus,source,copy in [
@@ -84,6 +117,133 @@ class UnderstandingTest(unittest.TestCase):
             self.assertEqual(result["questions"],[])
             self.assertEqual(result["updates"],[])
 
+    def test_answer_fragment_updates_its_question_without_standalone_positive(self):
+        from jev_understanding import observations
+        from jev_reader import proof
+        p=self.focused("role"); data=inputs(["행사 운영에 참여했습니다.","저는 회차별 안내문을 작성했습니다."], "role")
+        data["questions"]=[{"id":"q1","unit_id":"u1","status":"open","criterion_id":"c_r1","facet":"role","text":"행사에서 직접 맡은 역할과 진행 방법은 무엇인가요?"}]
+        result={"questions":[],"updates":[],"evidence":[],"retractions":[]}
+        observations(data,p,result,proof,JevReader(p).diagnostics)
+        self.assertEqual(result["evidence"],[])
+        self.assertEqual([(u["question_id"],u["relation"]) for u in result["updates"]],[("q1","partial")])
+        self.assertEqual([e["unit_id"] for e in result["updates"][0]["evidence"]],["u1","u2"])
+        state,heads=next((state,heads) for state,heads in reversed(p.payloads) if "answer_q1" in heads)
+        self.assertEqual(state["pending_question_origins"][0]["source"]["id"],"u1")
+        self.assertIn("actual/planned",heads["answer_q1"]["instructions"])
+        final_state,final_heads=p.payloads[-1]
+        self.assertEqual(set(final_heads),{"grounded"})
+        self.assertEqual(final_state["proposed_text"],result["updates"][0]["text"])
+        self.assertEqual(final_state["proposed_evidence"],result["updates"][0]["evidence"])
+        self.assertNotIn("sources",final_state)
+        self.assertNotIn("prior_notes",final_state)
+        self.assertEqual(final_state["question"]["facet"],"role")
+        self.assertIn("한 가지",final_state["question"]["sufficient"])
+
+    def test_compact_fact_audit_cannot_borrow_unquoted_source_or_generic_note(self):
+        p=self.focused("role");r=JevReader(p)
+        r.step(inputs(["다른 행사에 관한 배경 설명입니다."]))
+        out=r.step(inputs(["다른 행사에 관한 배경 설명입니다.","저는 안내문을 작성했습니다."]))
+        state,heads=p.payloads[-1]
+        self.assertEqual(set(heads),{"grounded"})
+        self.assertEqual([e["unit_id"] for e in state["proposed_evidence"]],["u2"])
+        self.assertTrue(out["evidence"][0]["text"].startswith(state["proposed_text"] + " 공고의 "))
+        self.assertNotIn("selected_criterion",state)
+        full_state,full_heads=next((s,h) for s,h in reversed(p.payloads) if "relevant" in h)
+        self.assertEqual(full_state["proposed_text"],out["evidence"][0]["text"])
+        self.assertIn("invalidated",full_heads)
+        self.assertNotIn("sources",state)
+        self.assertNotIn("prior_notes",state)
+        self.assertIsNone(state["question"])
+
+    def test_link_state_deduplicates_context_without_dropping_exact_sources_or_anchors(self):
+        p=self.focused("method",link=True);r=JevReader(p)
+        r.step(inputs(["저는 일정표를 작성했습니다."]))
+        data=inputs(["저는 일정표를 작성했습니다.","일정표에는 담당 요일을 표시했습니다."],notes=[note()])
+        out=r.step(data)
+        state,heads=next((s,h) for s,h in p.payloads if "prior_note_anchors" in s)
+        self.assertEqual(state["sources"],[{"id":u["id"],"text":u["text"]} for u in data["prefix"]])
+        self.assertEqual(state["prior_note_anchors"]["n1"],state["sources"][0])
+        self.assertNotIn("context_candidates",state)
+        self.assertNotIn("prior_notes",state)
+        self.assertIn("prior_note_anchors[n1]",heads["n1"]["instructions"])
+        self.assertEqual([e["unit_id"] for e in out["evidence"][0]["evidence"]],["u1","u2"])
+
+    def test_partial_routing_needs_accepted_answer_relation_and_all_factual_audits(self):
+        from jev_understanding import observations
+        from jev_reader import proof
+        # These are routing invariants, not evidence of model semantics: an
+        # unrelated/uncertain relation cannot create a partial; bad facts block both.
+        for answer,confidence,grounded,updates,notes in [
+            ("no",.95,True,0,1),("yes",.74,True,0,1),
+            ("unclear",.95,True,0,1),("yes",.95,False,0,0),
+        ]:
+            p=self.focused("plan"); original=p.ask
+            def ask(state,heads):
+                out=original(state,heads)
+                if "answer_q1" in heads:out["answers"]["answer_q1"]={"label":answer,"confidence":confidence}
+                if "grounded" in heads:out["answers"]["grounded"]["label"]="yes" if grounded else "no"
+                return out
+            p.ask=ask;data=inputs(["행사를 운영했습니다.","다음 봉사에서는 제가 안내문을 만들 계획입니다."], "role")
+            data["questions"]=[{"id":"q1","unit_id":"u1","status":"open","criterion_id":"c_r1","facet":"role","text":"행사에서 직접 한 일은 무엇인가요?"}]
+            result={"questions":[],"updates":[],"evidence":[],"retractions":[]}
+            observations(data,p,result,proof,JevReader(p).diagnostics)
+            self.assertEqual(len(result["updates"]),updates)
+            self.assertEqual(len(result["evidence"]),notes)
+
+    def test_partial_routing_selects_one_pending_question_and_leaves_resolved_or_reopened_alone(self):
+        from jev_understanding import observations
+        from jev_reader import proof
+        p=self.focused("role"); original=p.ask
+        def ask(state,heads):
+            out=original(state,heads)
+            if "answer_q1" in heads:out["answers"]["answer_q1"]={"label":"yes","confidence":.8}
+            if "answer_q2" in heads:out["answers"]["answer_q2"]={"label":"yes","confidence":.95}
+            return out
+        p.ask=ask;data=inputs(["행사를 운영했습니다.","안내문은 제가 작성했습니다."])
+        data["questions"]=[{"id":f"q{i}","unit_id":"u1","status":status,"criterion_id":"c_r1","facet":"method","text":"직접 맡은 일은 무엇인가요?"}
+                           for i,status in enumerate(("open","partial","resolved","reopened"),1)]
+        result={"questions":[],"updates":[],"evidence":[],"retractions":[]}
+        observations(data,p,result,proof,JevReader(p).diagnostics)
+        self.assertEqual([u["question_id"] for u in result["updates"]],["q2"])
+        self.assertEqual(result["evidence"],[])
+        heads=p.payloads[-1][1]
+        self.assertNotIn("answer_q3",heads)
+        self.assertNotIn("answer_q4",heads)
+
+    def test_partial_extension_preserves_prior_proof_only_after_retained_audit(self):
+        from jev_understanding import observations
+        from jev_reader import proof
+        for label,confidence,should_update in [("yes",.95,True),("no",.95,False),("yes",.74,False)]:
+            p=self.focused("method");original=p.ask
+            def ask(state,heads):
+                out=original(state,heads)
+                if "retained_q1" in heads:out["answers"]["retained_q1"]={"label":label,"confidence":confidence}
+                return out
+            p.ask=ask;data=inputs(["문의 안내를 개선했습니다.","긴급도를 기준으로 분류했습니다.","유형별 안내문을 작성했습니다."])
+            data["questions"]=[{"id":"q1","unit_id":"u1","status":"partial","criterion_id":"c_r1","facet":"method",
+                                "text":"어떤 기준으로 문의를 분류하고 안내했나요?","evidence_unit_ids":["u2"]}]
+            result={"questions":[],"updates":[],"evidence":[],"retractions":[]}
+            observations(data,p,result,proof,JevReader(p).diagnostics)
+            self.assertEqual(bool(result["updates"]),should_update)
+            if should_update:
+                self.assertEqual([e["unit_id"] for e in result["updates"][0]["evidence"]],["u1","u2","u3"])
+            self.assertEqual(result["evidence"],[])
+            state,heads=next((state,heads) for state,heads in reversed(p.payloads) if "retained_q1" in heads)
+            self.assertIn("retained_q1",heads)
+            self.assertEqual([u["id"] for u in state["question_context"]["q1"]["existing_evidence"]],["u2"])
+            self.assertEqual(state["question_context"]["q1"]["sufficient"],data["job"]["reader_profile"]["criteria"][0]["checks"][0]["sufficient"])
+
+    def test_partial_extension_never_truncates_existing_proof_to_fit_limit(self):
+        from jev_understanding import observations
+        from jev_reader import proof
+        p=self.focused("method");data=inputs([f"문의 처리 단계 {i}를 수행했습니다." for i in range(7)])
+        data["questions"]=[{"id":"q1","unit_id":"u1","status":"partial","criterion_id":"c_r1","facet":"method",
+                            "text":"문의 처리 단계는 무엇인가요?","evidence_unit_ids":["u2","u3","u4","u5","u6"]}]
+        result={"questions":[],"updates":[],"evidence":[],"retractions":[]}
+        observations(data,p,result,proof,JevReader(p).diagnostics)
+        self.assertEqual(result["updates"],[])
+        self.assertEqual(data["questions"][0]["evidence_unit_ids"],["u2","u3","u4","u5","u6"])
+
     def test_link_uses_only_prior_anchor_and_current_not_recursive_note_proof(self):
         p=self.focused("method",link=True);r=JevReader(p)
         texts=["문의 안내를 맡았습니다.","저는 취소 절차를 정리했습니다.","취소 접수 순서대로 절차를 안내했습니다."]
@@ -94,7 +254,7 @@ class UnderstandingTest(unittest.TestCase):
         self.assertEqual([e["unit_id"] for e in card["evidence"]],["u2","u3"])
         self.assertIn("이해가 구체화",card["text"])
         self.assertEqual(r.diagnostics["evidence_linked"],1)
-        self.assertIn("linked",p.payloads[-1][1])
+        self.assertTrue(any("linked" in heads for _,heads in p.payloads))
 
     def test_different_experience_can_make_independent_note_without_linking(self):
         p=self.focused("role",link=False);r=JevReader(p)
@@ -103,12 +263,56 @@ class UnderstandingTest(unittest.TestCase):
         self.assertEqual([e["unit_id"] for e in result["evidence"][0]["evidence"]],["u2"])
         self.assertNotIn("앞서 연결한",result["evidence"][0]["text"])
 
+    def test_uncertain_novelty_uses_only_displayed_ledger_once_but_never_retries_known_duplicate(self):
+        for confidence,expected in [(.4,1),(.95,0)]:
+            p=self.focused("role"); original=p.ask
+            def ask(state,heads):
+                v=original(state,heads)
+                if "new" in heads:
+                    v["answers"]["new"]={"label":"no","confidence":confidence}
+                return v
+            p.ask=ask;r=JevReader(p)
+            r.step(inputs(["제가 안내문을 작성했습니다."]))
+            out=r.step(inputs(["제가 안내문을 작성했습니다.","다른 교육 행사에서는 취소 접수 순서를 안내했습니다."],notes=[note()]))
+            self.assertEqual(len(out["evidence"]),expected)
+            focused=[state for state,heads in p.payloads if set(heads)=={"duplicate"}]
+            self.assertEqual(len(focused),expected)
+            if focused:
+                self.assertNotIn("sources",focused[0])
+                self.assertEqual(len(focused[0]["source_context"]),2)
+                self.assertEqual(focused[0]["prior_note_sources"][0]["note_id"],"n1")
+
     def test_rephrased_information_is_not_a_new_note_despite_relevance(self):
         p=self.focused("role",duplicate=True);r=JevReader(p)
         r.step(inputs(["제가 문의 안내를 맡았습니다."]))
         result=r.step(inputs(["제가 문의 안내를 맡았습니다.","문의 안내 담당자는 저였습니다."],notes=[note()]))
         self.assertEqual(result["evidence"],[])
         self.assertEqual(r.diagnostics["evidence_repeated"],1)
+
+    def test_focused_duplicate_check_keeps_confident_no_and_all_other_gates_required(self):
+        for label,confidence,expected in [("no",.95,1),("no",.4,0),("unclear",.95,0),("yes",.95,0)]:
+            p=self.focused("role"); original=p.ask
+            def ask(state,heads):
+                value=original(state,heads)
+                if "new" in heads: value["answers"]["new"]={"label":"unclear","confidence":.4}
+                if "duplicate" in heads: value["answers"]["duplicate"]={"label":label,"confidence":confidence}
+                return value
+            p.ask=ask;r=JevReader(p)
+            r.step(inputs(["저는 안내문을 작성했습니다."]))
+            out=r.step(inputs(["저는 안내문을 작성했습니다.","다른 행사에서는 예약 순서를 조정했습니다."],notes=[note()]))
+            self.assertEqual(len(out["evidence"]),expected)
+            self.assertEqual(sum(set(h)=={"duplicate"} for _,h in p.payloads),1)
+
+        p=self.focused("role");p.reject_audit=True;original=p.ask
+        def ask_rejected(state,heads):
+            value=original(state,heads)
+            if "new" in heads: value["answers"]["new"]={"label":"unclear","confidence":.4}
+            return value
+        p.ask=ask_rejected;r=JevReader(p)
+        r.step(inputs(["저는 안내문을 작성했습니다."]))
+        out=r.step(inputs(["저는 안내문을 작성했습니다.","다른 행사에서는 예약 순서를 조정했습니다."],notes=[note()]))
+        self.assertEqual(out["evidence"],[])
+        self.assertFalse(any("duplicate" in h for _,h in p.payloads))
 
     def test_unconfirmed_link_fails_closed_and_uses_no_future_source(self):
         p=self.focused("method",link=True);original=p.ask
@@ -134,7 +338,7 @@ class UnderstandingTest(unittest.TestCase):
         r.step(inputs(texts[:1]));r.step(inputs(texts[:2]))
         prior={**note(),"unit_id":"u2","evidence_unit_ids":["u2"]}
         card=r.step(inputs(texts,notes=[prior]))["evidence"][0]
-        state=p.payloads[-1][0]
+        state=next(state for state,heads in reversed(p.payloads) if "contextual" in heads)
         self.assertEqual([e["unit_id"] for e in card["evidence"]],["u1","u2","u3"])
         self.assertEqual(state["previous_source"]["id"],"u2")
         self.assertEqual(state["context_source"]["id"],"u1")
@@ -233,7 +437,7 @@ class UnderstandingTest(unittest.TestCase):
         with self.assertRaises(ProviderError): r.step(inputs(["문의 내용을 분류했습니다."]))
         self.assertEqual(r.prefix, [])
         self.assertTrue(all(x==0 for x in r.diagnostics.values()))
-        self.assertEqual(r.provider.calls, 3)
+        self.assertEqual(r.provider.calls, 4)
 
     def test_later_detail_in_same_experience_is_not_filtered_before_novelty_audit(self):
         p=Provider(); r=JevReader(p)
@@ -241,7 +445,7 @@ class UnderstandingTest(unittest.TestCase):
         out=r.step(inputs(["제가 문의를 긴급도에 따라 분류했습니다.", "취소 절차는 안내문을 작성해 전달했습니다."], notes=[note()]))
         self.assertEqual(len(out["evidence"]), 1)
         self.assertEqual(out["evidence"][0]["evidence"][-1]["unit_id"], "u2")
-        self.assertIn("new", p.payloads[-1][1])
+        self.assertTrue(any("new" in heads for _,heads in p.payloads))
 
     def test_missed_correction_is_recovered_from_full_prefix(self):
         p=Provider(); r=JevReader(p)
@@ -273,11 +477,11 @@ class UnderstandingTest(unittest.TestCase):
         self.assertEqual(out["retractions"], [])
         self.assertEqual(r.diagnostics["evidence_retracted"], 0)
 
-    def test_pending_same_experience_answer_is_not_presented_as_separate_positive(self):
+    def test_pending_question_completion_overclaim_is_not_presented_as_positive(self):
         p=Provider(); original=p.ask
         def ask(state, heads):
             value=original(state, heads)
-            if "consistent" in heads: value["answers"]["consistent"]["label"]="no"
+            if "overclaims_answer" in heads: value["answers"]["overclaims_answer"]["label"]="yes"
             return value
         p.ask=ask; r=JevReader(p)
         r.step(inputs(["문의 대응을 담당했습니다."]))
