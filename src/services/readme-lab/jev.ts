@@ -57,6 +57,10 @@ export const jevDiagnosticsSchema = z
     evidence_audit_rejected: count,
     evidence_cap_steps: count,
     proof_omitted: count,
+    evidence_irrelevant: count.optional(),
+    evidence_repeated: count.optional(),
+    evidence_linked: count.optional(),
+    understanding_focus_uncertain: count.optional(),
   })
   .strict();
 export interface JevReader extends SequentialReasoner {

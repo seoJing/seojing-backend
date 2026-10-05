@@ -10,7 +10,7 @@ from jev_grounded import GroundedJev, EN_BOUNDARY, ROLE_EXPLANATION_BOUNDARY, ac
 from runtime import choice
 from jev_understanding import observations
 
-READER_VERSION = "jev-reader-v8"
+READER_VERSION = "jev-reader-v9"
 # Internal request-size policy, not a provider head-count limit. Every chunk
 # sees the same full prefix; no criterion is dropped to fit a trigger request.
 TRIGGER_BATCH_SIZE = 32
@@ -103,7 +103,8 @@ class JevReader:
         self.diagnostics = {key: 0 for key in (
             "steps", "question_candidates", "trigger_no", "trigger_abstained", "questions_created",
             "question_cap_steps", "evidence_candidates", "evidence_abstained", "evidence_created",
-            "evidence_retracted", "evidence_audit_rejected", "evidence_cap_steps", "proof_omitted")}
+            "evidence_retracted", "evidence_audit_rejected", "evidence_cap_steps", "proof_omitted",
+            "evidence_irrelevant", "evidence_repeated", "evidence_linked", "understanding_focus_uncertain")}
 
     def step(self, data):
         # A failed later head must not leave an uncommitted answer or cache in

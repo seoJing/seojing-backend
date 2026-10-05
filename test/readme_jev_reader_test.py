@@ -178,7 +178,7 @@ class ReaderTest(unittest.TestCase):
             value["job"]["reader_profile"]["criteria"][0]["checks"] = [{"facet": "basis", "trigger": "비교 성과 주장", "sufficient": "비교 근거 설명", "insufficient": "근거 없는 개선 주장"}]
             result = JevReader(provider).step(value)
             self.assertEqual(bool(result["questions"]), rejected is None)
-            self.assertEqual(sum("current" in x or "current_unit" in x and "criteria" not in x for x in provider.payloads), 2)
+            self.assertEqual(sum(("current" in x or "current_unit" in x) and "criteria" not in x for x in provider.payloads), 2)
 
     def test_compound_role_answer_survives_uncertainty_but_reopens_after_withdrawal(self):
         texts = ["프로그램 운영을 지원했습니다.", "제가 안내문을 작성했습니다.",

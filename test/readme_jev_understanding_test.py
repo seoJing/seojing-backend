@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src/services/readm
 from jev_reader import JevReader
 from jev_grounded import GroundedJev
 from decision_providers import ProviderError
+from jev_understanding import note_text, WORDING
 
 
 def inputs(texts, facet="method", notes=(), retractions=()):
@@ -35,6 +36,7 @@ class Provider:
         answers = {}
         for k in heads:
             label = self.trigger if k.startswith("trigger_") else "yes"
+            if k == "invalidated": label = "no"
             if k in ("n1", "withdrawn"): label = "yes" if self.withdraw else "no"
             if k == "grounded" and self.reject_audit: label = "no"
             answers[k] = {"label": label, "confidence": .95}
@@ -42,6 +44,152 @@ class Provider:
 
 
 class UnderstandingTest(unittest.TestCase):
+    def focused(self, focus, link=False, duplicate=False):
+        p=Provider(); original=p.ask
+        def ask(state, heads):
+            value=original(state, heads)
+            for key in heads:
+                if key.startswith("focus_"):
+                    value["answers"][key]["label"]="yes" if key=="focus_"+focus else "no"
+                if "prior_note_anchors" in state:
+                    value["answers"][key]["label"]="yes" if link and not key.startswith("context_") else "no"
+                if key=="new" and duplicate: value["answers"][key]["label"]="no"
+            return value
+        p.ask=ask
+        return p
+
+    def test_routes_overlap_by_confidence_and_does_not_treat_topic_as_full_qualification(self):
+        p=self.focused("method"); original=p.ask
+        def ask(state, heads):
+            v=original(state, heads)
+            if "focus_boundary" in heads: v["answers"]["focus_boundary"]={"label":"yes","confidence":.76}
+            return v
+        p.ask=ask; r=JevReader(p)
+        result=r.step(inputs(["급한 문의부터 확인하고 처리 절차를 안내했습니다."]))
+        self.assertTrue(result["evidence"][0]["text"].startswith("수행 방식:"))
+        state,heads=p.payloads[-1]
+        self.assertEqual(state["proposed_evidence"],result["evidence"][0]["evidence"])
+        self.assertEqual(state["proposed_text"],result["evidence"][0]["text"])
+        self.assertNotIn("new", heads)  # No earlier note can be duplicated.
+
+    def test_plan_and_boundary_wording_keep_their_limits(self):
+        for focus,source,copy in [
+            ("plan","앞으로 문의 안내문을 정리하고 싶습니다.","이미 수행한 경험이나 달성한 성과로 읽지는 않습니다"),
+            ("boundary","승인은 책임자가 맡았고 저는 안내만 했습니다.","다른 담당자의 수행·결정 책임"),
+            ("experience","교육센터에서 수강 문의 안내 업무를 맡았습니다.","구체적 역할이나 성과까지 확인한 뜻은 아닙니다"),
+        ]:
+            r=JevReader(self.focused(focus))
+            result=r.step(inputs([source]))
+            self.assertIn(copy,result["evidence"][0]["text"])
+            self.assertEqual(result["questions"],[])
+            self.assertEqual(result["updates"],[])
+
+    def test_link_uses_only_prior_anchor_and_current_not_recursive_note_proof(self):
+        p=self.focused("method",link=True);r=JevReader(p)
+        texts=["문의 안내를 맡았습니다.","저는 취소 절차를 정리했습니다.","취소 접수 순서대로 절차를 안내했습니다."]
+        r.step(inputs(texts[:1]));r.step(inputs(texts[:2]))
+        prior={**note(),"unit_id":"u2","evidence_unit_ids":["u1","u2"]}
+        result=r.step(inputs(texts,notes=[prior]))
+        card=result["evidence"][0]
+        self.assertEqual([e["unit_id"] for e in card["evidence"]],["u2","u3"])
+        self.assertIn("이해가 구체화",card["text"])
+        self.assertEqual(r.diagnostics["evidence_linked"],1)
+        self.assertIn("linked",p.payloads[-1][1])
+
+    def test_different_experience_can_make_independent_note_without_linking(self):
+        p=self.focused("role",link=False);r=JevReader(p)
+        r.step(inputs(["센터에서 문의 안내를 맡았습니다."]))
+        result=r.step(inputs(["센터에서 문의 안내를 맡았습니다.","별개 도서관에서는 제가 예약 문의를 안내했습니다."],notes=[note()]))
+        self.assertEqual([e["unit_id"] for e in result["evidence"][0]["evidence"]],["u2"])
+        self.assertNotIn("앞서 연결한",result["evidence"][0]["text"])
+
+    def test_rephrased_information_is_not_a_new_note_despite_relevance(self):
+        p=self.focused("role",duplicate=True);r=JevReader(p)
+        r.step(inputs(["제가 문의 안내를 맡았습니다."]))
+        result=r.step(inputs(["제가 문의 안내를 맡았습니다.","문의 안내 담당자는 저였습니다."],notes=[note()]))
+        self.assertEqual(result["evidence"],[])
+        self.assertEqual(r.diagnostics["evidence_repeated"],1)
+
+    def test_unconfirmed_link_fails_closed_and_uses_no_future_source(self):
+        p=self.focused("method",link=True);original=p.ask
+        def ask(state,heads):
+            v=original(state,heads)
+            if "linked" in heads:v["answers"]["linked"]={"label":"yes","confidence":.4}
+            return v
+        p.ask=ask;r=JevReader(p)
+        r.step(inputs(["문의 안내를 맡았습니다."]))
+        result=r.step(inputs(["문의 안내를 맡았습니다.","급한 문의부터 안내했습니다."],notes=[note()]))
+        self.assertEqual(result["evidence"],[])
+        for state,_ in p.payloads:
+            self.assertTrue(all(u["id"] in ("u1","u2") for u in state.get("sources",[])))
+
+    def test_context_and_prior_note_are_distinct_and_leave_room_for_correction(self):
+        p=self.focused("method",link=True); original=p.ask
+        def ask(state,heads):
+            v=original(state,heads)
+            if "context_u1" in heads: v["answers"]["context_u1"]={"label":"yes","confidence":.99}
+            return v
+        p.ask=ask;r=JevReader(p)
+        texts=["교육센터 문의 안내 경험입니다.","제가 취소 절차를 정리했습니다.","취소 요청을 받은 순서대로 안내했습니다."]
+        r.step(inputs(texts[:1]));r.step(inputs(texts[:2]))
+        prior={**note(),"unit_id":"u2","evidence_unit_ids":["u2"]}
+        card=r.step(inputs(texts,notes=[prior]))["evidence"][0]
+        state=p.payloads[-1][0]
+        self.assertEqual([e["unit_id"] for e in card["evidence"]],["u1","u2","u3"])
+        self.assertEqual(state["previous_source"]["id"],"u2")
+        self.assertEqual(state["context_source"]["id"],"u1")
+        self.assertEqual(state["current_source"]["id"],"u3")
+        self.assertEqual([u["id"] for u in state["prior_note_sources"][0]["sources"]],["u2"])
+        p.withdraw=True
+        retraction=r.step(inputs([*texts,"정정하면 취소 절차 정리와 안내는 모두 동료의 업무였습니다."],notes=[{
+            **prior,"id":"n1","unit_id":"u3","evidence_unit_ids":["u1","u2","u3"],"text":card["text"]}]))["retractions"][0]
+        self.assertEqual([e["unit_id"] for e in retraction["evidence"]],["u1","u2","u3","u4"])
+        audit=next(state for state,heads in reversed(p.payloads) if "target_sources" in state)
+        self.assertEqual([u["id"] for u in audit["target_sources"]],["u1","u2","u3"])
+        self.assertEqual(audit["target_sources"],audit["note_sources"]["n1"])
+
+    def test_uncertain_retrieved_relevance_still_needs_confirmed_final_audit(self):
+        for confirmed in (False,True):
+            p=self.focused("role");original=p.ask
+            def ask(state,heads):
+                v=original(state,heads)
+                if "criteria" in state and "c_r1" in heads:v["answers"]["c_r1"]={"label":"yes","confidence":.55}
+                if "relevant" in heads:v["answers"]["relevant"]={"label":"yes","confidence":.9 if confirmed else .74}
+                return v
+            p.ask=ask;r=JevReader(p)
+            result=r.step(inputs(["제가 문의를 안내했습니다."]))
+            self.assertEqual(len(result["evidence"]),int(confirmed))
+
+    def test_contradicted_or_uncertain_validity_cannot_emit_a_note(self):
+        for label,confidence in [("yes",.95),("no",.74),("unclear",.9)]:
+            p=self.focused("role");original=p.ask
+            def ask(state,heads):
+                v=original(state,heads)
+                if "invalidated" in heads:v["answers"]["invalidated"]={"label":label,"confidence":confidence}
+                return v
+            p.ask=ask
+            self.assertEqual(JevReader(p).step(inputs(["제가 문의를 안내했습니다."]))["evidence"],[])
+
+    def test_link_failure_rolls_back_state_and_can_retry_same_prefix(self):
+        p=self.focused("method",link=True);r=JevReader(p)
+        texts=["제가 문의를 안내했습니다.","긴급 문의부터 안내했습니다."]
+        r.step(inputs(texts[:1]));before=copy.deepcopy(r.diagnostics);calls=r.provider.calls
+        original=p.ask
+        def ask(state,heads):
+            if "linked" in heads:raise ProviderError("jev_http_503")
+            return original(state,heads)
+        p.ask=ask
+        with self.assertRaises(ProviderError):r.step(inputs(texts,notes=[note()]))
+        self.assertEqual(len(r.prefix),1)
+        self.assertEqual(r.diagnostics,before)
+        self.assertGreater(r.provider.calls,calls)
+        p.ask=original
+        self.assertEqual(len(r.step(inputs(texts,notes=[note()]))["evidence"]),1)
+
+    def test_copy_stays_inside_utf16_public_limit_for_every_focus(self):
+        for focus in WORDING:
+            self.assertLessEqual(len(note_text(focus,"🙂"*100,True).encode("utf-16-le"))//2,200)
+
     def test_method_result_questions_use_posting_wording_and_only_prefix(self):
         for facet in ("method", "result"):
             p=Provider(trigger="yes"); r=JevReader(p); value=inputs(["문의 처리 경험이 있습니다."], facet)
@@ -92,7 +240,7 @@ class UnderstandingTest(unittest.TestCase):
         r.step(inputs(["제가 문의를 긴급도에 따라 분류했습니다."]))
         out=r.step(inputs(["제가 문의를 긴급도에 따라 분류했습니다.", "취소 절차는 안내문을 작성해 전달했습니다."], notes=[note()]))
         self.assertEqual(len(out["evidence"]), 1)
-        self.assertEqual(out["evidence"][0]["evidence"][0]["unit_id"], "u2")
+        self.assertEqual(out["evidence"][0]["evidence"][-1]["unit_id"], "u2")
         self.assertIn("new", p.payloads[-1][1])
 
     def test_missed_correction_is_recovered_from_full_prefix(self):
