@@ -63,6 +63,22 @@ export interface LabOptions {
     reason: string;
     elapsed_ms: number;
   }) => void;
+  onReadingDiagnostic?: (event: {
+    job_id: string;
+    phase: "reading_completed" | "finished";
+    status: JobView["status"];
+    read_units: number;
+    total_units: number;
+    question_count: number;
+    note_count: number;
+    evidence_count: number;
+    retracted_count: number;
+    elapsed_ms: number;
+    reading_ms: number | null;
+    error: string | null;
+    metrics: JevReader["metrics"] | null;
+    decisions: JevReader["diagnostics"] | null;
+  }) => void;
 }
 
 export class ReadmeLab {
@@ -318,6 +334,35 @@ export class ReadmeLab {
       if (reading.controller.signal.aborted) return;
       let classifier: Classifier | undefined;
       let jev: JevReader | undefined;
+      const started = Date.now();
+      let readingMs: number | null = null;
+      let metrics: JevReader["metrics"] | null = null;
+      let decisions: JevReader["diagnostics"] | null = null;
+      const diagnostic = (phase: "reading_completed" | "finished") => {
+        // An explicit allowlist, never model text, inputs, errors or credentials.
+        try {
+          this.options.onReadingDiagnostic?.({
+            job_id: jobId,
+            phase,
+            status: reading.view.status,
+            read_units: reading.view.progress.read_unit_count,
+            total_units: document.units.length,
+            question_count: reading.questions.length,
+            note_count: reading.notes.length,
+            evidence_count: reading.notes.filter(
+              (n) => n.kind === "evidence" && !n.question_id,
+            ).length,
+            retracted_count: reading.memory?.note_retractions?.length ?? 0,
+            elapsed_ms: Date.now() - started,
+            reading_ms: readingMs,
+            error: reading.view.error ?? null,
+            metrics: structuredClone(jev?.metrics ?? metrics),
+            decisions: structuredClone(jev?.diagnostics ?? decisions),
+          });
+        } catch {
+          /* diagnostics must not change an analysis outcome */
+        }
+      };
       const timer = setTimeout(
         () => reading.controller.abort(),
         10 * 60 * 1000,
@@ -384,6 +429,9 @@ export class ReadmeLab {
           });
         }
         classifier?.close();
+        readingMs = Date.now() - started;
+        metrics = jev ? structuredClone(jev.metrics) : null;
+        decisions = jev?.diagnostics ? structuredClone(jev.diagnostics) : null;
         if (jev?.contextReviews && reading.memory)
           reading.memory.context_reviews = structuredClone(jev.contextReviews);
         jev?.close();
@@ -396,6 +444,7 @@ export class ReadmeLab {
         reading.view.progress.current_window = null;
         this.emit(reading, { type: "reading_completed" });
         reading.view.status = "reporting";
+        diagnostic("reading_completed");
         const report = await this.options.reasoner.report(
           document,
           job,
@@ -421,6 +470,7 @@ export class ReadmeLab {
           });
         }
       } finally {
+        diagnostic("finished");
         classifier?.close();
         jev?.close();
         clearTimeout(timer);

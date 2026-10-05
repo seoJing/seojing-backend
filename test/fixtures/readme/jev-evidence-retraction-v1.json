@@ -1,0 +1,5 @@
+{
+  "id": "evidence_retraction",
+  "resume": "저는 참여자의 가능 시간을 모아 일정표를 직접 작성했습니다.\n정정하면 일정표 작성자는 동료이고 저는 일정표를 작성하지 않았습니다.\n저는 확정된 장소와 시간을 참여자 안내문에 반영해 전달했습니다.",
+  "expectation": "If an authored role note is accepted before correction, retire it once and preserve later independently performed work."
+}

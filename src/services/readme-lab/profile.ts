@@ -23,6 +23,7 @@ export const readerProfileSchema = z
                     trigger: z.string().min(1).max(120),
                     sufficient: z.string().min(1).max(160),
                     insufficient: z.string().min(1).max(160),
+                    question: z.string().min(8).max(180).optional(),
                   })
                   .strict(),
               )

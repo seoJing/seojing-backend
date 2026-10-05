@@ -364,6 +364,7 @@ export async function readSemanticPrefix(
     proof: z.infer<typeof proofSchema>,
     requirements: string[],
     q?: Question,
+    retractedNoteId?: string,
   ) => {
     const anchor = proof.find((p) => p.unit_id === current.id)!;
     const start = current.start + current.text.indexOf(anchor.quote);
@@ -381,6 +382,7 @@ export async function readSemanticPrefix(
       requirement_ids: requirements,
       review_required: true,
       ...(q ? { question_id: q.id } : {}),
+      ...(retractedNoteId ? { retracted_note_id: retractedNoteId } : {}),
     };
     notes.push(n);
     emit({ type: "note", note: structuredClone(n) });
@@ -448,9 +450,14 @@ export async function readSemanticPrefix(
       note_id: original.id,
       at_unit_id: current.id,
     });
-    card("observation", correction.text, correction.evidence, [
-      ...original.requirement_ids,
-    ]);
+    card(
+      "observation",
+      correction.text,
+      correction.evidence,
+      [...original.requirement_ids],
+      undefined,
+      original.id,
+    );
   }
   // Raw source and explicit transition ledger are authoritative. Never disguise
   // Codex's structured output as Laya probabilities in memory.observations.

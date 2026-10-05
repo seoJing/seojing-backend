@@ -63,7 +63,7 @@ def main():
                 result = reader.step(message["input"])
                 retries = reader.provider.failures[diagnostic_cursor:]
                 diagnostic_cursor = len(reader.provider.failures)
-                send({"id": message["id"], "result": result, "metrics": reader.metrics(), "retries": retries})
+                send({"id": message["id"], "result": result, "metrics": reader.metrics(), "diagnostics": reader.diagnostics, "retries": retries})
             except ProviderError as error:
                 code = "engine_timeout" if str(error) == "jev_timeout" else "engine_unavailable"
                 if str(error) == "jev_call_budget_exceeded":
@@ -72,7 +72,7 @@ def main():
                     code = "engine_output_invalid"
                 # ProviderError messages originate only from fixed local codes;
                 # never attach HTTP bodies, headers, source or exceptions.
-                send({"id": message["id"], "error": code, "diagnostic_code": str(error), "metrics": reader.metrics(),
+                send({"id": message["id"], "error": code, "diagnostic_code": str(error), "metrics": reader.metrics(), "diagnostics": reader.diagnostics,
                       **({"retries": reader.provider.failures[diagnostic_cursor:]} if reader.provider.failures[diagnostic_cursor:] else {})})
                 return 1
     except Exception:

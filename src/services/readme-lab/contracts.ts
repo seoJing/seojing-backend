@@ -5,6 +5,7 @@ export interface ReaderCheck {
   trigger: string;
   sufficient: string;
   insufficient: string;
+  question?: string;
 }
 export interface ReaderCriterion {
   id: string;
@@ -66,6 +67,7 @@ export interface Note {
   evidence_unit_ids: string[];
   requirement_ids: string[];
   review_required: true;
+  retracted_note_id?: string;
 }
 export interface Question {
   id: string;

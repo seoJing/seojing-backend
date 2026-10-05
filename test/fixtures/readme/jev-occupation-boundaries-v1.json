@@ -1,0 +1,81 @@
+[
+  {
+    "id": "method_distributed",
+    "facet": "method",
+    "question": "어떤 기준으로 문의를 분류하고 어떻게 안내했나요?",
+    "sufficient": "같은 경험에서 문의 분류 기준과 안내 방식이 모두 설명됨",
+    "insufficient": "한 부분만 설명됨",
+    "units": [
+      "센터에서 문의 처리 방식을 정했습니다.",
+      "서비스 중단 문의를 먼저 처리했습니다.",
+      "취소 절차는 단계별 안내문으로 전달했습니다."
+    ],
+    "current_index": 2,
+    "expected_complete": true
+  },
+  {
+    "id": "qualitative_result",
+    "facet": "result",
+    "question": "독자 반응을 보고 어떤 후속 안내를 만들었나요?",
+    "sufficient": "같은 안내 글의 독자 질문을 반영한 실제 후속 안내 산출물이 설명됨. 숫자는 필수 아님",
+    "insufficient": "계획이나 다른 글의 결과",
+    "units": [
+      "초보자 안내 글의 독자 반응을 후속 안내에 반영했습니다.",
+      "이 글에 달린 질문 중 신청 순서 문의를 묶어 추가 FAQ를 작성해 게시했습니다."
+    ],
+    "current_index": 1,
+    "expected_complete": true
+  },
+  {
+    "id": "planned_result",
+    "facet": "result",
+    "question": "독자 반응을 보고 어떤 후속 안내를 만들었나요?",
+    "sufficient": "독자 반응을 반영해 실제 완성한 후속 안내 산출물",
+    "insufficient": "미래 계획만 설명",
+    "units": [
+      "초보자 안내 글의 반응을 후속 안내에 반영하려 합니다.",
+      "다음 달에 댓글을 모아서 FAQ를 작성할 계획입니다."
+    ],
+    "current_index": 1,
+    "expected_complete": false
+  },
+  {
+    "id": "allowed_intention",
+    "facet": "method",
+    "question": "입사 후 반복 문의를 어떻게 정리할 계획인가요?",
+    "sufficient": "공고가 요청한 입사 후 문의 정리 계획을 구체적으로 설명. 수행 경험은 필요 없음",
+    "insufficient": "성장하고 싶다는 의지만 설명",
+    "units": [
+      "입사 후 반복 문의를 정리하고 싶습니다.",
+      "문의 유형별로 질문을 모은 뒤 자주 반복되는 항목부터 안내문에 추가할 계획입니다."
+    ],
+    "current_index": 1,
+    "expected_complete": true
+  },
+  {
+    "id": "other_actor",
+    "facet": "method",
+    "question": "본인은 어떤 기준으로 문의 순서를 정했나요?",
+    "sufficient": "본인이 문의 우선순위를 정한 기준",
+    "insufficient": "동료가 한 일이나 계획",
+    "units": [
+      "센터에서 문의 우선순위를 정했습니다.",
+      "정확히는 동료가 서비스 중단 여부를 기준으로 순서를 정했고 저는 분류에 관여하지 않았습니다."
+    ],
+    "current_index": 1,
+    "expected_complete": false
+  },
+  {
+    "id": "other_experience",
+    "facet": "result",
+    "question": "센터 안내 글을 보고 독자들이 어떤 반응을 보였나요?",
+    "sufficient": "해당 센터 안내 글을 읽은 독자의 반응이 설명됨",
+    "insufficient": "다른 경험이나 계획",
+    "units": [
+      "센터 안내 글에 독자 반응이 있었습니다.",
+      "별개의 도서관 포스터를 본 이용자들이 위치 안내가 편리하다고 했습니다."
+    ],
+    "current_index": 1,
+    "expected_complete": false
+  }
+]

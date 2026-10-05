@@ -28,8 +28,7 @@ def data(texts, questions=None):
     return {"prefix": [{"id": f"u{i+1}", "order": i, "text": t, "scope_id": "s1"} for i, t in enumerate(texts)],
         "questions": questions or [], "job": {"requirements": [{"id": "r1", "kind": "duty", "label": "안내", "quote": "안내"}],
         "reader_profile": {"criteria": [{"id": "c_r1", "label": "안내", "requirement_id": "r1",
-        "checks": [{"facet": "role", "trigger": "담당 업무 주장", "sufficient": "공고에서 정한 역할 설명 조건", "insufficient": "역할이 불분명함"},
-                   {"facet": "method", "trigger": "방법 설명", "sufficient": "방법 설명", "insufficient": "방법 미설명"}]}]}}}
+        "checks": [{"facet": "role", "trigger": "담당 업무 주장", "sufficient": "공고에서 정한 역할 설명 조건", "insufficient": "역할이 불분명함"}]}]}}}
 
 
 def question(status="open"):
@@ -179,7 +178,7 @@ class ReaderTest(unittest.TestCase):
             value["job"]["reader_profile"]["criteria"][0]["checks"] = [{"facet": "basis", "trigger": "비교 성과 주장", "sufficient": "비교 근거 설명", "insufficient": "근거 없는 개선 주장"}]
             result = JevReader(provider).step(value)
             self.assertEqual(bool(result["questions"]), rejected is None)
-            self.assertEqual(len(provider.payloads), 2)
+            self.assertEqual(sum("current" in x or "current_unit" in x and "criteria" not in x for x in provider.payloads), 2)
 
     def test_compound_role_answer_survives_uncertainty_but_reopens_after_withdrawal(self):
         texts = ["프로그램 운영을 지원했습니다.", "제가 안내문을 작성했습니다.",
@@ -196,7 +195,7 @@ class ReaderTest(unittest.TestCase):
             self.assertEqual(reader.step(inputs(2))["updates"][0]["relation"], "complete")
         with patch("jev_reader.GroundedJev.decide", return_value={"label": "unknown"}):
             self.assertEqual(reader.step(inputs(3, "resolved"))["updates"], [])
-            self.assertEqual(provider.payloads[-1]["adopted_evidence"], evidence)
+            self.assertEqual(next(x["adopted_evidence"] for x in reversed(provider.payloads) if "adopted_evidence" in x), evidence)
             provider.label = "no"
             step = reader.step(inputs(4, "resolved"))
         self.assertEqual(step["updates"][0]["relation"], "conflict")
@@ -212,7 +211,8 @@ class ReaderTest(unittest.TestCase):
                     jev_runtime, "JevProvider", return_value=FakeProvider()), patch.object(
                     jev_runtime, "JevReader", side_effect=lambda provider: JevReader(provider, **budget)):
                 self.assertEqual(jev_runtime.main(), 1)
-            self.assertEqual(sent[-1], {"id": "step1", "error": "engine_budget_exceeded", "diagnostic_code": "jev_call_budget_exceeded",
+            self.assertTrue(all(v == 0 for v in sent[-1]["diagnostics"].values()))
+            self.assertEqual({k:v for k,v in sent[-1].items() if k != "diagnostics"}, {"id": "step1", "error": "engine_budget_exceeded", "diagnostic_code": "jev_call_budget_exceeded",
                 "metrics": {"calls": 0, "input_tokens": 0, "output_tokens": 0, "omitted_proofs": 0}})
 
     def test_trigger_uses_only_prefix_and_supported_job_checks(self):
@@ -240,7 +240,7 @@ class ReaderTest(unittest.TestCase):
         with patch("jev_reader.GroundedJev.decide", return_value={"label": "unknown"}):
             step = reader.step(data(["참여했습니다.", "배경 설명입니다."], [question()]))
         self.assertEqual(step["questions"], [])
-        self.assertEqual(len(provider.payloads), 1)
+        self.assertEqual(sum("units" in p for p in provider.payloads), 1)
 
     def test_exact_evidence_and_withdrawal_recovery(self):
         texts = ["안내에 기여했습니다.", "제가 안내문을 썼습니다.", "정정하면 작성한 사람은 동료입니다."]

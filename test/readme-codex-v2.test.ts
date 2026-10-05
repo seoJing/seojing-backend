@@ -814,6 +814,56 @@ describe("Codex v2 bounded verification", () => {
 });
 
 describe("whole posting coverage", () => {
+  it("repairs duplicate quotes once against the full posting and still performs the semantic audit", async () => {
+    const text = "담당 업무: 문의 분류와 처리 절차 안내.";
+    const duplicate = {
+      requirements: [
+        {
+          kind: "duty",
+          label: "문의 분류",
+          quote: "문의 분류와 처리 절차 안내",
+        },
+        {
+          kind: "duty",
+          label: "절차 안내",
+          quote: "문의 분류와 처리 절차 안내",
+        },
+      ],
+    };
+    const corrected = {
+      requirements: [
+        { kind: "duty", label: "문의 분류", quote: "문의 분류" },
+        { kind: "duty", label: "절차 안내", quote: "처리 절차 안내" },
+      ],
+    };
+    outputs([
+      duplicate,
+      corrected,
+      checksFor([{ id: "r1" }, { id: "r2" }]),
+      { valid: false, issues: ["조건이 공고보다 강합니다."] },
+    ]);
+    await expect(
+      new CodexReasoner().profile(text, new AbortController().signal),
+    ).rejects.toMatchObject({
+      validationReason: "profile_semantic_review_failed",
+    });
+    expect(runCommand).toHaveBeenCalledTimes(4);
+    const retry: unknown = JSON.parse(
+      vi
+        .mocked(runCommand)
+        .mock.calls[1]![0].input.split("UNTRUSTED_DATA_JSON:\n")[1]!,
+    );
+    expect(retry).toEqual({
+      job_text: text,
+      validation_correction: "profile_quote_duplicate",
+    });
+    vi.mocked(runCommand).mockReset();
+    outputs([duplicate, duplicate]);
+    await expect(
+      new CodexReasoner().profile(text, new AbortController().signal),
+    ).rejects.toMatchObject({ validationReason: "profile_quote_duplicate" });
+    expect(runCommand).toHaveBeenCalledTimes(2);
+  });
   const posting = (n: number) => {
     const requirements = Array.from({ length: n }, (_, i) => ({
       kind: "preferred",

@@ -34,7 +34,12 @@ export async function readJevDocument(
       signal,
       { engine: "jev", timeoutMs: 10 * 60 * 1000 },
     );
-    return { ...result, model: reader.metadata, usage: { ...reader.metrics } };
+    return {
+      ...result,
+      model: reader.metadata,
+      usage: { ...reader.metrics },
+      diagnostics: reader.diagnostics ? { ...reader.diagnostics } : null,
+    };
   } finally {
     reader.close();
   }
