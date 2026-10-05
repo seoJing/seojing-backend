@@ -65,6 +65,51 @@ export const groundedRepairSchema = z
   })
   .strict();
 
+/** Constrain generated references without dropping posting context from input. */
+export function groundedOutputSchemas(
+  document: ResumeDocument,
+  job: JobPosting,
+  notes: Note[],
+) {
+  const references = (ids: string[]) =>
+    ids.length
+      ? z.array(z.enum(ids as [string, ...string[]])).max(8)
+      : z.array(z.string()).max(0);
+  const retired = new Set(notes.flatMap((n) => n.retracted_note_id ?? []));
+  const unitIds = document.units.map((u) => u.id);
+  const item = groundedReportSchema.shape.items.element.extend({
+    evidence: z
+      .array(
+        groundedReportSchema.shape.items.element.shape.evidence.element.extend({
+          unit_id: unitIds.length
+            ? z.enum(unitIds as [string, ...string[]])
+            : z.string(),
+        }),
+      )
+      .min(1)
+      .max(unitIds.length ? 8 : 0),
+    note_ids: references(
+      notes.filter((n) => !retired.has(n.id)).map((n) => n.id),
+    ),
+    requirement_ids: references(
+      job.requirements.filter((r) => r.kind !== "other").map((r) => r.id),
+    ),
+  });
+  return {
+    report: groundedReportSchema.extend({ items: z.array(item).max(12) }),
+    repair: groundedRepairSchema.extend({
+      repairs: z
+        .array(
+          groundedRepairSchema.shape.repairs.element.extend({
+            item: item.nullable(),
+          }),
+        )
+        .min(1)
+        .max(12),
+    }),
+  };
+}
+
 /** Apply only requested repairs; the model cannot rewrite approved neighbors. */
 export function mergeGroundedRepairs(
   value: unknown,

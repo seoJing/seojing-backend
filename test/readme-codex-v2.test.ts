@@ -19,7 +19,9 @@ import type { Note } from "../src/services/readme-lab/contracts.js";
 import { MAX_JOB_REQUIREMENTS } from "../src/services/readme-lab/profile.js";
 import {
   citationRejected,
+  groundedOutputSchemas,
   mergeGroundedRepairs,
+  reportInput,
   type GroundedDraft,
 } from "../src/services/readme-lab/report-v2.js";
 
@@ -125,6 +127,75 @@ function fixture() {
   return { document, job, draft };
 }
 describe("targeted report repair boundary", () => {
+  it("restricts generated references while retaining negative posting context", () => {
+    const { document, job, draft } = fixture();
+    job.requirements.push({
+      id: "r2",
+      kind: "other",
+      label: "수치 성과는 필수 아님",
+      quote: "수치 성과는 필수가 아닙니다.",
+      start: 0,
+      end: 17,
+    });
+    const schemas = groundedOutputSchemas(document, job, []);
+    expect(schemas.report.safeParse(draft).success).toBe(true);
+    expect(schemas.repair.safeParse(repairDraft(draft)).success).toBe(true);
+    const invalid = structuredClone(draft);
+    invalid.items[0]!.requirement_ids = ["r2"];
+    expect(schemas.report.safeParse(invalid).success).toBe(false);
+    expect(schemas.repair.safeParse(repairDraft(invalid)).success).toBe(false);
+    invalid.items[0]!.requirement_ids = ["r1"];
+    invalid.items[0]!.evidence[0]!.unit_id = "u999";
+    expect(schemas.report.safeParse(invalid).success).toBe(false);
+    expect(reportInput(document, job, [], []).requirements).toContainEqual(
+      job.requirements[1],
+    );
+  });
+
+  it("excludes retired notes and permits empty reference arrays", () => {
+    const { document, job, draft } = fixture();
+    const notes: Note[] = [
+      {
+        id: "n1",
+        unit_id: "u1",
+        span: { block_id: "b1", start: 0, end: 1 },
+        review_required: true,
+        kind: "evidence",
+        text: "이전 설명입니다.",
+        evidence_unit_ids: ["u1"],
+        requirement_ids: ["r1"],
+      },
+      {
+        id: "n2",
+        unit_id: "u2",
+        span: { block_id: "b1", start: 1, end: 2 },
+        review_required: true,
+        kind: "observation",
+        text: "설명이 정정되었습니다.",
+        evidence_unit_ids: ["u1", "u2"],
+        requirement_ids: ["r1"],
+        retracted_note_id: "n1",
+      },
+    ];
+    const schemas = groundedOutputSchemas(document, job, notes);
+    for (const noteId of ["n1", "unknown"]) {
+      draft.items[0]!.note_ids = [noteId];
+      expect(schemas.report.safeParse(draft).success).toBe(false);
+      expect(schemas.repair.safeParse(repairDraft(draft)).success).toBe(false);
+    }
+    draft.items[0]!.note_ids = ["n2"];
+    expect(schemas.report.safeParse(draft).success).toBe(true);
+    const empty = groundedOutputSchemas(
+      document,
+      { ...job, requirements: [] },
+      [],
+    );
+    expect(empty.report.safeParse(draft).success).toBe(false);
+    draft.items[0]!.note_ids = [];
+    draft.items[0]!.requirement_ids = [];
+    expect(empty.report.safeParse(draft).success).toBe(true);
+  });
+
   it("requires a supported citation repair to change the claim or actual evidence", () => {
     const { draft } = fixture();
     draft.items[0]!.evidence.push({
