@@ -1,0 +1,257 @@
+{
+  "synthetic": true,
+  "human_reviewed": false,
+  "purpose": "Development rerun after exact-anchor guard. Original v1 6/8 retained; two sources now specify writing method so standalone evidence expectations are meaningful. Third actual report checks withdrawn spring work versus separate summer work. Not fresh holdout.",
+  "cases": [
+    {
+      "id": "standalone_actor_retraction",
+      "requirement": "전자기기 부품 교체",
+      "profile_job_text": "담당업무: 전자기기 부품 교체. 해당 업무를 직접 수행할 담당자를 모집합니다.",
+      "checks": [
+        {
+          "facet": "role",
+          "trigger": "본인 담당 부분이 모호한 참여 주장",
+          "sufficient": "같은 경험에서 직접 수행한 구체적 행동",
+          "insufficient": "팀이나 타인의 업무만 있음"
+        }
+      ],
+      "text": "저는 고장 난 전원 단자를 분리하고 새 단자로 직접 교체했습니다. 앞서 직접 교체했다고 쓴 것은 정정합니다: 실제 교체는 정비사가 했고 저는 부품명을 견적서에 입력했습니다.",
+      "expect": [
+        {
+          "at": 1,
+          "question_count": 0,
+          "min_evidence": 1
+        },
+        {
+          "at": 2,
+          "question_count": 0,
+          "correction_visible": true,
+          "standalone_retractions": 1
+        }
+      ],
+      "critical": true,
+      "full_report": true
+    },
+    {
+      "id": "standalone_scope_refinement_explicit_method",
+      "requirement": "행사 안내문 작성",
+      "profile_job_text": "담당업무: 행사 안내문 작성. 해당 업무를 직접 수행할 담당자를 모집합니다.",
+      "checks": [
+        {
+          "facet": "role",
+          "trigger": "본인 담당 부분이 모호한 참여 주장",
+          "sufficient": "같은 경험에서 직접 수행한 구체적 행동",
+          "insufficient": "팀이나 타인의 업무만 있음"
+        }
+      ],
+      "text": "저는 행사 날짜와 장소를 한 문단으로 정리하여 안내문의 일정 항목을 직접 작성했습니다. 구체적으로 첫 문장에는 날짜를, 다음 문장에는 장소를 적었고 주의사항은 동료가 썼습니다.",
+      "expect": [
+        {
+          "at": 1,
+          "question_count": 0,
+          "min_evidence": 1
+        },
+        {
+          "at": 2,
+          "question_count": 0,
+          "correction_visible": false,
+          "standalone_retractions": 0
+        }
+      ],
+      "critical": true,
+      "full_report": false
+    },
+    {
+      "id": "different_experience_actor",
+      "requirement": "물품 포장",
+      "profile_job_text": "담당업무: 물품 포장. 해당 업무를 직접 수행할 담당자를 모집합니다.",
+      "checks": [
+        {
+          "facet": "role",
+          "trigger": "본인 담당 부분이 모호한 참여 주장",
+          "sufficient": "같은 경험에서 직접 수행한 구체적 행동",
+          "insufficient": "팀이나 타인의 업무만 있음"
+        }
+      ],
+      "text": "저는 봄 장터에서 머그잔을 완충재로 감싸 상자에 포장했습니다. 별개인 가을 장터에서는 동료가 머그잔을 포장했고 저는 가격표만 인쇄했습니다.",
+      "expect": [
+        {
+          "at": 1,
+          "question_count": 0,
+          "min_evidence": 1
+        },
+        {
+          "at": 2,
+          "question_count": 0,
+          "correction_visible": false,
+          "standalone_retractions": 0
+        }
+      ],
+      "critical": true,
+      "full_report": false
+    },
+    {
+      "id": "hypothetical_retraction_text",
+      "requirement": "고객 문의 분류",
+      "profile_job_text": "담당업무: 고객 문의 분류. 해당 업무를 직접 수행할 담당자를 모집합니다.",
+      "checks": [
+        {
+          "facet": "role",
+          "trigger": "본인 담당 부분이 모호한 참여 주장",
+          "sufficient": "같은 경험에서 직접 수행한 구체적 행동",
+          "insufficient": "팀이나 타인의 업무만 있음"
+        }
+      ],
+      "text": "저는 고객 문의를 배송과 결제 항목으로 직접 분류했습니다. 교육 중 가상 사례에서는 직원이 직접 분류했다는 말을 철회하고 상사가 분류했다고 설명했습니다.",
+      "expect": [
+        {
+          "at": 1,
+          "question_count": 0,
+          "min_evidence": 1
+        },
+        {
+          "at": 2,
+          "question_count": 0,
+          "correction_visible": false,
+          "standalone_retractions": 0
+        }
+      ],
+      "critical": true,
+      "full_report": false
+    },
+    {
+      "id": "repeated_same_withdrawal",
+      "requirement": "행사 일정표 작성",
+      "profile_job_text": "담당업무: 행사 일정표 작성. 해당 업무를 직접 수행할 담당자를 모집합니다.",
+      "checks": [
+        {
+          "facet": "role",
+          "trigger": "본인 담당 부분이 모호한 참여 주장",
+          "sufficient": "같은 경험에서 직접 수행한 구체적 행동",
+          "insufficient": "팀이나 타인의 업무만 있음"
+        }
+      ],
+      "text": "저는 축제 일정표의 공연 시간 부분을 직접 작성했습니다. 정정하면 공연 시간 부분은 동료가 작성했고 저는 완성본을 인쇄했습니다. 다시 말해 그 축제 일정표를 제가 작성했다는 표현은 틀리고 동료가 작성했습니다.",
+      "expect": [
+        {
+          "at": 1,
+          "question_count": 0,
+          "min_evidence": 1
+        },
+        {
+          "at": 2,
+          "correction_visible": true,
+          "standalone_retractions": 1
+        },
+        {
+          "at": 3,
+          "correction_visible": false,
+          "standalone_retractions": 1,
+          "max_new_notes": 0
+        }
+      ],
+      "critical": true,
+      "full_report": true
+    },
+    {
+      "id": "question_conflict_no_standalone_duplicate",
+      "requirement": "전시 설명문 작성",
+      "profile_job_text": "담당업무: 전시 설명문 작성. 해당 업무를 직접 수행할 담당자를 모집합니다.",
+      "checks": [
+        {
+          "facet": "role",
+          "trigger": "본인 담당 부분이 모호한 참여 주장",
+          "sufficient": "같은 경험에서 직접 수행한 구체적 행동",
+          "insufficient": "팀이나 타인의 업무만 있음"
+        }
+      ],
+      "text": "전시 설명문 작성에 참여했습니다. 그 전시에서 저는 작품 재료를 설명하는 문단을 직접 작성했습니다. 정정하면 그 문단은 큐레이터가 작성했고 저는 완성본을 복사했습니다.",
+      "expect": [
+        {
+          "at": 1,
+          "question_count": 1,
+          "origin": 1,
+          "status": ["open"]
+        },
+        {
+          "at": 2,
+          "origin": 1,
+          "status": ["resolved"]
+        },
+        {
+          "at": 3,
+          "origin": 1,
+          "status": ["reopened"],
+          "correction_visible": true,
+          "standalone_retractions": 0,
+          "max_new_notes": 1
+        }
+      ],
+      "critical": true,
+      "full_report": false
+    },
+    {
+      "id": "later_new_work_after_withdrawal_explicit_method",
+      "requirement": "전시 안내문 작성",
+      "profile_job_text": "담당업무: 전시 안내문 작성. 해당 업무를 직접 수행할 담당자를 모집합니다.",
+      "checks": [
+        {
+          "facet": "role",
+          "trigger": "본인 담당 부분이 모호한 참여 주장",
+          "sufficient": "같은 경험에서 직접 수행한 구체적 행동",
+          "insufficient": "팀이나 타인의 업무만 있음"
+        }
+      ],
+      "text": "저는 봄 전시의 개장과 폐장 시각을 한 문단으로 정리하여 관람 시간 안내문을 직접 작성했습니다. 정정하면 봄 전시 안내문은 동료가 작성했고 저는 배포만 했습니다. 그와 별개인 여름 전시에서는 제가 관람 날짜와 시간을 적어 안내문을 직접 작성했습니다.",
+      "expect": [
+        {
+          "at": 1,
+          "question_count": 0,
+          "min_evidence": 1
+        },
+        {
+          "at": 2,
+          "correction_visible": true,
+          "standalone_retractions": 1
+        },
+        {
+          "at": 3,
+          "question_count": 0,
+          "correction_visible": false,
+          "standalone_retractions": 1,
+          "min_evidence": 2
+        }
+      ],
+      "critical": true,
+      "full_report": true
+    },
+    {
+      "id": "repair_actor_retraction_revised_expectation",
+      "requirement": "전자기기 부품 교체",
+      "profile_job_text": "담당업무: 전자기기 부품 교체. 이 공고는 해당 업무 담당자를 모집합니다.",
+      "checks": [
+        {
+          "facet": "role",
+          "trigger": "본인 담당 부분이 모호한 참여 주장",
+          "sufficient": "같은 경험에서 직접 수행한 구체적 행동",
+          "insufficient": "팀이나 타인의 업무만 있음"
+        }
+      ],
+      "text": "작업장의 전자기기 수리 과정에 참여했습니다. 저는 이 작업에서 파손된 전원 단자를 직접 교체했습니다. 실제로 전원 단자를 교체한 사람은 정비사였고 저는 견적서의 부품명을 입력한 것입니다.",
+      "expect": [
+        {
+          "at": 3,
+          "correction_visible": true
+        }
+      ],
+      "critical": true,
+      "full_report": false
+    }
+  ],
+  "frozen_reader_hashes": {
+    "codex.ts": "8d6cab576c9bde04694ef554beddd9dc1db68fb2307a40b6e3f1a1d8d2fc7a5c",
+    "semantic-reader.ts": "858f8efef4cb35713bffea05530551be953e22b2793ac233d33cf9d79b999cf3",
+    "reader.ts": "828b99253d530d80b47781be2b61bf1ddbd03a30c9b6a92899cbeef2bc471dc3",
+    "tools/semantic-quality-eval.ts": "c996d2a16891ec8da2d5b0f11742dbcf2f90b6d833ba969b79e4dddabb413716"
+  }
+}

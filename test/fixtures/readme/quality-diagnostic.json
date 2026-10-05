@@ -1,0 +1,380 @@
+{
+  "synthetic": true,
+  "label_status": "provisional_agent_authored",
+  "human_reviewed": false,
+  "purpose": "Predeclared diagnostic hypotheses, not product accuracy or approved training labels. Some ambiguous cases allow multiple labels. Never tune on these and call them an unseen test.",
+  "cases": [
+    {
+      "id": "u1",
+      "kind": "unit",
+      "state": {
+        "current": "제가 참가자 일정을 조정하고 매주 안내문을 작성했습니다.",
+        "previous": []
+      },
+      "expected": {
+        "signal": ["concrete"],
+        "missing": ["none"]
+      }
+    },
+    {
+      "id": "u2",
+      "kind": "unit",
+      "state": {
+        "current": "우리 팀의 노력으로 매출이 크게 늘었습니다.",
+        "previous": []
+      },
+      "expected": {
+        "signal": ["claim"],
+        "missing": ["role", "basis"]
+      }
+    },
+    {
+      "id": "u3",
+      "kind": "unit",
+      "state": {
+        "current": "# 지역 행사 운영 경험",
+        "previous": []
+      },
+      "expected": {
+        "signal": ["context"],
+        "missing": ["none"]
+      }
+    },
+    {
+      "id": "u4",
+      "kind": "unit",
+      "state": {
+        "current": "2024년 3월부터 6월까지 진행한 활동입니다.",
+        "previous": []
+      },
+      "expected": {
+        "signal": ["context"],
+        "missing": ["none"]
+      }
+    },
+    {
+      "id": "u5",
+      "kind": "unit",
+      "state": {
+        "current": "저는 SQL로 주간 판매 보고서를 작성했습니다.",
+        "previous": []
+      },
+      "expected": {
+        "signal": ["concrete"],
+        "missing": ["none"]
+      }
+    },
+    {
+      "id": "u6",
+      "kind": "unit",
+      "state": {
+        "current": "제가 안내문 양식을 바꿔 문의를 30% 줄였습니다.",
+        "previous": []
+      },
+      "expected": {
+        "signal": ["concrete"],
+        "missing": ["basis"]
+      }
+    },
+    {
+      "id": "u7",
+      "kind": "unit",
+      "state": {
+        "current": "만족도가 높아졌습니다.",
+        "previous": []
+      },
+      "expected": {
+        "signal": ["claim"],
+        "missing": ["basis"]
+      }
+    },
+    {
+      "id": "u8",
+      "kind": "unit",
+      "state": {
+        "current": "행사 운영에 기여했습니다.",
+        "previous": ["제가 행사 안내문 작성과 참여자 일정 조정을 담당했습니다."]
+      },
+      "expected": {
+        "signal": ["claim"],
+        "missing": ["none"]
+      }
+    },
+    {
+      "id": "q1",
+      "kind": "relation",
+      "state": {
+        "question": "문화 행사에서 직접 맡은 업무는 무엇인가요?",
+        "original": "문화 행사 운영을 지원했습니다.",
+        "current": "이 문화 행사에서 제가 참여자 일정 조정과 안내문 작성을 담당했습니다."
+      },
+      "expected": {
+        "relation": ["answers"]
+      }
+    },
+    {
+      "id": "q2",
+      "kind": "relation",
+      "state": {
+        "question": "문화 행사에서 직접 맡은 업무는 무엇인가요?",
+        "original": "문화 행사 운영을 지원했습니다.",
+        "current": "다른 경험인 학과 축제에서는 제가 예산을 관리했습니다."
+      },
+      "expected": {
+        "relation": ["unrelated"]
+      }
+    },
+    {
+      "id": "q3",
+      "kind": "relation",
+      "state": {
+        "question": "문화 행사에서 직접 맡은 업무는 무엇인가요?",
+        "original": "문화 행사 운영을 지원했습니다.",
+        "current": "문화 행사는 토요일에 열렸습니다."
+      },
+      "expected": {
+        "relation": ["unrelated"]
+      }
+    },
+    {
+      "id": "q4",
+      "kind": "relation",
+      "state": {
+        "question": "문화 행사에서 직접 맡은 업무는 무엇인가요?",
+        "original": "문화 행사 운영을 지원했습니다.",
+        "current": "앞으로 문화 행사의 참여자 일정을 맡을 계획입니다."
+      },
+      "expected": {
+        "relation": ["unrelated", "partial"]
+      }
+    },
+    {
+      "id": "q5",
+      "kind": "relation",
+      "state": {
+        "question": "만족도 상승의 조사 방식과 전후 비교 결과는 무엇인가요?",
+        "original": "문화 행사 참여자의 만족도가 높아졌습니다.",
+        "current": "이 행사가 끝난 뒤 설문지를 배포했습니다."
+      },
+      "expected": {
+        "relation": ["partial"]
+      }
+    },
+    {
+      "id": "q6",
+      "kind": "relation",
+      "state": {
+        "question": "만족도 상승의 조사 방식과 전후 비교 결과는 무엇인가요?",
+        "original": "문화 행사 참여자의 만족도가 높아졌습니다.",
+        "current": "문화 행사 전후 같은 참여자 30명에게 같은 5점 척도 설문을 실시했고 평균은 3.2점에서 4.1점이 됐습니다."
+      },
+      "expected": {
+        "relation": ["answers"]
+      }
+    },
+    {
+      "id": "q7",
+      "kind": "relation",
+      "state": {
+        "question": "매출 증가의 비교 기간과 수치는 무엇인가요?",
+        "original": "우리 매장의 매출이 증가했습니다.",
+        "current": "같은 매장의 2024년 2분기 매출은 1분기보다 15% 높았습니다."
+      },
+      "expected": {
+        "relation": ["answers"]
+      }
+    },
+    {
+      "id": "q8",
+      "kind": "relation",
+      "state": {
+        "question": "매출 증가의 비교 기간과 수치는 무엇인가요?",
+        "original": "우리 매장의 매출이 증가했습니다.",
+        "current": "고객 안내문을 매주 새로 작성했습니다."
+      },
+      "expected": {
+        "relation": ["unrelated"]
+      }
+    },
+    {
+      "id": "q9",
+      "kind": "relation",
+      "state": {
+        "question": "학생회에서 직접 맡은 역할은 무엇인가요?",
+        "original": "학생회 행사를 도왔습니다.",
+        "current": "학생회에서 본인의 담당 업무는 회계 정산이었습니다."
+      },
+      "expected": {
+        "relation": ["answers"]
+      }
+    },
+    {
+      "id": "q10",
+      "kind": "relation",
+      "state": {
+        "question": "학생회에서 직접 맡은 역할은 무엇인가요?",
+        "original": "학생회 행사를 도왔습니다.",
+        "current": "학생회 회계 정산은 제가 아닌 다른 팀원이 담당했습니다."
+      },
+      "expected": {
+        "relation": ["unrelated", "partial"]
+      }
+    },
+    {
+      "id": "q11",
+      "kind": "relation",
+      "state": {
+        "question": "접수 오류를 줄인 구체적인 방법은 무엇인가요?",
+        "original": "행사 접수 오류를 줄였습니다.",
+        "current": "이 행사의 신청 양식에 필수 항목 검사를 추가하고 누락 시 안내 메시지를 표시했습니다."
+      },
+      "expected": {
+        "relation": ["answers"]
+      }
+    },
+    {
+      "id": "q12",
+      "kind": "relation",
+      "state": {
+        "question": "접수 오류를 줄인 구체적인 방법은 무엇인가요?",
+        "original": "행사 접수 오류를 줄였습니다.",
+        "current": "행사 안내문에는 시작 시간을 적었습니다."
+      },
+      "expected": {
+        "relation": ["unrelated"]
+      }
+    },
+    {
+      "id": "r1",
+      "kind": "relevance",
+      "state": {
+        "current": "제가 참여자 일정을 조정하고 매주 안내문을 작성했습니다.",
+        "requirement": "참여자 일정 조정 경험"
+      },
+      "expected": {
+        "relevance": ["supports"]
+      }
+    },
+    {
+      "id": "r2",
+      "kind": "relevance",
+      "state": {
+        "current": "제가 참여자 일정을 조정하고 매주 안내문을 작성했습니다.",
+        "requirement": "Java 서버 개발 경험"
+      },
+      "expected": {
+        "relevance": ["unrelated"]
+      }
+    },
+    {
+      "id": "r3",
+      "kind": "relevance",
+      "state": {
+        "current": "Java를 공부할 계획입니다.",
+        "requirement": "Java 서버 개발 경험"
+      },
+      "expected": {
+        "relevance": ["mentions"]
+      }
+    },
+    {
+      "id": "r4",
+      "kind": "relevance",
+      "state": {
+        "current": "제가 Java로 신청서 접수 API를 구현했습니다.",
+        "requirement": "Java 서버 개발 경험"
+      },
+      "expected": {
+        "relevance": ["supports"]
+      }
+    },
+    {
+      "id": "r5",
+      "kind": "relevance",
+      "state": {
+        "current": "보고서 작성 능력이 있습니다.",
+        "requirement": "프로그램 결과 보고서 작성 경험"
+      },
+      "expected": {
+        "relevance": ["mentions"]
+      }
+    },
+    {
+      "id": "r6",
+      "kind": "relevance",
+      "state": {
+        "current": "제가 프로그램 출석 기록을 집계하고 결과 보고서를 작성했습니다.",
+        "requirement": "프로그램 결과 보고서 작성 경험"
+      },
+      "expected": {
+        "relevance": ["supports"]
+      }
+    },
+    {
+      "id": "r7",
+      "kind": "relevance",
+      "state": {
+        "current": "일정 조정은 다른 팀원이 맡았으며 저는 행사 사진만 촬영했습니다.",
+        "requirement": "참여자 일정 조정 경험"
+      },
+      "expected": {
+        "relevance": ["mentions", "unrelated"]
+      }
+    },
+    {
+      "id": "r8",
+      "kind": "relevance",
+      "state": {
+        "current": "제가 두 기관의 사용 가능 시간을 비교하고 회의에서 교육실 일정을 합의했습니다.",
+        "requirement": "협력 기관과 업무 조율 경험"
+      },
+      "expected": {
+        "relevance": ["supports"]
+      }
+    },
+    {
+      "id": "r9",
+      "kind": "relevance",
+      "state": {
+        "current": "주말마다 독서 모임에 참여했습니다.",
+        "requirement": "회계 정산 경험"
+      },
+      "expected": {
+        "relevance": ["unrelated"]
+      }
+    },
+    {
+      "id": "r10",
+      "kind": "relevance",
+      "state": {
+        "current": "협력 기관과 업무 조율 경험을 쌓고 싶습니다.",
+        "requirement": "협력 기관과 업무 조율 경험"
+      },
+      "expected": {
+        "relevance": ["mentions"]
+      }
+    },
+    {
+      "id": "r11",
+      "kind": "relevance",
+      "state": {
+        "current": "저는 SQL로 주문별 매출을 집계하고 월간 보고서를 만들었습니다.",
+        "requirement": "SQL을 활용한 데이터 분석 경험"
+      },
+      "expected": {
+        "relevance": ["supports"]
+      }
+    },
+    {
+      "id": "r12",
+      "kind": "relevance",
+      "state": {
+        "current": "보고서 파일을 다운로드했습니다.",
+        "requirement": "보고서 작성 경험"
+      },
+      "expected": {
+        "relevance": ["mentions", "unrelated"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "synthetic": true,
+  "human_reviewed": false,
+  "label_status": "provisional_agent_authored",
+  "split": "held_out_once",
+  "policy": "role-contract-v1",
+  "purpose": "Six additional independently authored transfer scenarios, fixed after v21 chosen and before first inference; eight strict labels and nine state checks. Not human accuracy.",
+  "cases": [
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "bindery_assignment_record_1",
+      "scenario": "bindery_assignment_record",
+      "units": [
+        "제본소의 견본 제작 보조 경험입니다.",
+        "작업명: 견본책 표지 번호와 내지 번호 대조 / 담당: 본인 / 상태: 배정, 아직 미착수.",
+        "같은 작업의 마감 기록: 본인 수행 완료 / 확인 결과: 번호가 다른 견본 두 권을 분리함."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial"],
+      "expected_state": "not_resolved",
+      "require_current_evidence": false,
+      "state_only": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "bindery_assignment_record_2",
+      "scenario": "bindery_assignment_record",
+      "units": [
+        "제본소의 견본 제작 보조 경험입니다.",
+        "작업명: 견본책 표지 번호와 내지 번호 대조 / 담당: 본인 / 상태: 배정, 아직 미착수.",
+        "같은 작업의 마감 기록: 본인 수행 완료 / 확인 결과: 번호가 다른 견본 두 권을 분리함."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true,
+      "state_only": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "boarding_cancelled_assignment_new_duty_1",
+      "scenario": "boarding_cancelled_assignment_new_duty",
+      "units": [
+        "반려동물 호텔의 입실 준비 업무를 도왔습니다.",
+        "당초 제가 맡을 예정이던 일은 먹이 용기에 이름표를 붙이는 작업이었습니다.",
+        "그 작업은 취소됐고, 같은 근무일에 저는 보관함 번호를 입실 명단에 직접 기입했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["partial"],
+      "expected_state": "not_resolved",
+      "require_current_evidence": false,
+      "state_only": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "boarding_cancelled_assignment_new_duty_2",
+      "scenario": "boarding_cancelled_assignment_new_duty",
+      "units": [
+        "반려동물 호텔의 입실 준비 업무를 도왔습니다.",
+        "당초 제가 맡을 예정이던 일은 먹이 용기에 이름표를 붙이는 작업이었습니다.",
+        "그 작업은 취소됐고, 같은 근무일에 저는 보관함 번호를 입실 명단에 직접 기입했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true,
+      "state_only": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "insurance_different_unnamed_action_2",
+      "scenario": "insurance_different_unnamed_action",
+      "units": [
+        "보험 서류 접수 지원에 참여했습니다.",
+        "저에게 예정된 업무는 신청서와 고객 명부의 주소를 대조하는 일이었습니다.",
+        "주소 대조는 아직 하지 않았고, 그날 별도로 배정된 다른 일만 마쳤습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["partial"],
+      "expected_state": "not_resolved",
+      "require_current_evidence": false,
+      "state_only": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "tunnel_new_contract_after_plan_2",
+      "scenario": "tunnel_new_contract_after_plan",
+      "units": [
+        "동부터널 공사의 서류 정리를 지원한 경험입니다.",
+        "이 공사에서 제 예정 업무는 작업일보의 누락 항목을 확인하는 일이었습니다.",
+        "이후 다른 계약으로 시작한 서부터널 공사에서는 제가 작업일보의 누락 항목을 실제로 확인했습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["unrelated"],
+      "expected_state": "not_resolved",
+      "require_current_evidence": false,
+      "state_only": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "water_records_unknown_performer_2",
+      "scenario": "water_records_unknown_performer",
+      "units": [
+        "상수도 검침 자료 정리 업무를 지원했습니다.",
+        "검침 사진 파일명과 계량기 번호를 대조하는 일이 제 예정 업무였습니다.",
+        "대장에는 대조 완료라고 표시돼 있지만 수행자 칸이 비어 있고, 제가 대조했는지도 확인되지 않습니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["unknown"],
+      "expected_state": "not_resolved",
+      "require_current_evidence": false,
+      "state_only": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "hotel_historical_plan_quote_1",
+      "scenario": "hotel_historical_plan_quote",
+      "units": [
+        "호텔의 단체 예약 정리 업무를 도왔습니다.",
+        "제가 예약 명단의 중복 항목을 대조하고 수정 목록을 작성했습니다.",
+        "업무 시작 전에 만든 제 계획서에는 ‘명단 대조는 내일 할 예정’이라고 적혀 있습니다. 이는 앞서 설명한 작업을 수행하기 전에 작성한 문구입니다."
+      ],
+      "origin_index": 0,
+      "current_index": 1,
+      "expected": ["complete"],
+      "expected_state": "resolved",
+      "require_current_evidence": true,
+      "state_only": false
+    },
+    {
+      "facet": "role",
+      "question": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
+      "sufficient": "같은 경험에서 지원자 본인이 실제 수행한 구체적인 업무 한 가지가 설명되어 있다.",
+      "insufficient": "단순 참여, 팀·타인의 업무, 계획·가상 사례만 있음.",
+      "id": "hotel_historical_plan_quote_2",
+      "scenario": "hotel_historical_plan_quote",
+      "units": [
+        "호텔의 단체 예약 정리 업무를 도왔습니다.",
+        "제가 예약 명단의 중복 항목을 대조하고 수정 목록을 작성했습니다.",
+        "업무 시작 전에 만든 제 계획서에는 ‘명단 대조는 내일 할 예정’이라고 적혀 있습니다. 이는 앞서 설명한 작업을 수행하기 전에 작성한 문구입니다."
+      ],
+      "origin_index": 0,
+      "current_index": 2,
+      "expected": ["complete", "partial", "unrelated", "unknown"],
+      "expected_state": "resolved",
+      "require_current_evidence": false,
+      "state_only": true
+    }
+  ]
+}

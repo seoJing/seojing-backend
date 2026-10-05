@@ -6,15 +6,19 @@ import swaggerUi from "@fastify/swagger-ui";
 import Fastify, { type FastifyInstance } from "fastify";
 
 import { ArticleRepository } from "./repositories/articles.js";
+import { CareerRepository } from "./repositories/careers.js";
 import { CommunityRepository } from "./repositories/community.js";
 import { registerAdminWritingRoutes } from "./routes/admin-writing.js";
 import { registerArticleQaRoutes } from "./routes/article-qa.js";
 import { registerArticleRoutes } from "./routes/articles.js";
+import { registerCareerRoutes } from "./routes/careers.js";
 import { registerCommunityRoutes } from "./routes/community.js";
 import { registerHealthRoutes } from "./routes/health.js";
+import { registerReadmeRoutes } from "./routes/readme.js";
 import { registerTtsRoutes } from "./routes/tts.js";
 import { ArticleQaService } from "./services/article-qa.js";
 import { ArticleService } from "./services/articles.js";
+import { CareerService } from "./services/careers.js";
 import { CommunityService } from "./services/community.js";
 import { GitHubOAuthService } from "./services/github-oauth.js";
 import { type PythonWorkerClient } from "./services/python-worker.js";
@@ -29,7 +33,9 @@ export interface BuildAppOptions {
   corsOrigins?: string[];
   adminToken?: string;
   articleService?: ArticleService;
+  careerService?: CareerService;
   communityService?: CommunityService;
+  prisma?: PrismaClient;
   githubOAuth?: {
     clientId: string;
     clientSecret: string;
@@ -81,6 +87,18 @@ export async function buildApp(
             "Admin-only article draft, revision, block editor, and publish workflow",
         },
         {
+          name: "careers",
+          description: "Published, source-backed Career Radar opportunities",
+        },
+        {
+          name: "readme",
+          description: "Synthetic README reading preview",
+        },
+        {
+          name: "admin-careers",
+          description: "Admin-only Career Radar aggregate workflow",
+        },
+        {
           name: "community",
           description: "GitHub-authenticated comments and questions",
         },
@@ -95,6 +113,14 @@ export async function buildApp(
             "Source-backed article Q&A delegated to the internal Python worker",
         },
       ],
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+          },
+        },
+      },
     },
   });
 
@@ -103,23 +129,33 @@ export async function buildApp(
   });
 
   registerHealthRoutes(app, { pythonWorkerClient: options.pythonWorkerClient });
+  registerReadmeRoutes(app);
   registerTtsRoutes(app, {
     ttsService: new TtsService(options.pythonWorkerClient, {
       audioRoot: options.ttsAudioRoot,
     }),
   });
 
-  const prisma =
-    options.articleService && options.communityService
-      ? undefined
-      : new PrismaClient();
+  const needsPrisma =
+    !options.articleService ||
+    !options.careerService ||
+    !options.communityService;
+  const ownsPrisma = needsPrisma && !options.prisma;
+  const prisma = needsPrisma
+    ? (options.prisma ?? new PrismaClient())
+    : undefined;
   const articleService = options.articleService ?? createArticleService(prisma);
+  const careerService = options.careerService ?? createCareerService(prisma);
   const communityService =
     options.communityService ?? createCommunityService(prisma, options);
   const githubOAuthService =
     options.githubOAuthService ??
     createGitHubOAuthService(options, communityService);
   registerArticleRoutes(app, { articleService });
+  registerCareerRoutes(app, {
+    careerService,
+    adminToken: options.adminToken,
+  });
   registerArticleQaRoutes(app, {
     articleQaService: new ArticleQaService(
       articleService,
@@ -138,7 +174,7 @@ export async function buildApp(
     adminToken: options.adminToken,
   });
 
-  if (prisma) {
+  if (prisma && ownsPrisma) {
     app.addHook("onClose", async () => {
       await prisma.$disconnect();
     });
@@ -173,6 +209,15 @@ function createArticleService(
     );
   }
   return new ArticleService(new ArticleRepository(prisma));
+}
+
+function createCareerService(prisma: PrismaClient | undefined): CareerService {
+  if (!prisma) {
+    throw new Error(
+      "Prisma client is required when careerService is not provided.",
+    );
+  }
+  return new CareerService(new CareerRepository(prisma));
 }
 
 function createCommunityService(

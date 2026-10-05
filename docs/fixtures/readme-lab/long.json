@@ -1,0 +1,4921 @@
+{
+  "synthetic": true,
+  "fixture": true,
+  "authored": true,
+  "prepare_ms": 0,
+  "total_ms": 0,
+  "prepare": {
+    "prepare_id": "fixture-long-prepare",
+    "input_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "status": "ready",
+    "document": {
+      "doc_id": "df95a765cefd811e198b2833",
+      "source_kind": "md",
+      "blocks": [
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "# 지역 문화 행사 운영",
+          "id": "b1",
+          "unit_ids": ["u1"]
+        },
+        {
+          "type": "paragraph",
+          "text": "지역 행사 운영을 지원했습니다. 행사는 주말마다 세 차례 열렸습니다. 신청자들은 전화와 온라인으로 접수했습니다. 제가 참여자 일정 조정과 안내문 작성을 담당했습니다. 신청 가능 시간을 표로 정리했습니다. 일정이 겹친 참여자에게 대체 회차를 안내했습니다. 변경 사항은 담당자에게 매일 전달했습니다.",
+          "id": "b2",
+          "unit_ids": ["u2", "u3", "u4", "u5", "u6", "u7", "u8"]
+        },
+        {
+          "type": "list_item",
+          "text": "- 참여자 만족도를 높였습니다. 종료 후 종이 설문을 배포했습니다. 응답은 익명으로 받았습니다. 설문에는 운영 시간과 안내 내용에 관한 항목이 있었습니다. 안내가 이해하기 쉬웠다는 의견을 결과 보고서에 정리했습니다. 이전 행사와 같은 문항을 사용했는지는 기록하지 않았습니다. 행사 사진 정리는 다른 담당자가 맡았습니다.",
+          "id": "b3",
+          "unit_ids": ["u9", "u10", "u11", "u12", "u13", "u14", "u15"]
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "# 청년 교육 프로그램",
+          "id": "b4",
+          "unit_ids": ["u16"]
+        },
+        {
+          "type": "paragraph",
+          "text": "협력 기관과 일정 충돌을 해결했습니다. 두 기관이 같은 교육실을 요청한 상황이었습니다. 저는 각 기관의 필수 사용 시간을 확인했습니다. 변경 가능한 시간을 표로 공유하고 양쪽 담당자와 조정안을 합의했습니다. 확정 일정은 공동 달력에 반영했습니다. 교육실 사용 안내도 수정했습니다. 프로그램은 네 주 동안 진행됐습니다.",
+          "id": "b5",
+          "unit_ids": ["u17", "u18", "u19", "u20", "u21", "u22", "u23"]
+        },
+        {
+          "type": "list_item",
+          "text": "- 운영 보고서 초안은 팀이 함께 작성했습니다. 저는 출석 기록과 회차별 운영 일지를 정리했습니다. 회의에서는 진행 중인 문제를 공유했습니다. 보고서의 다른 부분은 역할을 나눠 작성했습니다. 전체 문서의 최종 검토는 팀장이 맡았습니다. 배포용 안내문에는 장소와 준비물을 넣었습니다. 문의가 반복된 항목은 다음 회차 안내에 추가했습니다.",
+          "id": "b6",
+          "unit_ids": ["u24", "u25", "u26", "u27", "u28", "u29", "u30"]
+        },
+        {
+          "type": "heading",
+          "level": 1,
+          "text": "# 마을 도서관 활동",
+          "id": "b7",
+          "unit_ids": ["u31"]
+        },
+        {
+          "type": "paragraph",
+          "text": "제가 독서 모임의 신청 안내문을 작성했습니다. 신청 기간과 참여 조건을 표로 배치했습니다. 안내문은 도서관 게시판에 붙였습니다. 팀 전체의 활동으로 신규 참여자가 늘었습니다. 같은 기간 도서관에서 홍보 행사도 열렸습니다. 저는 모임의 장소를 예약했습니다. 진행자에게 참석 예정 명단을 전달했습니다. 모임은 월말에 마무리됐습니다. 다음 분기에도 활동을 이어갈 계획입니다.",
+          "id": "b8",
+          "unit_ids": [
+            "u32",
+            "u33",
+            "u34",
+            "u35",
+            "u36",
+            "u37",
+            "u38",
+            "u39",
+            "u40"
+          ]
+        }
+      ],
+      "units": [
+        {
+          "id": "u1",
+          "block_id": "b1",
+          "order": 0,
+          "start": 0,
+          "end": 13,
+          "text": "# 지역 문화 행사 운영",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u2",
+          "block_id": "b2",
+          "order": 1,
+          "start": 0,
+          "end": 17,
+          "text": "지역 행사 운영을 지원했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u3",
+          "block_id": "b2",
+          "order": 2,
+          "start": 17,
+          "end": 38,
+          "text": " 행사는 주말마다 세 차례 열렸습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u4",
+          "block_id": "b2",
+          "order": 3,
+          "start": 38,
+          "end": 62,
+          "text": " 신청자들은 전화와 온라인으로 접수했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u5",
+          "block_id": "b2",
+          "order": 4,
+          "start": 62,
+          "end": 92,
+          "text": " 제가 참여자 일정 조정과 안내문 작성을 담당했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u6",
+          "block_id": "b2",
+          "order": 5,
+          "start": 92,
+          "end": 113,
+          "text": " 신청 가능 시간을 표로 정리했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u7",
+          "block_id": "b2",
+          "order": 6,
+          "start": 113,
+          "end": 141,
+          "text": " 일정이 겹친 참여자에게 대체 회차를 안내했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u8",
+          "block_id": "b2",
+          "order": 7,
+          "start": 141,
+          "end": 165,
+          "text": " 변경 사항은 담당자에게 매일 전달했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u9",
+          "block_id": "b3",
+          "order": 8,
+          "start": 0,
+          "end": 17,
+          "text": "- 참여자 만족도를 높였습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u10",
+          "block_id": "b3",
+          "order": 9,
+          "start": 17,
+          "end": 37,
+          "text": " 종료 후 종이 설문을 배포했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u11",
+          "block_id": "b3",
+          "order": 10,
+          "start": 37,
+          "end": 53,
+          "text": " 응답은 익명으로 받았습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u12",
+          "block_id": "b3",
+          "order": 11,
+          "start": 53,
+          "end": 86,
+          "text": " 설문에는 운영 시간과 안내 내용에 관한 항목이 있었습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u13",
+          "block_id": "b3",
+          "order": 12,
+          "start": 86,
+          "end": 120,
+          "text": " 안내가 이해하기 쉬웠다는 의견을 결과 보고서에 정리했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u14",
+          "block_id": "b3",
+          "order": 13,
+          "start": 120,
+          "end": 153,
+          "text": " 이전 행사와 같은 문항을 사용했는지는 기록하지 않았습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u15",
+          "block_id": "b3",
+          "order": 14,
+          "start": 153,
+          "end": 178,
+          "text": " 행사 사진 정리는 다른 담당자가 맡았습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u16",
+          "block_id": "b4",
+          "order": 15,
+          "start": 0,
+          "end": 12,
+          "text": "# 청년 교육 프로그램",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u17",
+          "block_id": "b5",
+          "order": 16,
+          "start": 0,
+          "end": 21,
+          "text": "협력 기관과 일정 충돌을 해결했습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u18",
+          "block_id": "b5",
+          "order": 17,
+          "start": 21,
+          "end": 48,
+          "text": " 두 기관이 같은 교육실을 요청한 상황이었습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u19",
+          "block_id": "b5",
+          "order": 18,
+          "start": 48,
+          "end": 75,
+          "text": " 저는 각 기관의 필수 사용 시간을 확인했습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u20",
+          "block_id": "b5",
+          "order": 19,
+          "start": 75,
+          "end": 115,
+          "text": " 변경 가능한 시간을 표로 공유하고 양쪽 담당자와 조정안을 합의했습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u21",
+          "block_id": "b5",
+          "order": 20,
+          "start": 115,
+          "end": 137,
+          "text": " 확정 일정은 공동 달력에 반영했습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u22",
+          "block_id": "b5",
+          "order": 21,
+          "start": 137,
+          "end": 156,
+          "text": " 교육실 사용 안내도 수정했습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u23",
+          "block_id": "b5",
+          "order": 22,
+          "start": 156,
+          "end": 177,
+          "text": " 프로그램은 네 주 동안 진행됐습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u24",
+          "block_id": "b6",
+          "order": 23,
+          "start": 0,
+          "end": 26,
+          "text": "- 운영 보고서 초안은 팀이 함께 작성했습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u25",
+          "block_id": "b6",
+          "order": 24,
+          "start": 26,
+          "end": 55,
+          "text": " 저는 출석 기록과 회차별 운영 일지를 정리했습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u26",
+          "block_id": "b6",
+          "order": 25,
+          "start": 55,
+          "end": 79,
+          "text": " 회의에서는 진행 중인 문제를 공유했습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u27",
+          "block_id": "b6",
+          "order": 26,
+          "start": 79,
+          "end": 106,
+          "text": " 보고서의 다른 부분은 역할을 나눠 작성했습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u28",
+          "block_id": "b6",
+          "order": 27,
+          "start": 106,
+          "end": 131,
+          "text": " 전체 문서의 최종 검토는 팀장이 맡았습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u29",
+          "block_id": "b6",
+          "order": 28,
+          "start": 131,
+          "end": 157,
+          "text": " 배포용 안내문에는 장소와 준비물을 넣었습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u30",
+          "block_id": "b6",
+          "order": 29,
+          "start": 157,
+          "end": 187,
+          "text": " 문의가 반복된 항목은 다음 회차 안내에 추가했습니다.",
+          "scope_id": "b4"
+        },
+        {
+          "id": "u31",
+          "block_id": "b7",
+          "order": 30,
+          "start": 0,
+          "end": 11,
+          "text": "# 마을 도서관 활동",
+          "scope_id": "b7"
+        },
+        {
+          "id": "u32",
+          "block_id": "b8",
+          "order": 31,
+          "start": 0,
+          "end": 25,
+          "text": "제가 독서 모임의 신청 안내문을 작성했습니다.",
+          "scope_id": "b7"
+        },
+        {
+          "id": "u33",
+          "block_id": "b8",
+          "order": 32,
+          "start": 25,
+          "end": 50,
+          "text": " 신청 기간과 참여 조건을 표로 배치했습니다.",
+          "scope_id": "b7"
+        },
+        {
+          "id": "u34",
+          "block_id": "b8",
+          "order": 33,
+          "start": 50,
+          "end": 71,
+          "text": " 안내문은 도서관 게시판에 붙였습니다.",
+          "scope_id": "b7"
+        },
+        {
+          "id": "u35",
+          "block_id": "b8",
+          "order": 34,
+          "start": 71,
+          "end": 97,
+          "text": " 팀 전체의 활동으로 신규 참여자가 늘었습니다.",
+          "scope_id": "b7"
+        },
+        {
+          "id": "u36",
+          "block_id": "b8",
+          "order": 35,
+          "start": 97,
+          "end": 123,
+          "text": " 같은 기간 도서관에서 홍보 행사도 열렸습니다.",
+          "scope_id": "b7"
+        },
+        {
+          "id": "u37",
+          "block_id": "b8",
+          "order": 36,
+          "start": 123,
+          "end": 142,
+          "text": " 저는 모임의 장소를 예약했습니다.",
+          "scope_id": "b7"
+        },
+        {
+          "id": "u38",
+          "block_id": "b8",
+          "order": 37,
+          "start": 142,
+          "end": 166,
+          "text": " 진행자에게 참석 예정 명단을 전달했습니다.",
+          "scope_id": "b7"
+        },
+        {
+          "id": "u39",
+          "block_id": "b8",
+          "order": 38,
+          "start": 166,
+          "end": 183,
+          "text": " 모임은 월말에 마무리됐습니다.",
+          "scope_id": "b7"
+        },
+        {
+          "id": "u40",
+          "block_id": "b8",
+          "order": 39,
+          "start": 183,
+          "end": 206,
+          "text": " 다음 분기에도 활동을 이어갈 계획입니다.",
+          "scope_id": "b7"
+        }
+      ],
+      "warnings": [],
+      "truncated": false
+    },
+    "job": {
+      "source": "user_paste",
+      "text": "필수: 참여자 일정 조정, 안내문 작성, 프로그램 결과 보고서 작성 경험. 우대: 협력 기관과 업무 조율 경험.",
+      "requirements": [
+        {
+          "id": "r1",
+          "kind": "required",
+          "label": "일정 조정",
+          "quote": "참여자 일정 조정",
+          "start": 4,
+          "end": 13
+        },
+        {
+          "id": "r2",
+          "kind": "required",
+          "label": "안내문 작성",
+          "quote": "안내문 작성",
+          "start": 15,
+          "end": 21
+        },
+        {
+          "id": "r3",
+          "kind": "required",
+          "label": "결과 보고",
+          "quote": "프로그램 결과 보고서 작성 경험",
+          "start": 23,
+          "end": 40
+        },
+        {
+          "id": "r4",
+          "kind": "preferred",
+          "label": "기관 간 조율",
+          "quote": "협력 기관과 업무 조율 경험",
+          "start": 46,
+          "end": 61
+        }
+      ],
+      "warnings": []
+    },
+    "expires_at": "2100-01-01T00:00:00.000Z"
+  },
+  "snapshots": [
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w1",
+          "unit_ids": ["u1"],
+          "seq": 1
+        }
+      ],
+      "next_seq": 1,
+      "progress": {
+        "read_unit_count": 0,
+        "total_unit_count": 40,
+        "current_window": "w1"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w1",
+          "unit_ids": ["u1"],
+          "seq": 2
+        }
+      ],
+      "next_seq": 2,
+      "progress": {
+        "read_unit_count": 1,
+        "total_unit_count": 40,
+        "current_window": "w1"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w2",
+          "unit_ids": ["u2"],
+          "seq": 3
+        }
+      ],
+      "next_seq": 3,
+      "progress": {
+        "read_unit_count": 1,
+        "total_unit_count": 40,
+        "current_window": "w2"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n1",
+            "unit_id": "u2",
+            "span": { "block_id": "b2", "start": 0, "end": 17 },
+            "kind": "question",
+            "text": "행사 운영에서 직접 맡은 업무는 무엇이었을까?",
+            "question_id": "q1",
+            "evidence_unit_ids": ["u2"],
+            "requirement_ids": ["r1", "r2"],
+            "review_required": true
+          },
+          "seq": 4
+        }
+      ],
+      "next_seq": 4,
+      "progress": {
+        "read_unit_count": 1,
+        "total_unit_count": 40,
+        "current_window": "w2"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w2",
+          "unit_ids": ["u2"],
+          "seq": 5
+        }
+      ],
+      "next_seq": 5,
+      "progress": {
+        "read_unit_count": 2,
+        "total_unit_count": 40,
+        "current_window": "w2"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w3",
+          "unit_ids": ["u3"],
+          "seq": 6
+        }
+      ],
+      "next_seq": 6,
+      "progress": {
+        "read_unit_count": 2,
+        "total_unit_count": 40,
+        "current_window": "w3"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w3",
+          "unit_ids": ["u3"],
+          "seq": 7
+        }
+      ],
+      "next_seq": 7,
+      "progress": {
+        "read_unit_count": 3,
+        "total_unit_count": 40,
+        "current_window": "w3"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w4",
+          "unit_ids": ["u4"],
+          "seq": 8
+        }
+      ],
+      "next_seq": 8,
+      "progress": {
+        "read_unit_count": 3,
+        "total_unit_count": 40,
+        "current_window": "w4"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w4",
+          "unit_ids": ["u4"],
+          "seq": 9
+        }
+      ],
+      "next_seq": 9,
+      "progress": {
+        "read_unit_count": 4,
+        "total_unit_count": 40,
+        "current_window": "w4"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w5",
+          "unit_ids": ["u5"],
+          "seq": 10
+        }
+      ],
+      "next_seq": 10,
+      "progress": {
+        "read_unit_count": 4,
+        "total_unit_count": 40,
+        "current_window": "w5"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n2",
+            "unit_id": "u5",
+            "span": { "block_id": "b2", "start": 62, "end": 92 },
+            "kind": "hold",
+            "text": "일정 조정과 안내문 작성이 담당 업무로 나온다. 앞선 역할 질문에 답하는 설명 후보다.",
+            "question_id": "q1",
+            "evidence_unit_ids": ["u2", "u5"],
+            "requirement_ids": ["r1", "r2"],
+            "review_required": true
+          },
+          "seq": 11
+        }
+      ],
+      "next_seq": 11,
+      "progress": {
+        "read_unit_count": 4,
+        "total_unit_count": 40,
+        "current_window": "w5"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w5",
+          "unit_ids": ["u5"],
+          "seq": 12
+        }
+      ],
+      "next_seq": 12,
+      "progress": {
+        "read_unit_count": 5,
+        "total_unit_count": 40,
+        "current_window": "w5"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w6",
+          "unit_ids": ["u6"],
+          "seq": 13
+        }
+      ],
+      "next_seq": 13,
+      "progress": {
+        "read_unit_count": 5,
+        "total_unit_count": 40,
+        "current_window": "w6"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w6",
+          "unit_ids": ["u6"],
+          "seq": 14
+        }
+      ],
+      "next_seq": 14,
+      "progress": {
+        "read_unit_count": 6,
+        "total_unit_count": 40,
+        "current_window": "w6"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w7",
+          "unit_ids": ["u7"],
+          "seq": 15
+        }
+      ],
+      "next_seq": 15,
+      "progress": {
+        "read_unit_count": 6,
+        "total_unit_count": 40,
+        "current_window": "w7"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n3",
+            "unit_id": "u7",
+            "span": { "block_id": "b2", "start": 113, "end": 141 },
+            "kind": "evidence",
+            "text": "일정이 겹친 참여자에게 대체 회차를 안내했다는 구체적인 조정 행동이 적혀 있다.",
+            "evidence_unit_ids": ["u7"],
+            "requirement_ids": ["r1"],
+            "review_required": true
+          },
+          "seq": 16
+        }
+      ],
+      "next_seq": 16,
+      "progress": {
+        "read_unit_count": 6,
+        "total_unit_count": 40,
+        "current_window": "w7"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w7",
+          "unit_ids": ["u7"],
+          "seq": 17
+        }
+      ],
+      "next_seq": 17,
+      "progress": {
+        "read_unit_count": 7,
+        "total_unit_count": 40,
+        "current_window": "w7"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w8",
+          "unit_ids": ["u8"],
+          "seq": 18
+        }
+      ],
+      "next_seq": 18,
+      "progress": {
+        "read_unit_count": 7,
+        "total_unit_count": 40,
+        "current_window": "w8"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w8",
+          "unit_ids": ["u8"],
+          "seq": 19
+        }
+      ],
+      "next_seq": 19,
+      "progress": {
+        "read_unit_count": 8,
+        "total_unit_count": 40,
+        "current_window": "w8"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w9",
+          "unit_ids": ["u9"],
+          "seq": 20
+        }
+      ],
+      "next_seq": 20,
+      "progress": {
+        "read_unit_count": 8,
+        "total_unit_count": 40,
+        "current_window": "w9"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n4",
+            "unit_id": "u9",
+            "span": { "block_id": "b3", "start": 0, "end": 17 },
+            "kind": "question",
+            "text": "어떤 조사와 비교 자료로 만족도가 높아졌다고 판단했을까?",
+            "question_id": "q2",
+            "evidence_unit_ids": ["u9"],
+            "requirement_ids": ["r3"],
+            "review_required": true
+          },
+          "seq": 21
+        }
+      ],
+      "next_seq": 21,
+      "progress": {
+        "read_unit_count": 8,
+        "total_unit_count": 40,
+        "current_window": "w9"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w9",
+          "unit_ids": ["u9"],
+          "seq": 22
+        }
+      ],
+      "next_seq": 22,
+      "progress": {
+        "read_unit_count": 9,
+        "total_unit_count": 40,
+        "current_window": "w9"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w10",
+          "unit_ids": ["u10"],
+          "seq": 23
+        }
+      ],
+      "next_seq": 23,
+      "progress": {
+        "read_unit_count": 9,
+        "total_unit_count": 40,
+        "current_window": "w10"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n5",
+            "unit_id": "u10",
+            "span": { "block_id": "b3", "start": 17, "end": 37 },
+            "kind": "hold",
+            "text": "설문으로 의견을 수집한 점은 보인다. 만족도가 이전보다 높아졌는지 비교할 정보는 아직 없다.",
+            "question_id": "q2",
+            "evidence_unit_ids": ["u9", "u10"],
+            "requirement_ids": ["r3"],
+            "review_required": true
+          },
+          "seq": 24
+        }
+      ],
+      "next_seq": 24,
+      "progress": {
+        "read_unit_count": 9,
+        "total_unit_count": 40,
+        "current_window": "w10"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w10",
+          "unit_ids": ["u10"],
+          "seq": 25
+        }
+      ],
+      "next_seq": 25,
+      "progress": {
+        "read_unit_count": 10,
+        "total_unit_count": 40,
+        "current_window": "w10"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w11",
+          "unit_ids": ["u11"],
+          "seq": 26
+        }
+      ],
+      "next_seq": 26,
+      "progress": {
+        "read_unit_count": 10,
+        "total_unit_count": 40,
+        "current_window": "w11"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w11",
+          "unit_ids": ["u11"],
+          "seq": 27
+        }
+      ],
+      "next_seq": 27,
+      "progress": {
+        "read_unit_count": 11,
+        "total_unit_count": 40,
+        "current_window": "w11"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w12",
+          "unit_ids": ["u12"],
+          "seq": 28
+        }
+      ],
+      "next_seq": 28,
+      "progress": {
+        "read_unit_count": 11,
+        "total_unit_count": 40,
+        "current_window": "w12"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w12",
+          "unit_ids": ["u12"],
+          "seq": 29
+        }
+      ],
+      "next_seq": 29,
+      "progress": {
+        "read_unit_count": 12,
+        "total_unit_count": 40,
+        "current_window": "w12"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w13",
+          "unit_ids": ["u13"],
+          "seq": 30
+        }
+      ],
+      "next_seq": 30,
+      "progress": {
+        "read_unit_count": 12,
+        "total_unit_count": 40,
+        "current_window": "w13"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w13",
+          "unit_ids": ["u13"],
+          "seq": 31
+        }
+      ],
+      "next_seq": 31,
+      "progress": {
+        "read_unit_count": 13,
+        "total_unit_count": 40,
+        "current_window": "w13"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w14",
+          "unit_ids": ["u14"],
+          "seq": 32
+        }
+      ],
+      "next_seq": 32,
+      "progress": {
+        "read_unit_count": 13,
+        "total_unit_count": 40,
+        "current_window": "w14"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w14",
+          "unit_ids": ["u14"],
+          "seq": 33
+        }
+      ],
+      "next_seq": 33,
+      "progress": {
+        "read_unit_count": 14,
+        "total_unit_count": 40,
+        "current_window": "w14"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w15",
+          "unit_ids": ["u15"],
+          "seq": 34
+        }
+      ],
+      "next_seq": 34,
+      "progress": {
+        "read_unit_count": 14,
+        "total_unit_count": 40,
+        "current_window": "w15"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w15",
+          "unit_ids": ["u15"],
+          "seq": 35
+        }
+      ],
+      "next_seq": 35,
+      "progress": {
+        "read_unit_count": 15,
+        "total_unit_count": 40,
+        "current_window": "w15"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w16",
+          "unit_ids": ["u16"],
+          "seq": 36
+        }
+      ],
+      "next_seq": 36,
+      "progress": {
+        "read_unit_count": 15,
+        "total_unit_count": 40,
+        "current_window": "w16"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w16",
+          "unit_ids": ["u16"],
+          "seq": 37
+        }
+      ],
+      "next_seq": 37,
+      "progress": {
+        "read_unit_count": 16,
+        "total_unit_count": 40,
+        "current_window": "w16"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w17",
+          "unit_ids": ["u17"],
+          "seq": 38
+        }
+      ],
+      "next_seq": 38,
+      "progress": {
+        "read_unit_count": 16,
+        "total_unit_count": 40,
+        "current_window": "w17"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n6",
+            "unit_id": "u17",
+            "span": { "block_id": "b5", "start": 0, "end": 21 },
+            "kind": "question",
+            "text": "두 기관의 일정 충돌을 어떤 절차로 조정했을까?",
+            "question_id": "q3",
+            "evidence_unit_ids": ["u17"],
+            "requirement_ids": ["r4"],
+            "review_required": true
+          },
+          "seq": 39
+        }
+      ],
+      "next_seq": 39,
+      "progress": {
+        "read_unit_count": 16,
+        "total_unit_count": 40,
+        "current_window": "w17"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w17",
+          "unit_ids": ["u17"],
+          "seq": 40
+        }
+      ],
+      "next_seq": 40,
+      "progress": {
+        "read_unit_count": 17,
+        "total_unit_count": 40,
+        "current_window": "w17"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w18",
+          "unit_ids": ["u18"],
+          "seq": 41
+        }
+      ],
+      "next_seq": 41,
+      "progress": {
+        "read_unit_count": 17,
+        "total_unit_count": 40,
+        "current_window": "w18"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w18",
+          "unit_ids": ["u18"],
+          "seq": 42
+        }
+      ],
+      "next_seq": 42,
+      "progress": {
+        "read_unit_count": 18,
+        "total_unit_count": 40,
+        "current_window": "w18"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w19",
+          "unit_ids": ["u19"],
+          "seq": 43
+        }
+      ],
+      "next_seq": 43,
+      "progress": {
+        "read_unit_count": 18,
+        "total_unit_count": 40,
+        "current_window": "w19"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w19",
+          "unit_ids": ["u19"],
+          "seq": 44
+        }
+      ],
+      "next_seq": 44,
+      "progress": {
+        "read_unit_count": 19,
+        "total_unit_count": 40,
+        "current_window": "w19"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w20",
+          "unit_ids": ["u20"],
+          "seq": 45
+        }
+      ],
+      "next_seq": 45,
+      "progress": {
+        "read_unit_count": 19,
+        "total_unit_count": 40,
+        "current_window": "w20"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n7",
+            "unit_id": "u20",
+            "span": { "block_id": "b5", "start": 75, "end": 115 },
+            "kind": "hold",
+            "text": "변경 가능 시간을 공유하고 양쪽 담당자와 합의했다는 조정 절차가 나왔다.",
+            "question_id": "q3",
+            "evidence_unit_ids": ["u17", "u20"],
+            "requirement_ids": ["r4"],
+            "review_required": true
+          },
+          "seq": 46
+        }
+      ],
+      "next_seq": 46,
+      "progress": {
+        "read_unit_count": 19,
+        "total_unit_count": 40,
+        "current_window": "w20"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w20",
+          "unit_ids": ["u20"],
+          "seq": 47
+        }
+      ],
+      "next_seq": 47,
+      "progress": {
+        "read_unit_count": 20,
+        "total_unit_count": 40,
+        "current_window": "w20"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w21",
+          "unit_ids": ["u21"],
+          "seq": 48
+        }
+      ],
+      "next_seq": 48,
+      "progress": {
+        "read_unit_count": 20,
+        "total_unit_count": 40,
+        "current_window": "w21"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w21",
+          "unit_ids": ["u21"],
+          "seq": 49
+        }
+      ],
+      "next_seq": 49,
+      "progress": {
+        "read_unit_count": 21,
+        "total_unit_count": 40,
+        "current_window": "w21"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w22",
+          "unit_ids": ["u22"],
+          "seq": 50
+        }
+      ],
+      "next_seq": 50,
+      "progress": {
+        "read_unit_count": 21,
+        "total_unit_count": 40,
+        "current_window": "w22"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w22",
+          "unit_ids": ["u22"],
+          "seq": 51
+        }
+      ],
+      "next_seq": 51,
+      "progress": {
+        "read_unit_count": 22,
+        "total_unit_count": 40,
+        "current_window": "w22"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w23",
+          "unit_ids": ["u23"],
+          "seq": 52
+        }
+      ],
+      "next_seq": 52,
+      "progress": {
+        "read_unit_count": 22,
+        "total_unit_count": 40,
+        "current_window": "w23"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w23",
+          "unit_ids": ["u23"],
+          "seq": 53
+        }
+      ],
+      "next_seq": 53,
+      "progress": {
+        "read_unit_count": 23,
+        "total_unit_count": 40,
+        "current_window": "w23"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w24",
+          "unit_ids": ["u24"],
+          "seq": 54
+        }
+      ],
+      "next_seq": 54,
+      "progress": {
+        "read_unit_count": 23,
+        "total_unit_count": 40,
+        "current_window": "w24"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n8",
+            "unit_id": "u24",
+            "span": { "block_id": "b6", "start": 0, "end": 26 },
+            "kind": "question",
+            "text": "팀이 만든 보고서에서 본인이 직접 작성한 부분은 어디일까?",
+            "question_id": "q4",
+            "evidence_unit_ids": ["u24"],
+            "requirement_ids": ["r3"],
+            "review_required": true
+          },
+          "seq": 55
+        }
+      ],
+      "next_seq": 55,
+      "progress": {
+        "read_unit_count": 23,
+        "total_unit_count": 40,
+        "current_window": "w24"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w24",
+          "unit_ids": ["u24"],
+          "seq": 56
+        }
+      ],
+      "next_seq": 56,
+      "progress": {
+        "read_unit_count": 24,
+        "total_unit_count": 40,
+        "current_window": "w24"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w25",
+          "unit_ids": ["u25"],
+          "seq": 57
+        }
+      ],
+      "next_seq": 57,
+      "progress": {
+        "read_unit_count": 24,
+        "total_unit_count": 40,
+        "current_window": "w25"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n9",
+            "unit_id": "u25",
+            "span": { "block_id": "b6", "start": 26, "end": 55 },
+            "kind": "hold",
+            "text": "본인이 정리한 자료는 출석 기록과 운영 일지다. 보고서에서 맡은 작성 범위까지 설명됐는지는 더 확인해야 한다.",
+            "question_id": "q4",
+            "evidence_unit_ids": ["u24", "u25"],
+            "requirement_ids": ["r3"],
+            "review_required": true
+          },
+          "seq": 58
+        }
+      ],
+      "next_seq": 58,
+      "progress": {
+        "read_unit_count": 24,
+        "total_unit_count": 40,
+        "current_window": "w25"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w25",
+          "unit_ids": ["u25"],
+          "seq": 59
+        }
+      ],
+      "next_seq": 59,
+      "progress": {
+        "read_unit_count": 25,
+        "total_unit_count": 40,
+        "current_window": "w25"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w26",
+          "unit_ids": ["u26"],
+          "seq": 60
+        }
+      ],
+      "next_seq": 60,
+      "progress": {
+        "read_unit_count": 25,
+        "total_unit_count": 40,
+        "current_window": "w26"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w26",
+          "unit_ids": ["u26"],
+          "seq": 61
+        }
+      ],
+      "next_seq": 61,
+      "progress": {
+        "read_unit_count": 26,
+        "total_unit_count": 40,
+        "current_window": "w26"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w27",
+          "unit_ids": ["u27"],
+          "seq": 62
+        }
+      ],
+      "next_seq": 62,
+      "progress": {
+        "read_unit_count": 26,
+        "total_unit_count": 40,
+        "current_window": "w27"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w27",
+          "unit_ids": ["u27"],
+          "seq": 63
+        }
+      ],
+      "next_seq": 63,
+      "progress": {
+        "read_unit_count": 27,
+        "total_unit_count": 40,
+        "current_window": "w27"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w28",
+          "unit_ids": ["u28"],
+          "seq": 64
+        }
+      ],
+      "next_seq": 64,
+      "progress": {
+        "read_unit_count": 27,
+        "total_unit_count": 40,
+        "current_window": "w28"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w28",
+          "unit_ids": ["u28"],
+          "seq": 65
+        }
+      ],
+      "next_seq": 65,
+      "progress": {
+        "read_unit_count": 28,
+        "total_unit_count": 40,
+        "current_window": "w28"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w29",
+          "unit_ids": ["u29"],
+          "seq": 66
+        }
+      ],
+      "next_seq": 66,
+      "progress": {
+        "read_unit_count": 28,
+        "total_unit_count": 40,
+        "current_window": "w29"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w29",
+          "unit_ids": ["u29"],
+          "seq": 67
+        }
+      ],
+      "next_seq": 67,
+      "progress": {
+        "read_unit_count": 29,
+        "total_unit_count": 40,
+        "current_window": "w29"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w30",
+          "unit_ids": ["u30"],
+          "seq": 68
+        }
+      ],
+      "next_seq": 68,
+      "progress": {
+        "read_unit_count": 29,
+        "total_unit_count": 40,
+        "current_window": "w30"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w30",
+          "unit_ids": ["u30"],
+          "seq": 69
+        }
+      ],
+      "next_seq": 69,
+      "progress": {
+        "read_unit_count": 30,
+        "total_unit_count": 40,
+        "current_window": "w30"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w31",
+          "unit_ids": ["u31"],
+          "seq": 70
+        }
+      ],
+      "next_seq": 70,
+      "progress": {
+        "read_unit_count": 30,
+        "total_unit_count": 40,
+        "current_window": "w31"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w31",
+          "unit_ids": ["u31"],
+          "seq": 71
+        }
+      ],
+      "next_seq": 71,
+      "progress": {
+        "read_unit_count": 31,
+        "total_unit_count": 40,
+        "current_window": "w31"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w32",
+          "unit_ids": ["u32"],
+          "seq": 72
+        }
+      ],
+      "next_seq": 72,
+      "progress": {
+        "read_unit_count": 31,
+        "total_unit_count": 40,
+        "current_window": "w32"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n10",
+            "unit_id": "u32",
+            "span": { "block_id": "b8", "start": 0, "end": 25 },
+            "kind": "evidence",
+            "text": "독서 모임의 신청 안내문을 직접 작성했다고 명시했다.",
+            "evidence_unit_ids": ["u32"],
+            "requirement_ids": ["r2"],
+            "review_required": true
+          },
+          "seq": 73
+        }
+      ],
+      "next_seq": 73,
+      "progress": {
+        "read_unit_count": 31,
+        "total_unit_count": 40,
+        "current_window": "w32"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w32",
+          "unit_ids": ["u32"],
+          "seq": 74
+        }
+      ],
+      "next_seq": 74,
+      "progress": {
+        "read_unit_count": 32,
+        "total_unit_count": 40,
+        "current_window": "w32"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w33",
+          "unit_ids": ["u33"],
+          "seq": 75
+        }
+      ],
+      "next_seq": 75,
+      "progress": {
+        "read_unit_count": 32,
+        "total_unit_count": 40,
+        "current_window": "w33"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w33",
+          "unit_ids": ["u33"],
+          "seq": 76
+        }
+      ],
+      "next_seq": 76,
+      "progress": {
+        "read_unit_count": 33,
+        "total_unit_count": 40,
+        "current_window": "w33"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w34",
+          "unit_ids": ["u34"],
+          "seq": 77
+        }
+      ],
+      "next_seq": 77,
+      "progress": {
+        "read_unit_count": 33,
+        "total_unit_count": 40,
+        "current_window": "w34"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w34",
+          "unit_ids": ["u34"],
+          "seq": 78
+        }
+      ],
+      "next_seq": 78,
+      "progress": {
+        "read_unit_count": 34,
+        "total_unit_count": 40,
+        "current_window": "w34"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w35",
+          "unit_ids": ["u35"],
+          "seq": 79
+        }
+      ],
+      "next_seq": 79,
+      "progress": {
+        "read_unit_count": 34,
+        "total_unit_count": 40,
+        "current_window": "w35"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "note",
+          "note": {
+            "id": "n11",
+            "unit_id": "u35",
+            "span": { "block_id": "b8", "start": 71, "end": 97 },
+            "kind": "question",
+            "text": "신규 참여자는 어느 기간에 얼마나 늘었으며, 본인이 기여한 부분은 무엇일까?",
+            "question_id": "q5",
+            "evidence_unit_ids": ["u35"],
+            "requirement_ids": ["r3"],
+            "review_required": true
+          },
+          "seq": 80
+        }
+      ],
+      "next_seq": 80,
+      "progress": {
+        "read_unit_count": 34,
+        "total_unit_count": 40,
+        "current_window": "w35"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w35",
+          "unit_ids": ["u35"],
+          "seq": 81
+        }
+      ],
+      "next_seq": 81,
+      "progress": {
+        "read_unit_count": 35,
+        "total_unit_count": 40,
+        "current_window": "w35"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w36",
+          "unit_ids": ["u36"],
+          "seq": 82
+        }
+      ],
+      "next_seq": 82,
+      "progress": {
+        "read_unit_count": 35,
+        "total_unit_count": 40,
+        "current_window": "w36"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w36",
+          "unit_ids": ["u36"],
+          "seq": 83
+        }
+      ],
+      "next_seq": 83,
+      "progress": {
+        "read_unit_count": 36,
+        "total_unit_count": 40,
+        "current_window": "w36"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w37",
+          "unit_ids": ["u37"],
+          "seq": 84
+        }
+      ],
+      "next_seq": 84,
+      "progress": {
+        "read_unit_count": 36,
+        "total_unit_count": 40,
+        "current_window": "w37"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w37",
+          "unit_ids": ["u37"],
+          "seq": 85
+        }
+      ],
+      "next_seq": 85,
+      "progress": {
+        "read_unit_count": 37,
+        "total_unit_count": 40,
+        "current_window": "w37"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w38",
+          "unit_ids": ["u38"],
+          "seq": 86
+        }
+      ],
+      "next_seq": 86,
+      "progress": {
+        "read_unit_count": 37,
+        "total_unit_count": 40,
+        "current_window": "w38"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w38",
+          "unit_ids": ["u38"],
+          "seq": 87
+        }
+      ],
+      "next_seq": 87,
+      "progress": {
+        "read_unit_count": 38,
+        "total_unit_count": 40,
+        "current_window": "w38"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w39",
+          "unit_ids": ["u39"],
+          "seq": 88
+        }
+      ],
+      "next_seq": 88,
+      "progress": {
+        "read_unit_count": 38,
+        "total_unit_count": 40,
+        "current_window": "w39"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w39",
+          "unit_ids": ["u39"],
+          "seq": 89
+        }
+      ],
+      "next_seq": 89,
+      "progress": {
+        "read_unit_count": 39,
+        "total_unit_count": 40,
+        "current_window": "w39"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_started",
+          "window_id": "w40",
+          "unit_ids": ["u40"],
+          "seq": 90
+        }
+      ],
+      "next_seq": 90,
+      "progress": {
+        "read_unit_count": 39,
+        "total_unit_count": 40,
+        "current_window": "w40"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reading",
+      "events": [
+        {
+          "type": "window_completed",
+          "window_id": "w40",
+          "unit_ids": ["u40"],
+          "seq": 91
+        }
+      ],
+      "next_seq": 91,
+      "progress": {
+        "read_unit_count": 40,
+        "total_unit_count": 40,
+        "current_window": "w40"
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "reporting",
+      "events": [{ "type": "reading_completed", "seq": 92 }],
+      "next_seq": 92,
+      "progress": {
+        "read_unit_count": 40,
+        "total_unit_count": 40,
+        "current_window": null
+      },
+      "report": null,
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    },
+    {
+      "job_id": "fixture-long-job",
+      "status": "completed",
+      "events": [{ "type": "report_completed", "seq": 93 }],
+      "next_seq": 93,
+      "progress": {
+        "read_unit_count": 40,
+        "total_unit_count": 40,
+        "current_window": null
+      },
+      "report": {
+        "items": [
+          {
+            "id": "report1",
+            "category": "explained",
+            "text": "일정 충돌에 대체 회차를 안내한 행동이 구체적입니다.",
+            "reason": "공고의 일정 조정 요건과 연결해 읽을 수 있습니다. 실제 업무 수행 사실을 검증했다는 의미는 아닙니다.",
+            "note_ids": ["n3"],
+            "requirement_ids": ["r1"],
+            "citations": [
+              { "unit_id": "u7", "block_id": "b2", "start": 113, "end": 141 }
+            ]
+          },
+          {
+            "id": "report2",
+            "category": "explained",
+            "text": "독서 모임의 안내문 작성은 개인 담당 업무로 명시돼 있습니다.",
+            "reason": "공고의 안내문 작성 경험을 설명하는 문장이 있습니다.",
+            "note_ids": ["n10"],
+            "requirement_ids": ["r2"],
+            "citations": [
+              { "unit_id": "u32", "block_id": "b8", "start": 0, "end": 25 }
+            ]
+          },
+          {
+            "id": "report3",
+            "category": "open",
+            "text": "설문을 했다는 설명만으로 만족도 상승 여부를 비교하기는 어렵습니다.",
+            "reason": "의견 수집 방법은 나왔지만 이전 조사와의 비교 기준은 남아 있습니다.",
+            "note_ids": ["n4", "n5"],
+            "requirement_ids": ["r3"],
+            "citations": [
+              { "unit_id": "u9", "block_id": "b3", "start": 0, "end": 17 },
+              { "unit_id": "u10", "block_id": "b3", "start": 17, "end": 37 }
+            ]
+          },
+          {
+            "id": "report4",
+            "category": "open",
+            "text": "기관 간 조정은 시간표 공유와 합의 절차로 이어집니다.",
+            "reason": "앞선 방법 질문과 뒤의 설명을 연결해 볼 수 있습니다. 읽는 동안에는 답변 후보로만 표시됐습니다.",
+            "note_ids": ["n6", "n7"],
+            "requirement_ids": ["r4"],
+            "citations": [
+              { "unit_id": "u17", "block_id": "b5", "start": 0, "end": 21 },
+              { "unit_id": "u20", "block_id": "b5", "start": 75, "end": 115 }
+            ]
+          },
+          {
+            "id": "report5",
+            "category": "improve",
+            "text": "보고서에서 직접 작성한 범위를 더 구체화할 수 있습니다.",
+            "reason": "출석 기록과 운영 일지 정리는 드러나지만, 팀 보고서의 어느 부분을 작성했는지는 아직 구분하기 어렵습니다.",
+            "note_ids": ["n8", "n9"],
+            "requirement_ids": ["r3"],
+            "citations": [
+              { "unit_id": "u24", "block_id": "b6", "start": 0, "end": 26 },
+              { "unit_id": "u25", "block_id": "b6", "start": 26, "end": 55 }
+            ]
+          },
+          {
+            "id": "report6",
+            "category": "improve",
+            "text": "신규 참여자 증가의 기간과 비교 근거를 덧붙일 수 있습니다.",
+            "reason": "팀 성과의 변화량과 본인의 기여를 구분할 자료가 남아 있습니다.",
+            "note_ids": ["n11"],
+            "requirement_ids": ["r3"],
+            "citations": [
+              { "unit_id": "u35", "block_id": "b8", "start": 71, "end": 97 }
+            ]
+          }
+        ],
+        "questions": [
+          {
+            "id": "q1",
+            "unit_id": "u2",
+            "scope_id": "b1",
+            "text": "행사 운영에서 직접 맡은 업무는 무엇이었을까?",
+            "status": "held",
+            "candidate_unit_ids": ["u5"]
+          },
+          {
+            "id": "q2",
+            "unit_id": "u9",
+            "scope_id": "b1",
+            "text": "어떤 조사와 비교 자료로 만족도가 높아졌다고 판단했을까?",
+            "status": "held",
+            "candidate_unit_ids": ["u10"]
+          },
+          {
+            "id": "q3",
+            "unit_id": "u17",
+            "scope_id": "b4",
+            "text": "두 기관의 일정 충돌을 어떤 절차로 조정했을까?",
+            "status": "held",
+            "candidate_unit_ids": ["u20"]
+          },
+          {
+            "id": "q4",
+            "unit_id": "u24",
+            "scope_id": "b4",
+            "text": "팀이 만든 보고서에서 본인이 직접 작성한 부분은 어디일까?",
+            "status": "held",
+            "candidate_unit_ids": ["u25"]
+          },
+          {
+            "id": "q5",
+            "unit_id": "u35",
+            "scope_id": "b7",
+            "text": "신규 참여자는 어느 기간에 얼마나 늘었으며, 본인이 기여한 부분은 무엇일까?",
+            "status": "open_at_end",
+            "candidate_unit_ids": []
+          }
+        ],
+        "limitations": [
+          "디자인 검증을 위해 사람이 작성한 합성 예시입니다. 모델 실행·학습·정확도 증거가 아닙니다.",
+          "이 예시에서는 뒤에서 찾은 설명을 답변 후보로만 표시했습니다. 질문이 해소됐다고 확정한 결과는 아닙니다."
+        ]
+      },
+      "error": null,
+      "expires_at": "2100-01-01T00:00:00.000Z",
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v1",
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "synthetic_fixture",
+        "model": {
+          "model": "convaiinnovations/laya-multilingual",
+          "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+          "sdk": "0.3.25",
+          "device": "synthetic_fixture",
+          "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "finetuned": false,
+          "calibrated_for_readme": false
+        }
+      }
+    }
+  ],
+  "final": {
+    "job_id": "fixture-long-job",
+    "status": "completed",
+    "events": [
+      {
+        "type": "window_started",
+        "window_id": "w1",
+        "unit_ids": ["u1"],
+        "seq": 1
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w1",
+        "unit_ids": ["u1"],
+        "seq": 2
+      },
+      {
+        "type": "window_started",
+        "window_id": "w2",
+        "unit_ids": ["u2"],
+        "seq": 3
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n1",
+          "unit_id": "u2",
+          "span": { "block_id": "b2", "start": 0, "end": 17 },
+          "kind": "question",
+          "text": "행사 운영에서 직접 맡은 업무는 무엇이었을까?",
+          "question_id": "q1",
+          "evidence_unit_ids": ["u2"],
+          "requirement_ids": ["r1", "r2"],
+          "review_required": true
+        },
+        "seq": 4
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w2",
+        "unit_ids": ["u2"],
+        "seq": 5
+      },
+      {
+        "type": "window_started",
+        "window_id": "w3",
+        "unit_ids": ["u3"],
+        "seq": 6
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w3",
+        "unit_ids": ["u3"],
+        "seq": 7
+      },
+      {
+        "type": "window_started",
+        "window_id": "w4",
+        "unit_ids": ["u4"],
+        "seq": 8
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w4",
+        "unit_ids": ["u4"],
+        "seq": 9
+      },
+      {
+        "type": "window_started",
+        "window_id": "w5",
+        "unit_ids": ["u5"],
+        "seq": 10
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n2",
+          "unit_id": "u5",
+          "span": { "block_id": "b2", "start": 62, "end": 92 },
+          "kind": "hold",
+          "text": "일정 조정과 안내문 작성이 담당 업무로 나온다. 앞선 역할 질문에 답하는 설명 후보다.",
+          "question_id": "q1",
+          "evidence_unit_ids": ["u2", "u5"],
+          "requirement_ids": ["r1", "r2"],
+          "review_required": true
+        },
+        "seq": 11
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w5",
+        "unit_ids": ["u5"],
+        "seq": 12
+      },
+      {
+        "type": "window_started",
+        "window_id": "w6",
+        "unit_ids": ["u6"],
+        "seq": 13
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w6",
+        "unit_ids": ["u6"],
+        "seq": 14
+      },
+      {
+        "type": "window_started",
+        "window_id": "w7",
+        "unit_ids": ["u7"],
+        "seq": 15
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n3",
+          "unit_id": "u7",
+          "span": { "block_id": "b2", "start": 113, "end": 141 },
+          "kind": "evidence",
+          "text": "일정이 겹친 참여자에게 대체 회차를 안내했다는 구체적인 조정 행동이 적혀 있다.",
+          "evidence_unit_ids": ["u7"],
+          "requirement_ids": ["r1"],
+          "review_required": true
+        },
+        "seq": 16
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w7",
+        "unit_ids": ["u7"],
+        "seq": 17
+      },
+      {
+        "type": "window_started",
+        "window_id": "w8",
+        "unit_ids": ["u8"],
+        "seq": 18
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w8",
+        "unit_ids": ["u8"],
+        "seq": 19
+      },
+      {
+        "type": "window_started",
+        "window_id": "w9",
+        "unit_ids": ["u9"],
+        "seq": 20
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n4",
+          "unit_id": "u9",
+          "span": { "block_id": "b3", "start": 0, "end": 17 },
+          "kind": "question",
+          "text": "어떤 조사와 비교 자료로 만족도가 높아졌다고 판단했을까?",
+          "question_id": "q2",
+          "evidence_unit_ids": ["u9"],
+          "requirement_ids": ["r3"],
+          "review_required": true
+        },
+        "seq": 21
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w9",
+        "unit_ids": ["u9"],
+        "seq": 22
+      },
+      {
+        "type": "window_started",
+        "window_id": "w10",
+        "unit_ids": ["u10"],
+        "seq": 23
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n5",
+          "unit_id": "u10",
+          "span": { "block_id": "b3", "start": 17, "end": 37 },
+          "kind": "hold",
+          "text": "설문으로 의견을 수집한 점은 보인다. 만족도가 이전보다 높아졌는지 비교할 정보는 아직 없다.",
+          "question_id": "q2",
+          "evidence_unit_ids": ["u9", "u10"],
+          "requirement_ids": ["r3"],
+          "review_required": true
+        },
+        "seq": 24
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w10",
+        "unit_ids": ["u10"],
+        "seq": 25
+      },
+      {
+        "type": "window_started",
+        "window_id": "w11",
+        "unit_ids": ["u11"],
+        "seq": 26
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w11",
+        "unit_ids": ["u11"],
+        "seq": 27
+      },
+      {
+        "type": "window_started",
+        "window_id": "w12",
+        "unit_ids": ["u12"],
+        "seq": 28
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w12",
+        "unit_ids": ["u12"],
+        "seq": 29
+      },
+      {
+        "type": "window_started",
+        "window_id": "w13",
+        "unit_ids": ["u13"],
+        "seq": 30
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w13",
+        "unit_ids": ["u13"],
+        "seq": 31
+      },
+      {
+        "type": "window_started",
+        "window_id": "w14",
+        "unit_ids": ["u14"],
+        "seq": 32
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w14",
+        "unit_ids": ["u14"],
+        "seq": 33
+      },
+      {
+        "type": "window_started",
+        "window_id": "w15",
+        "unit_ids": ["u15"],
+        "seq": 34
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w15",
+        "unit_ids": ["u15"],
+        "seq": 35
+      },
+      {
+        "type": "window_started",
+        "window_id": "w16",
+        "unit_ids": ["u16"],
+        "seq": 36
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w16",
+        "unit_ids": ["u16"],
+        "seq": 37
+      },
+      {
+        "type": "window_started",
+        "window_id": "w17",
+        "unit_ids": ["u17"],
+        "seq": 38
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n6",
+          "unit_id": "u17",
+          "span": { "block_id": "b5", "start": 0, "end": 21 },
+          "kind": "question",
+          "text": "두 기관의 일정 충돌을 어떤 절차로 조정했을까?",
+          "question_id": "q3",
+          "evidence_unit_ids": ["u17"],
+          "requirement_ids": ["r4"],
+          "review_required": true
+        },
+        "seq": 39
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w17",
+        "unit_ids": ["u17"],
+        "seq": 40
+      },
+      {
+        "type": "window_started",
+        "window_id": "w18",
+        "unit_ids": ["u18"],
+        "seq": 41
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w18",
+        "unit_ids": ["u18"],
+        "seq": 42
+      },
+      {
+        "type": "window_started",
+        "window_id": "w19",
+        "unit_ids": ["u19"],
+        "seq": 43
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w19",
+        "unit_ids": ["u19"],
+        "seq": 44
+      },
+      {
+        "type": "window_started",
+        "window_id": "w20",
+        "unit_ids": ["u20"],
+        "seq": 45
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n7",
+          "unit_id": "u20",
+          "span": { "block_id": "b5", "start": 75, "end": 115 },
+          "kind": "hold",
+          "text": "변경 가능 시간을 공유하고 양쪽 담당자와 합의했다는 조정 절차가 나왔다.",
+          "question_id": "q3",
+          "evidence_unit_ids": ["u17", "u20"],
+          "requirement_ids": ["r4"],
+          "review_required": true
+        },
+        "seq": 46
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w20",
+        "unit_ids": ["u20"],
+        "seq": 47
+      },
+      {
+        "type": "window_started",
+        "window_id": "w21",
+        "unit_ids": ["u21"],
+        "seq": 48
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w21",
+        "unit_ids": ["u21"],
+        "seq": 49
+      },
+      {
+        "type": "window_started",
+        "window_id": "w22",
+        "unit_ids": ["u22"],
+        "seq": 50
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w22",
+        "unit_ids": ["u22"],
+        "seq": 51
+      },
+      {
+        "type": "window_started",
+        "window_id": "w23",
+        "unit_ids": ["u23"],
+        "seq": 52
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w23",
+        "unit_ids": ["u23"],
+        "seq": 53
+      },
+      {
+        "type": "window_started",
+        "window_id": "w24",
+        "unit_ids": ["u24"],
+        "seq": 54
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n8",
+          "unit_id": "u24",
+          "span": { "block_id": "b6", "start": 0, "end": 26 },
+          "kind": "question",
+          "text": "팀이 만든 보고서에서 본인이 직접 작성한 부분은 어디일까?",
+          "question_id": "q4",
+          "evidence_unit_ids": ["u24"],
+          "requirement_ids": ["r3"],
+          "review_required": true
+        },
+        "seq": 55
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w24",
+        "unit_ids": ["u24"],
+        "seq": 56
+      },
+      {
+        "type": "window_started",
+        "window_id": "w25",
+        "unit_ids": ["u25"],
+        "seq": 57
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n9",
+          "unit_id": "u25",
+          "span": { "block_id": "b6", "start": 26, "end": 55 },
+          "kind": "hold",
+          "text": "본인이 정리한 자료는 출석 기록과 운영 일지다. 보고서에서 맡은 작성 범위까지 설명됐는지는 더 확인해야 한다.",
+          "question_id": "q4",
+          "evidence_unit_ids": ["u24", "u25"],
+          "requirement_ids": ["r3"],
+          "review_required": true
+        },
+        "seq": 58
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w25",
+        "unit_ids": ["u25"],
+        "seq": 59
+      },
+      {
+        "type": "window_started",
+        "window_id": "w26",
+        "unit_ids": ["u26"],
+        "seq": 60
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w26",
+        "unit_ids": ["u26"],
+        "seq": 61
+      },
+      {
+        "type": "window_started",
+        "window_id": "w27",
+        "unit_ids": ["u27"],
+        "seq": 62
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w27",
+        "unit_ids": ["u27"],
+        "seq": 63
+      },
+      {
+        "type": "window_started",
+        "window_id": "w28",
+        "unit_ids": ["u28"],
+        "seq": 64
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w28",
+        "unit_ids": ["u28"],
+        "seq": 65
+      },
+      {
+        "type": "window_started",
+        "window_id": "w29",
+        "unit_ids": ["u29"],
+        "seq": 66
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w29",
+        "unit_ids": ["u29"],
+        "seq": 67
+      },
+      {
+        "type": "window_started",
+        "window_id": "w30",
+        "unit_ids": ["u30"],
+        "seq": 68
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w30",
+        "unit_ids": ["u30"],
+        "seq": 69
+      },
+      {
+        "type": "window_started",
+        "window_id": "w31",
+        "unit_ids": ["u31"],
+        "seq": 70
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w31",
+        "unit_ids": ["u31"],
+        "seq": 71
+      },
+      {
+        "type": "window_started",
+        "window_id": "w32",
+        "unit_ids": ["u32"],
+        "seq": 72
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n10",
+          "unit_id": "u32",
+          "span": { "block_id": "b8", "start": 0, "end": 25 },
+          "kind": "evidence",
+          "text": "독서 모임의 신청 안내문을 직접 작성했다고 명시했다.",
+          "evidence_unit_ids": ["u32"],
+          "requirement_ids": ["r2"],
+          "review_required": true
+        },
+        "seq": 73
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w32",
+        "unit_ids": ["u32"],
+        "seq": 74
+      },
+      {
+        "type": "window_started",
+        "window_id": "w33",
+        "unit_ids": ["u33"],
+        "seq": 75
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w33",
+        "unit_ids": ["u33"],
+        "seq": 76
+      },
+      {
+        "type": "window_started",
+        "window_id": "w34",
+        "unit_ids": ["u34"],
+        "seq": 77
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w34",
+        "unit_ids": ["u34"],
+        "seq": 78
+      },
+      {
+        "type": "window_started",
+        "window_id": "w35",
+        "unit_ids": ["u35"],
+        "seq": 79
+      },
+      {
+        "type": "note",
+        "note": {
+          "id": "n11",
+          "unit_id": "u35",
+          "span": { "block_id": "b8", "start": 71, "end": 97 },
+          "kind": "question",
+          "text": "신규 참여자는 어느 기간에 얼마나 늘었으며, 본인이 기여한 부분은 무엇일까?",
+          "question_id": "q5",
+          "evidence_unit_ids": ["u35"],
+          "requirement_ids": ["r3"],
+          "review_required": true
+        },
+        "seq": 80
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w35",
+        "unit_ids": ["u35"],
+        "seq": 81
+      },
+      {
+        "type": "window_started",
+        "window_id": "w36",
+        "unit_ids": ["u36"],
+        "seq": 82
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w36",
+        "unit_ids": ["u36"],
+        "seq": 83
+      },
+      {
+        "type": "window_started",
+        "window_id": "w37",
+        "unit_ids": ["u37"],
+        "seq": 84
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w37",
+        "unit_ids": ["u37"],
+        "seq": 85
+      },
+      {
+        "type": "window_started",
+        "window_id": "w38",
+        "unit_ids": ["u38"],
+        "seq": 86
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w38",
+        "unit_ids": ["u38"],
+        "seq": 87
+      },
+      {
+        "type": "window_started",
+        "window_id": "w39",
+        "unit_ids": ["u39"],
+        "seq": 88
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w39",
+        "unit_ids": ["u39"],
+        "seq": 89
+      },
+      {
+        "type": "window_started",
+        "window_id": "w40",
+        "unit_ids": ["u40"],
+        "seq": 90
+      },
+      {
+        "type": "window_completed",
+        "window_id": "w40",
+        "unit_ids": ["u40"],
+        "seq": 91
+      },
+      { "type": "reading_completed", "seq": 92 },
+      { "type": "report_completed", "seq": 93 }
+    ],
+    "next_seq": 93,
+    "progress": {
+      "read_unit_count": 40,
+      "total_unit_count": 40,
+      "current_window": null
+    },
+    "report": {
+      "items": [
+        {
+          "id": "report1",
+          "category": "explained",
+          "text": "일정 충돌에 대체 회차를 안내한 행동이 구체적입니다.",
+          "reason": "공고의 일정 조정 요건과 연결해 읽을 수 있습니다. 실제 업무 수행 사실을 검증했다는 의미는 아닙니다.",
+          "note_ids": ["n3"],
+          "requirement_ids": ["r1"],
+          "citations": [
+            { "unit_id": "u7", "block_id": "b2", "start": 113, "end": 141 }
+          ]
+        },
+        {
+          "id": "report2",
+          "category": "explained",
+          "text": "독서 모임의 안내문 작성은 개인 담당 업무로 명시돼 있습니다.",
+          "reason": "공고의 안내문 작성 경험을 설명하는 문장이 있습니다.",
+          "note_ids": ["n10"],
+          "requirement_ids": ["r2"],
+          "citations": [
+            { "unit_id": "u32", "block_id": "b8", "start": 0, "end": 25 }
+          ]
+        },
+        {
+          "id": "report3",
+          "category": "open",
+          "text": "설문을 했다는 설명만으로 만족도 상승 여부를 비교하기는 어렵습니다.",
+          "reason": "의견 수집 방법은 나왔지만 이전 조사와의 비교 기준은 남아 있습니다.",
+          "note_ids": ["n4", "n5"],
+          "requirement_ids": ["r3"],
+          "citations": [
+            { "unit_id": "u9", "block_id": "b3", "start": 0, "end": 17 },
+            { "unit_id": "u10", "block_id": "b3", "start": 17, "end": 37 }
+          ]
+        },
+        {
+          "id": "report4",
+          "category": "open",
+          "text": "기관 간 조정은 시간표 공유와 합의 절차로 이어집니다.",
+          "reason": "앞선 방법 질문과 뒤의 설명을 연결해 볼 수 있습니다. 읽는 동안에는 답변 후보로만 표시됐습니다.",
+          "note_ids": ["n6", "n7"],
+          "requirement_ids": ["r4"],
+          "citations": [
+            { "unit_id": "u17", "block_id": "b5", "start": 0, "end": 21 },
+            { "unit_id": "u20", "block_id": "b5", "start": 75, "end": 115 }
+          ]
+        },
+        {
+          "id": "report5",
+          "category": "improve",
+          "text": "보고서에서 직접 작성한 범위를 더 구체화할 수 있습니다.",
+          "reason": "출석 기록과 운영 일지 정리는 드러나지만, 팀 보고서의 어느 부분을 작성했는지는 아직 구분하기 어렵습니다.",
+          "note_ids": ["n8", "n9"],
+          "requirement_ids": ["r3"],
+          "citations": [
+            { "unit_id": "u24", "block_id": "b6", "start": 0, "end": 26 },
+            { "unit_id": "u25", "block_id": "b6", "start": 26, "end": 55 }
+          ]
+        },
+        {
+          "id": "report6",
+          "category": "improve",
+          "text": "신규 참여자 증가의 기간과 비교 근거를 덧붙일 수 있습니다.",
+          "reason": "팀 성과의 변화량과 본인의 기여를 구분할 자료가 남아 있습니다.",
+          "note_ids": ["n11"],
+          "requirement_ids": ["r3"],
+          "citations": [
+            { "unit_id": "u35", "block_id": "b8", "start": 71, "end": 97 }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "unit_id": "u2",
+          "scope_id": "b1",
+          "text": "행사 운영에서 직접 맡은 업무는 무엇이었을까?",
+          "status": "held",
+          "candidate_unit_ids": ["u5"]
+        },
+        {
+          "id": "q2",
+          "unit_id": "u9",
+          "scope_id": "b1",
+          "text": "어떤 조사와 비교 자료로 만족도가 높아졌다고 판단했을까?",
+          "status": "held",
+          "candidate_unit_ids": ["u10"]
+        },
+        {
+          "id": "q3",
+          "unit_id": "u17",
+          "scope_id": "b4",
+          "text": "두 기관의 일정 충돌을 어떤 절차로 조정했을까?",
+          "status": "held",
+          "candidate_unit_ids": ["u20"]
+        },
+        {
+          "id": "q4",
+          "unit_id": "u24",
+          "scope_id": "b4",
+          "text": "팀이 만든 보고서에서 본인이 직접 작성한 부분은 어디일까?",
+          "status": "held",
+          "candidate_unit_ids": ["u25"]
+        },
+        {
+          "id": "q5",
+          "unit_id": "u35",
+          "scope_id": "b7",
+          "text": "신규 참여자는 어느 기간에 얼마나 늘었으며, 본인이 기여한 부분은 무엇일까?",
+          "status": "open_at_end",
+          "candidate_unit_ids": []
+        }
+      ],
+      "limitations": [
+        "디자인 검증을 위해 사람이 작성한 합성 예시입니다. 모델 실행·학습·정확도 증거가 아닙니다.",
+        "이 예시에서는 뒤에서 찾은 설명을 답변 후보로만 표시했습니다. 질문이 해소됐다고 확정한 결과는 아닙니다."
+      ]
+    },
+    "error": null,
+    "expires_at": "2100-01-01T00:00:00.000Z",
+    "generation": {
+      "engine": "laya",
+      "policy_version": "readme-prefix-v1",
+      "prepare_engine": "codex_cli",
+      "report_engine": "codex_cli",
+      "codex_model": "synthetic_fixture",
+      "model": {
+        "model": "convaiinnovations/laya-multilingual",
+        "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "sdk": "0.3.25",
+        "device": "synthetic_fixture",
+        "weights_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "finetuned": false,
+        "calibrated_for_readme": false
+      }
+    }
+  }
+}

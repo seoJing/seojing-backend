@@ -1,0 +1,708 @@
+{
+  "synthetic": true,
+  "fixture": true,
+  "authored": true,
+  "production_approved": false,
+  "prepare": {
+    "prepare_id": "authored-v2",
+    "input_hash": "synthetic-not-a-real-input-hash",
+    "status": "ready",
+    "document": {
+      "doc_id": "052678650ef53ae142dddc25",
+      "source_kind": "txt",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "지역 행사 안내문 작성에 기여했습니다. 팀이 안내문을 공동 작성했습니다. 저는 일정과 장소 항목을 직접 작성했습니다. 앞선 담당 범위 설명은 부정확하여 다시 확인이 필요합니다.",
+          "id": "b1",
+          "unit_ids": ["u1", "u2", "u3", "u4"]
+        }
+      ],
+      "units": [
+        {
+          "id": "u1",
+          "block_id": "b1",
+          "order": 0,
+          "start": 0,
+          "end": 21,
+          "text": "지역 행사 안내문 작성에 기여했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u2",
+          "block_id": "b1",
+          "order": 1,
+          "start": 21,
+          "end": 40,
+          "text": " 팀이 안내문을 공동 작성했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u3",
+          "block_id": "b1",
+          "order": 2,
+          "start": 40,
+          "end": 65,
+          "text": " 저는 일정과 장소 항목을 직접 작성했습니다.",
+          "scope_id": "b1"
+        },
+        {
+          "id": "u4",
+          "block_id": "b1",
+          "order": 3,
+          "start": 65,
+          "end": 98,
+          "text": " 앞선 담당 범위 설명은 부정확하여 다시 확인이 필요합니다.",
+          "scope_id": "b1"
+        }
+      ],
+      "warnings": [],
+      "truncated": false
+    },
+    "job": {
+      "source": "user_paste",
+      "text": "담당업무: 안내문 작성",
+      "requirements": [
+        {
+          "id": "r1",
+          "kind": "duty",
+          "label": "안내문 작성",
+          "quote": "안내문 작성",
+          "start": 6,
+          "end": 12
+        }
+      ],
+      "warnings": [],
+      "reader_profile": {
+        "version": "reader-profile-v2",
+        "id": "d419f943a554e654d3669da9",
+        "criteria": [
+          {
+            "id": "c_r1",
+            "requirement_id": "r1",
+            "label": "안내문 작성",
+            "checks": [
+              {
+                "facet": "role",
+                "trigger": "작성 참여 주장",
+                "sufficient": "직접 작성한 범위",
+                "insufficient": "팀이 작성했다는 설명만 있음"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "expires_at": "2099-01-01T00:00:00.000Z"
+  },
+  "snapshots": [
+    {
+      "job_id": "authored-v2",
+      "status": "reading",
+      "events": [
+        {
+          "seq": 1,
+          "type": "window_started",
+          "window_id": "w1",
+          "unit_ids": ["u1"]
+        },
+        {
+          "seq": 2,
+          "type": "question_updated",
+          "question_id": "q1",
+          "previous_status": null,
+          "status": "open",
+          "evidence_unit_ids": [],
+          "at_unit_id": "u1",
+          "state_version": 1,
+          "question": {
+            "id": "q1",
+            "unit_id": "u1",
+            "scope_id": "b1",
+            "label": "안내문 · 본인 역할",
+            "facet": "role",
+            "criterion_id": "c_r1",
+            "text": "안내문에서 직접 작성한 범위는 어디인가요?",
+            "status": "open",
+            "candidate_unit_ids": [],
+            "evidence_unit_ids": [],
+            "state_version": 1
+          }
+        },
+        {
+          "seq": 3,
+          "type": "note",
+          "note": {
+            "id": "n1",
+            "unit_id": "u1",
+            "span": { "block_id": "b1", "start": 0, "end": 21 },
+            "kind": "question",
+            "text": "‘안내문 작성에 기여’했다는 설명에서 직접 맡은 범위가 궁금합니다.",
+            "question_id": "q1",
+            "evidence_unit_ids": ["u1"],
+            "requirement_ids": ["r1"],
+            "review_required": true
+          }
+        },
+        {
+          "seq": 4,
+          "type": "window_completed",
+          "window_id": "w1",
+          "unit_ids": ["u1"]
+        }
+      ],
+      "next_seq": 4,
+      "progress": {
+        "read_unit_count": 1,
+        "total_unit_count": 4,
+        "current_window": null
+      },
+      "error": null,
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v2",
+        "model": null,
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "authored_synthetic_not_a_model_run"
+      },
+      "expires_at": "2099-01-01T00:00:00.000Z",
+      "report": null
+    },
+    {
+      "job_id": "authored-v2",
+      "status": "reading",
+      "events": [
+        {
+          "seq": 5,
+          "type": "window_started",
+          "window_id": "w2",
+          "unit_ids": ["u2"]
+        },
+        {
+          "seq": 6,
+          "type": "question_updated",
+          "question_id": "q1",
+          "previous_status": "open",
+          "status": "partial",
+          "evidence_unit_ids": ["u2"],
+          "at_unit_id": "u2",
+          "state_version": 2,
+          "question": {
+            "id": "q1",
+            "unit_id": "u1",
+            "scope_id": "b1",
+            "label": "안내문 · 본인 역할",
+            "facet": "role",
+            "criterion_id": "c_r1",
+            "text": "안내문에서 직접 작성한 범위는 어디인가요?",
+            "status": "partial",
+            "candidate_unit_ids": ["u2"],
+            "evidence_unit_ids": ["u2"],
+            "state_version": 2
+          }
+        },
+        {
+          "seq": 7,
+          "type": "note",
+          "note": {
+            "id": "n2",
+            "unit_id": "u2",
+            "span": { "block_id": "b1", "start": 21, "end": 40 },
+            "kind": "hold",
+            "text": "‘팀이 공동 작성’했다는 설명은 있지만 개인의 범위는 남아 있습니다.",
+            "question_id": "q1",
+            "evidence_unit_ids": ["u1", "u2"],
+            "requirement_ids": ["r1"],
+            "review_required": true
+          }
+        },
+        {
+          "seq": 8,
+          "type": "window_completed",
+          "window_id": "w2",
+          "unit_ids": ["u2"]
+        }
+      ],
+      "next_seq": 8,
+      "progress": {
+        "read_unit_count": 2,
+        "total_unit_count": 4,
+        "current_window": null
+      },
+      "error": null,
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v2",
+        "model": null,
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "authored_synthetic_not_a_model_run"
+      },
+      "expires_at": "2099-01-01T00:00:00.000Z",
+      "report": null
+    },
+    {
+      "job_id": "authored-v2",
+      "status": "reading",
+      "events": [
+        {
+          "seq": 9,
+          "type": "window_started",
+          "window_id": "w3",
+          "unit_ids": ["u3"]
+        },
+        {
+          "seq": 10,
+          "type": "question_updated",
+          "question_id": "q1",
+          "previous_status": "partial",
+          "status": "resolved",
+          "evidence_unit_ids": ["u2", "u3"],
+          "at_unit_id": "u3",
+          "state_version": 3,
+          "question": {
+            "id": "q1",
+            "unit_id": "u1",
+            "scope_id": "b1",
+            "label": "안내문 · 본인 역할",
+            "facet": "role",
+            "criterion_id": "c_r1",
+            "text": "안내문에서 직접 작성한 범위는 어디인가요?",
+            "status": "resolved",
+            "candidate_unit_ids": ["u2", "u3"],
+            "evidence_unit_ids": ["u2", "u3"],
+            "state_version": 3
+          }
+        },
+        {
+          "seq": 11,
+          "type": "note",
+          "note": {
+            "id": "n3",
+            "unit_id": "u3",
+            "span": { "block_id": "b1", "start": 40, "end": 65 },
+            "kind": "resolves",
+            "text": "‘일정과 장소 항목’을 직접 작성했다는 설명을 찾았습니다.",
+            "question_id": "q1",
+            "evidence_unit_ids": ["u1", "u3"],
+            "requirement_ids": ["r1"],
+            "review_required": true
+          }
+        },
+        {
+          "seq": 12,
+          "type": "window_completed",
+          "window_id": "w3",
+          "unit_ids": ["u3"]
+        }
+      ],
+      "next_seq": 12,
+      "progress": {
+        "read_unit_count": 3,
+        "total_unit_count": 4,
+        "current_window": null
+      },
+      "error": null,
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v2",
+        "model": null,
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "authored_synthetic_not_a_model_run"
+      },
+      "expires_at": "2099-01-01T00:00:00.000Z",
+      "report": null
+    },
+    {
+      "job_id": "authored-v2",
+      "status": "reading",
+      "events": [
+        {
+          "seq": 13,
+          "type": "window_started",
+          "window_id": "w4",
+          "unit_ids": ["u4"]
+        },
+        {
+          "seq": 14,
+          "type": "question_updated",
+          "question_id": "q1",
+          "previous_status": "resolved",
+          "status": "reopened",
+          "evidence_unit_ids": ["u2", "u3", "u4"],
+          "at_unit_id": "u4",
+          "state_version": 4,
+          "question": {
+            "id": "q1",
+            "unit_id": "u1",
+            "scope_id": "b1",
+            "label": "안내문 · 본인 역할",
+            "facet": "role",
+            "criterion_id": "c_r1",
+            "text": "안내문에서 직접 작성한 범위는 어디인가요?",
+            "status": "reopened",
+            "candidate_unit_ids": ["u2", "u3", "u4"],
+            "evidence_unit_ids": ["u2", "u3", "u4"],
+            "state_version": 4
+          }
+        },
+        {
+          "seq": 15,
+          "type": "note",
+          "note": {
+            "id": "n4",
+            "unit_id": "u4",
+            "span": { "block_id": "b1", "start": 65, "end": 98 },
+            "kind": "hold",
+            "text": "담당 범위가 ‘부정확’하다는 정정이 나와 앞선 질문을 다시 확인합니다.",
+            "question_id": "q1",
+            "evidence_unit_ids": ["u1", "u4"],
+            "requirement_ids": ["r1"],
+            "review_required": true
+          }
+        },
+        {
+          "seq": 16,
+          "type": "window_completed",
+          "window_id": "w4",
+          "unit_ids": ["u4"]
+        }
+      ],
+      "next_seq": 16,
+      "progress": {
+        "read_unit_count": 4,
+        "total_unit_count": 4,
+        "current_window": null
+      },
+      "error": null,
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v2",
+        "model": null,
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "authored_synthetic_not_a_model_run"
+      },
+      "expires_at": "2099-01-01T00:00:00.000Z",
+      "report": null
+    },
+    {
+      "job_id": "authored-v2",
+      "status": "completed",
+      "events": [
+        { "seq": 17, "type": "reading_completed" },
+        { "seq": 18, "type": "report_completed" }
+      ],
+      "next_seq": 18,
+      "progress": {
+        "read_unit_count": 4,
+        "total_unit_count": 4,
+        "current_window": null
+      },
+      "error": null,
+      "generation": {
+        "engine": "laya",
+        "policy_version": "readme-prefix-v2",
+        "model": null,
+        "prepare_engine": "codex_cli",
+        "report_engine": "codex_cli",
+        "codex_model": "authored_synthetic_not_a_model_run"
+      },
+      "expires_at": "2099-01-01T00:00:00.000Z",
+      "report": {
+        "items": [
+          {
+            "id": "report1",
+            "category": "open",
+            "text": "직접 작성한 항목을 설명한 뒤 담당 범위가 부정확하다고 정정했습니다.",
+            "reason": "일정·장소 항목에서 실제 맡은 범위를 다시 확인해 일관되게 정리해 주세요.",
+            "note_ids": ["n3", "n4"],
+            "requirement_ids": ["r1"],
+            "citations": [
+              { "unit_id": "u3", "block_id": "b1", "start": 40, "end": 65 },
+              { "unit_id": "u4", "block_id": "b1", "start": 65, "end": 98 }
+            ]
+          }
+        ],
+        "questions": [
+          {
+            "id": "q1",
+            "unit_id": "u1",
+            "scope_id": "b1",
+            "label": "안내문 · 본인 역할",
+            "facet": "role",
+            "criterion_id": "c_r1",
+            "text": "안내문에서 직접 작성한 범위는 어디인가요?",
+            "status": "reopened",
+            "candidate_unit_ids": ["u2", "u3", "u4"],
+            "evidence_unit_ids": ["u2", "u3", "u4"],
+            "state_version": 4
+          }
+        ],
+        "limitations": [
+          "수동 작성 합성 시안입니다. 모델 정확도나 실제 검증을 나타내지 않습니다."
+        ]
+      }
+    }
+  ],
+  "final": {
+    "job_id": "authored-v2",
+    "status": "completed",
+    "events": [
+      {
+        "seq": 1,
+        "type": "window_started",
+        "window_id": "w1",
+        "unit_ids": ["u1"]
+      },
+      {
+        "seq": 2,
+        "type": "question_updated",
+        "question_id": "q1",
+        "previous_status": null,
+        "status": "open",
+        "evidence_unit_ids": [],
+        "at_unit_id": "u1",
+        "state_version": 1,
+        "question": {
+          "id": "q1",
+          "unit_id": "u1",
+          "scope_id": "b1",
+          "label": "안내문 · 본인 역할",
+          "facet": "role",
+          "criterion_id": "c_r1",
+          "text": "안내문에서 직접 작성한 범위는 어디인가요?",
+          "status": "open",
+          "candidate_unit_ids": [],
+          "evidence_unit_ids": [],
+          "state_version": 1
+        }
+      },
+      {
+        "seq": 3,
+        "type": "note",
+        "note": {
+          "id": "n1",
+          "unit_id": "u1",
+          "span": { "block_id": "b1", "start": 0, "end": 21 },
+          "kind": "question",
+          "text": "‘안내문 작성에 기여’했다는 설명에서 직접 맡은 범위가 궁금합니다.",
+          "question_id": "q1",
+          "evidence_unit_ids": ["u1"],
+          "requirement_ids": ["r1"],
+          "review_required": true
+        }
+      },
+      {
+        "seq": 4,
+        "type": "window_completed",
+        "window_id": "w1",
+        "unit_ids": ["u1"]
+      },
+      {
+        "seq": 5,
+        "type": "window_started",
+        "window_id": "w2",
+        "unit_ids": ["u2"]
+      },
+      {
+        "seq": 6,
+        "type": "question_updated",
+        "question_id": "q1",
+        "previous_status": "open",
+        "status": "partial",
+        "evidence_unit_ids": ["u2"],
+        "at_unit_id": "u2",
+        "state_version": 2,
+        "question": {
+          "id": "q1",
+          "unit_id": "u1",
+          "scope_id": "b1",
+          "label": "안내문 · 본인 역할",
+          "facet": "role",
+          "criterion_id": "c_r1",
+          "text": "안내문에서 직접 작성한 범위는 어디인가요?",
+          "status": "partial",
+          "candidate_unit_ids": ["u2"],
+          "evidence_unit_ids": ["u2"],
+          "state_version": 2
+        }
+      },
+      {
+        "seq": 7,
+        "type": "note",
+        "note": {
+          "id": "n2",
+          "unit_id": "u2",
+          "span": { "block_id": "b1", "start": 21, "end": 40 },
+          "kind": "hold",
+          "text": "‘팀이 공동 작성’했다는 설명은 있지만 개인의 범위는 남아 있습니다.",
+          "question_id": "q1",
+          "evidence_unit_ids": ["u1", "u2"],
+          "requirement_ids": ["r1"],
+          "review_required": true
+        }
+      },
+      {
+        "seq": 8,
+        "type": "window_completed",
+        "window_id": "w2",
+        "unit_ids": ["u2"]
+      },
+      {
+        "seq": 9,
+        "type": "window_started",
+        "window_id": "w3",
+        "unit_ids": ["u3"]
+      },
+      {
+        "seq": 10,
+        "type": "question_updated",
+        "question_id": "q1",
+        "previous_status": "partial",
+        "status": "resolved",
+        "evidence_unit_ids": ["u2", "u3"],
+        "at_unit_id": "u3",
+        "state_version": 3,
+        "question": {
+          "id": "q1",
+          "unit_id": "u1",
+          "scope_id": "b1",
+          "label": "안내문 · 본인 역할",
+          "facet": "role",
+          "criterion_id": "c_r1",
+          "text": "안내문에서 직접 작성한 범위는 어디인가요?",
+          "status": "resolved",
+          "candidate_unit_ids": ["u2", "u3"],
+          "evidence_unit_ids": ["u2", "u3"],
+          "state_version": 3
+        }
+      },
+      {
+        "seq": 11,
+        "type": "note",
+        "note": {
+          "id": "n3",
+          "unit_id": "u3",
+          "span": { "block_id": "b1", "start": 40, "end": 65 },
+          "kind": "resolves",
+          "text": "‘일정과 장소 항목’을 직접 작성했다는 설명을 찾았습니다.",
+          "question_id": "q1",
+          "evidence_unit_ids": ["u1", "u3"],
+          "requirement_ids": ["r1"],
+          "review_required": true
+        }
+      },
+      {
+        "seq": 12,
+        "type": "window_completed",
+        "window_id": "w3",
+        "unit_ids": ["u3"]
+      },
+      {
+        "seq": 13,
+        "type": "window_started",
+        "window_id": "w4",
+        "unit_ids": ["u4"]
+      },
+      {
+        "seq": 14,
+        "type": "question_updated",
+        "question_id": "q1",
+        "previous_status": "resolved",
+        "status": "reopened",
+        "evidence_unit_ids": ["u2", "u3", "u4"],
+        "at_unit_id": "u4",
+        "state_version": 4,
+        "question": {
+          "id": "q1",
+          "unit_id": "u1",
+          "scope_id": "b1",
+          "label": "안내문 · 본인 역할",
+          "facet": "role",
+          "criterion_id": "c_r1",
+          "text": "안내문에서 직접 작성한 범위는 어디인가요?",
+          "status": "reopened",
+          "candidate_unit_ids": ["u2", "u3", "u4"],
+          "evidence_unit_ids": ["u2", "u3", "u4"],
+          "state_version": 4
+        }
+      },
+      {
+        "seq": 15,
+        "type": "note",
+        "note": {
+          "id": "n4",
+          "unit_id": "u4",
+          "span": { "block_id": "b1", "start": 65, "end": 98 },
+          "kind": "hold",
+          "text": "담당 범위가 ‘부정확’하다는 정정이 나와 앞선 질문을 다시 확인합니다.",
+          "question_id": "q1",
+          "evidence_unit_ids": ["u1", "u4"],
+          "requirement_ids": ["r1"],
+          "review_required": true
+        }
+      },
+      {
+        "seq": 16,
+        "type": "window_completed",
+        "window_id": "w4",
+        "unit_ids": ["u4"]
+      },
+      { "seq": 17, "type": "reading_completed" },
+      { "seq": 18, "type": "report_completed" }
+    ],
+    "next_seq": 18,
+    "progress": {
+      "read_unit_count": 4,
+      "total_unit_count": 4,
+      "current_window": null
+    },
+    "error": null,
+    "generation": {
+      "engine": "laya",
+      "policy_version": "readme-prefix-v2",
+      "model": null,
+      "prepare_engine": "codex_cli",
+      "report_engine": "codex_cli",
+      "codex_model": "authored_synthetic_not_a_model_run"
+    },
+    "expires_at": "2099-01-01T00:00:00.000Z",
+    "report": {
+      "items": [
+        {
+          "id": "report1",
+          "category": "open",
+          "text": "직접 작성한 항목을 설명한 뒤 담당 범위가 부정확하다고 정정했습니다.",
+          "reason": "일정·장소 항목에서 실제 맡은 범위를 다시 확인해 일관되게 정리해 주세요.",
+          "note_ids": ["n3", "n4"],
+          "requirement_ids": ["r1"],
+          "citations": [
+            { "unit_id": "u3", "block_id": "b1", "start": 40, "end": 65 },
+            { "unit_id": "u4", "block_id": "b1", "start": 65, "end": 98 }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "unit_id": "u1",
+          "scope_id": "b1",
+          "label": "안내문 · 본인 역할",
+          "facet": "role",
+          "criterion_id": "c_r1",
+          "text": "안내문에서 직접 작성한 범위는 어디인가요?",
+          "status": "reopened",
+          "candidate_unit_ids": ["u2", "u3", "u4"],
+          "evidence_unit_ids": ["u2", "u3", "u4"],
+          "state_version": 4
+        }
+      ],
+      "limitations": [
+        "수동 작성 합성 시안입니다. 모델 정확도나 실제 검증을 나타내지 않습니다."
+      ]
+    }
+  }
+}
