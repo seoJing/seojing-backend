@@ -22,6 +22,7 @@ import {
   groundedOutputSchemas,
   mergeGroundedRepairs,
   reportInput,
+  validateRevisionPlan,
   type GroundedDraft,
 } from "../src/services/readme-lab/report-v2.js";
 
@@ -127,6 +128,62 @@ function fixture() {
   return { document, job, draft };
 }
 describe("targeted report repair boundary", () => {
+  it("bounds new editing plans without forcing gaps or allowing actionless fixes", () => {
+    const { document, job, draft } = fixture();
+    expect(() => validateRevisionPlan(draft)).not.toThrow();
+    expect(() => validateRevisionPlan({ items: [] })).not.toThrow();
+    const six = {
+      items: Array.from({ length: 6 }, () => ({
+        ...draft.items[0]!,
+        category: "improve",
+      })),
+    };
+    expect(
+      groundedOutputSchemas(document, job, []).report.safeParse(six).success,
+    ).toBe(false);
+    expect(() => validateRevisionPlan(six)).toThrow("engine_output_invalid");
+    expect(() =>
+      validateRevisionPlan({
+        items: Array.from({ length: 3 }, () => draft.items[0]!),
+      }),
+    ).toThrow("engine_output_invalid");
+    for (const category of ["open", "improve"]) {
+      expect(() =>
+        validateRevisionPlan({
+          items: [{ ...draft.items[0]!, category, suggestion: "   " }],
+        }),
+      ).toThrow("engine_output_invalid");
+    }
+  });
+
+  it("rechecks an actionless repaired plan instead of publishing the repair", async () => {
+    const { document, job, draft } = fixture();
+    const action = {
+      ...draft.items[0]!,
+      category: "improve" as const,
+      suggestion: "일정 항목을 맡았다는 문장을 안내문 소개 뒤에 붙이세요.",
+    };
+    const emptyAction = { ...action, suggestion: "" };
+    outputs([
+      { items: [action] },
+      { checks: [{ index: 0, supported: true, issue: "none" }] },
+      { checks: [{ index: 0, supported: false, issue: "other" }] },
+      { repairs: [{ index: 0, item: emptyAction }] },
+    ]);
+    await expect(
+      new CodexReasoner("codex", undefined, 5000).report(
+        document,
+        job,
+        [],
+        [],
+        AbortSignal.timeout(5000),
+      ),
+    ).rejects.toMatchObject({
+      validationReason: "grounded_report_verification_failed",
+    });
+    expect(runCommand).toHaveBeenCalledTimes(4);
+  });
+
   it("restricts generated references while retaining negative posting context", () => {
     const { document, job, draft } = fixture();
     job.requirements.push({
@@ -673,9 +730,10 @@ describe("Codex v2 bounded verification", () => {
   });
   it("stops assigning queued citation checks after a permanent failure and awaits started work", async () => {
     const { document, job, draft } = fixture();
-    draft.items = Array.from({ length: 5 }, () =>
-      structuredClone(draft.items[0]!),
-    );
+    draft.items = Array.from({ length: 5 }, () => ({
+      ...structuredClone(draft.items[0]!),
+      category: "improve",
+    }));
     let calls = 0;
     let releaseBoth!: () => void;
     let releaseFailure!: () => void;

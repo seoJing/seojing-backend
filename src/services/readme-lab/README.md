@@ -77,3 +77,27 @@ Fresh actual Codex CLI reports produced three operations items in 41.2 seconds a
 The new `jev-memo-transitions-v1.json` fixtures also expose remaining recall limits: `memo_progression` produced only one note, and `memo_correction` withdrew the original authorship note but omitted the later independent role explanation. Another actor's work and unrelated/instruction-like content produced no applicant-achievement notes. These are small development-used cases, not held-out accuracy measurements or an all-pass semantic benchmark. Category wording can still be repetitive, and this change does not establish an actual recruiter's thoughts.
 
 Restricted local artifacts: `.local/readme-lab-production/memos-v2/final-v4/` contains source hashes, real reading outputs, usage/counters, and the two actual reports. `retraction-controls.json` records the controlled cases. Earlier attempts and failures are retained separately; final-v3 is explicitly marked unsuitable as frozen release evidence. UI screenshots use a clearly labeled synthetic replay fixture, not a real applicant document or model-quality measurement. Source text remains absent from production aggregate diagnostics. The board records review and deployment status separately.
+
+## Action-oriented final report
+
+New grounded reports select at most five useful editing directions, including at most two representative explanations to preserve. These are upper bounds, not quotas. The writer groups notes that lead to the same editing action and prioritizes ambiguities affecting the posting's core work, responsibility boundaries, and unsupported claims. Each open/improve item must supply a concrete suggestion; the existing full-source audit also checks whether the action is specific, feasible, and avoids asking for information already present. A later explanation can be moved or linked closer to an earlier claim. Missing facts must not become invented achievements or compulsory numeric results.
+
+The public ReportItem contract is unchanged: text carries the grounded observation/gap, reason carries the suggested action, and citations/note_ids retain their evidence links. Initial synthesis selects and groups directions; targeted repairs still cannot rewrite approved siblings or delete partially overlapping items with unique facts. Revision-plan limits are rechecked after repairs. Citation checks and the complete-source semantic audit remain mandatory for nonempty output; this adds no separate model-call stage.
+
+The client shows “먼저 고칠 부분” before “고칠 때 유지할 설명”. Historical questions and per-requirement evidence remain available behind “판단 근거와 읽기 기록”, closed initially. Opening a source and returning preserves the disclosure and focused control. Old stored reports are not truncated to the new generation limit. An empty revision section does not assert a perfect document or complete qualifications.
+
+### Report-only development checks, 2026-10-06 KST
+
+Five synthetic cases received fresh actual Codex CLI reports. Four reused the complete v9 reading artifacts above; the claim-gap case used a new synthetic document, a cached operations posting profile, and no reading notes. No reader calls or real applicant documents were used in this report-only evaluation.
+
+| Case                            | Report time | Items | Observed result                                                                                                                        |
+| ------------------------------- | ----------: | ----: | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Operations                      |      28.0 s |     2 | Preserved concrete coordination actions and the decision-maker boundary; no forced revision.                                           |
+| Content                         |      32.6 s |     2 | Suggested merging the colleague-attributed sentences and placing the applicant's FAQ work next to them; preserved that work.           |
+| Customer support                |      34.6 s |     2 | Preserved response-priority and situation-specific guidance; the partial reading question stayed historical.                           |
+| Customer support, 42 units      |      33.0 s |     2 | Selected representative handling/hand-off explanations instead of enumerating all memo observations.                                   |
+| Unsupported role/outcome claims |      32.3 s |     2 | Narrowed “overall leadership” to the stated responsibilities and removed the unsupported satisfaction claim without inventing metrics. |
+
+Each completed through four CLI calls and no repair request. These are single development runs, not a reliability rate, a coverage benchmark, or a paired speed comparison with earlier reader versions. The reader's v9 recall/cap limits above remain unchanged. Prior report failures remain part of the historical evidence.
+
+Restricted local evidence: `.local/readme-lab-production/revision-report-v1/` contains the report harness, explicit cached-input provenance, output and source hashes, and local desktop/mobile UI captures. Browser checks replayed these synthetic results and verified closed-history defaults, source navigation, return focus, and 390px layout without horizontal overflow. Implementation, independent review, and production release status are recorded separately on the board.

@@ -39,6 +39,42 @@ export const groundedReportSchema = z
   })
   .strict();
 export type GroundedDraft = z.infer<typeof groundedReportSchema>;
+export const MAX_REVISION_ITEMS = 5;
+
+/** New reports are a selected editing plan; existing stored reports stay valid. */
+export function validateRevisionPlan(value: unknown): void {
+  const parsed = groundedReportSchema.safeParse(value);
+  if (!parsed.success)
+    throw new LabError(
+      "engine_output_invalid",
+      503,
+      "grounded_report_schema_invalid",
+    );
+  if (parsed.data.items.length > MAX_REVISION_ITEMS)
+    throw new LabError(
+      "engine_output_invalid",
+      503,
+      "report_revision_plan_too_long",
+    );
+  if (
+    parsed.data.items.filter((item) => item.category === "explained").length > 2
+  )
+    throw new LabError(
+      "engine_output_invalid",
+      503,
+      "report_strength_inventory",
+    );
+  if (
+    parsed.data.items.some(
+      (item) => item.category !== "explained" && !item.suggestion.trim(),
+    )
+  )
+    throw new LabError(
+      "engine_output_invalid",
+      503,
+      "report_revision_action_missing",
+    );
+}
 export interface RepairPolicy {
   citationIndices: readonly number[];
   deletableIndices: readonly number[];
@@ -96,7 +132,9 @@ export function groundedOutputSchemas(
     ),
   });
   return {
-    report: groundedReportSchema.extend({ items: z.array(item).max(12) }),
+    report: groundedReportSchema.extend({
+      items: z.array(item).max(MAX_REVISION_ITEMS),
+    }),
     repair: groundedRepairSchema.extend({
       repairs: z
         .array(
@@ -465,7 +503,7 @@ export function validateGroundedReport(
       ...(readingEngine === "jev"
         ? [
             "읽는 동안 공고에서 만든 기준에 따라 역할·수행 방식·결과와 필요한 비교 근거를 살폈습니다. 연결한 설명과 남은 질문은 문서에 근거한 독해 기록이며 실제 채용 담당자의 생각이나 모든 요건의 충족 판정이 아닙니다.",
-            `읽는 동안의 판단은 Typesafe의 Jev 모델로 처리했습니다.${contextReviews.length ? " 일부 역할의 문맥 연결은 Codex로 추가 확인했습니다." : ""} 판단 정확도는 검증 중이며, ‘설명을 찾은 부분’은 문서 안에서 설명을 찾았다는 뜻이지 경험의 진위를 인증한 결과가 아닙니다.`,
+            `읽는 동안의 판단은 Typesafe의 Jev 모델로 처리했습니다.${contextReviews.length ? " 일부 역할의 문맥 연결은 Codex로 추가 확인했습니다." : ""} 판단 정확도는 검증 중이며, ‘유지할 설명’은 문서 안에서 설명을 찾았다는 뜻이지 경험의 진위를 인증한 결과가 아닙니다.`,
             ...(contextReviews.some((r) => r.outcome === "failed")
               ? [
                   "일부 역할의 추가 문맥 확인을 완료하지 못했습니다. 이는 문서에 설명이 없다는 뜻이 아니며, 연결된 원문을 함께 확인해 주세요.",
