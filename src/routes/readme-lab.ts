@@ -45,6 +45,8 @@ export function registerReadmeLabRoutes(
         .filter(Boolean),
       reasoner,
       parse: parseDocument,
+      onPrepareFailure: (event) =>
+        app.log.warn(event, "README preparation failed"),
       ...(process.env.README_LAB_ENGINE === "jev"
         ? {
             jev: (signal: AbortSignal) =>

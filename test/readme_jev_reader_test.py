@@ -38,6 +38,45 @@ def question(status="open"):
 
 
 class ReaderTest(unittest.TestCase):
+    def many_criteria(self):
+        value = data(["마지막 도구 관련 공동 프로젝트에 참여했습니다."])
+        template = value["job"]["reader_profile"]["criteria"][0]
+        value["job"]["requirements"] = [{"id": f"r{i}", "kind": "preferred", "label": f"도구{i}", "quote": f"도구{i} 경험"} for i in range(1, 41)]
+        value["job"]["reader_profile"]["criteria"] = [
+            {**template, "id": f"c_r{i}", "requirement_id": f"r{i}", "label": f"도구{i}", "checks": [template["checks"][0]]}
+            for i in range(1, 41)]
+        return value
+
+    def test_trigger_chunks_keep_full_prefix_and_can_select_last_criterion(self):
+        raw = FakeProvider("no"); chunks = []
+        def ask(state, questions):
+            chunks.append((json.loads(json.dumps(state)), list(questions)))
+            return {"answers": {k: {"label": "yes" if k == "trigger_39" else "no", "confidence": .95} for k in questions},
+                    "usage": {"input_tokens": 100, "output_tokens": 5}}
+        raw.ask = ask; reader = JevReader(raw); value = self.many_criteria()
+        result = reader.step(value)
+        self.assertEqual([len(c[1]) for c in chunks], [32, 8])
+        self.assertEqual(chunks[0][0], chunks[1][0])
+        self.assertEqual(result["questions"][0]["criterion_id"], "c_r40")
+        self.assertEqual((reader.provider.calls, reader.provider.input_tokens), (2, 200))
+
+    def test_later_trigger_chunk_failure_or_budget_exhaustion_never_commits_first_chunk(self):
+        for mode in ("budget", "missing_keys"):
+            raw = FakeProvider(); count = 0
+            def ask(state, questions):
+                nonlocal count
+                count += 1
+                answers = {k: {"label": "yes", "confidence": .95} for k in questions}
+                if mode == "missing_keys" and count == 2: answers.pop(next(iter(answers)))
+                return {"answers": answers, "usage": {"input_tokens": 100, "output_tokens": 5}}
+            raw.ask = ask; reader = JevReader(raw, max_calls=1 if mode == "budget" else 600)
+            with self.assertRaises(ProviderError): reader.step(self.many_criteria())
+            self.assertEqual(reader.prefix, [])
+            self.assertIsNone(reader.job)
+            self.assertEqual(reader.adopted, {})
+            self.assertEqual(reader.provider.calls, 1 if mode == "budget" else 2)
+            self.assertEqual(reader.provider.input_tokens, 100 if mode == "budget" else 200)
+
     def test_retry_replays_immutable_request_counts_usage_and_has_no_head_mixing(self):
         class Flaky:
             def __init__(self): self.calls = []

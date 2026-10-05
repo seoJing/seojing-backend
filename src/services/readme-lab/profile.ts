@@ -3,6 +3,11 @@ import { z } from "zod";
 import type { JobPosting, ReaderProfile } from "./contracts.js";
 import { LabError } from "./errors.js";
 
+// Resource ceiling, not a top-N selection: every relevant posting item must
+// survive extraction and the whole-posting coverage audit.
+export const MAX_JOB_REQUIREMENTS = 64;
+export const PROFILE_BATCH_SIZE = 8;
+
 export const readerProfileSchema = z
   .object({
     criteria: z
@@ -26,7 +31,7 @@ export const readerProfileSchema = z
           })
           .strict(),
       )
-      .max(8),
+      .max(MAX_JOB_REQUIREMENTS),
   })
   .strict();
 

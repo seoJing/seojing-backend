@@ -11,8 +11,12 @@ import {
   textBlocks,
 } from "../src/services/readme-lab/document.js";
 import { runCommand } from "../src/services/readme-lab/process.js";
-import { LabError } from "../src/services/readme-lab/errors.js";
+import {
+  LabError,
+  preparationFailureReason,
+} from "../src/services/readme-lab/errors.js";
 import type { Note } from "../src/services/readme-lab/contracts.js";
+import { MAX_JOB_REQUIREMENTS } from "../src/services/readme-lab/profile.js";
 import {
   citationRejected,
   mergeGroundedRepairs,
@@ -806,5 +810,181 @@ describe("Codex v2 bounded verification", () => {
       validationReason: "profile_semantic_review_failed",
     });
     expect(runCommand).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("whole posting coverage", () => {
+  const posting = (n: number) => {
+    const requirements = Array.from({ length: n }, (_, i) => ({
+      kind: "preferred",
+      label: `도구 ${i + 1}`,
+      quote: `도구 ${i + 1} 사용 경험.`,
+    }));
+    return { requirements, text: requirements.map((r) => r.quote).join("\n") };
+  };
+  const checksFor = (requirements: { id: string }[]) => ({
+    criteria: requirements.map((r) => ({
+      requirement_id: r.id,
+      checks: [
+        {
+          facet: "role",
+          trigger: "실제 경험 주장",
+          sufficient: "직접 수행한 부분",
+          insufficient: "타인의 업무만 서술",
+        },
+      ],
+    })),
+  });
+  it("keeps the last of 64 items with exact offsets and rejects overflow or fabricated quotes", () => {
+    const f = posting(MAX_JOB_REQUIREMENTS);
+    const job = validateProfile({ requirements: f.requirements }, f.text);
+    expect(job.requirements).toHaveLength(64);
+    expect(
+      job.text.slice(job.requirements[63]!.start, job.requirements[63]!.end),
+    ).toBe(f.requirements[63]!.quote);
+    expect(
+      validateReaderProfile(checksFor(job.requirements), job).criteria,
+    ).toHaveLength(64);
+    const overflow = posting(65);
+    expect(() =>
+      validateProfile({ requirements: overflow.requirements }, overflow.text),
+    ).toThrowError(
+      expect.objectContaining({ validationReason: "profile_schema_invalid" }),
+    );
+    f.requirements[63]!.quote = "원문에 없는 필수 경험";
+    expect(() =>
+      validateProfile({ requirements: f.requirements }, f.text),
+    ).toThrowError(
+      expect.objectContaining({ validationReason: "profile_quote_missing" }),
+    );
+  });
+  it("compiles every assigned criterion in ordered batches, with full scope and at most two calls active", async () => {
+    const f = posting(19);
+    const context = {
+      kind: "other",
+      label: "인턴 범위",
+      quote: "위 업무의 보조 및 일부 기능 개발을 담당합니다.",
+    };
+    const text = f.text + "\n" + context.quote;
+    let active = 0,
+      peak = 0,
+      compiled = 0;
+    vi.mocked(runCommand).mockImplementation(async ({ cwd, input }) => {
+      const data = JSON.parse(input.split("UNTRUSTED_DATA_JSON:\n")[1]!) as {
+        requirements?: { id: string; kind: string }[];
+        job_text?: string;
+        reader_profile?: { criteria: unknown[] };
+      };
+      let result;
+      if (!data.requirements)
+        result = { requirements: [...f.requirements, context] };
+      else if (data.reader_profile) {
+        expect(data.reader_profile.criteria).toHaveLength(19);
+        result = { valid: true, issues: [] };
+      } else {
+        expect(data.job_text).toBe(text);
+        expect(data.requirements.length).toBeLessThanOrEqual(8);
+        expect(
+          data.requirements.every((r: { kind: string }) => r.kind !== "other"),
+        ).toBe(true);
+        active++;
+        peak = Math.max(peak, active);
+        compiled++;
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        active--;
+        result = checksFor(data.requirements);
+      }
+      await writeOutput(cwd, input, result);
+      return JSON.stringify({ type: "turn.completed" });
+    });
+    const job = await new CodexReasoner().profile(
+      text,
+      new AbortController().signal,
+    );
+    expect(peak).toBe(2);
+    expect(compiled).toBe(3);
+    expect(active).toBe(0);
+    expect(job.requirements).toHaveLength(20);
+    expect(job.reader_profile!.criteria.map((c) => c.requirement_id)).toEqual(
+      job.requirements.slice(0, 19).map((r) => r.id),
+    );
+    expect(runCommand).toHaveBeenCalledTimes(5);
+  });
+  it("preserves the original batch failure and waits for sibling cancellation before returning", async () => {
+    const f = posting(17);
+    let secondStarted!: () => void;
+    const bothStarted = new Promise<void>((resolve) => {
+      secondStarted = resolve;
+    });
+    let cleaned = false;
+    vi.mocked(runCommand).mockImplementation(async ({ cwd, input, signal }) => {
+      const data = JSON.parse(input.split("UNTRUSTED_DATA_JSON:\n")[1]!) as {
+        requirements?: { id: string; kind: string }[];
+        job_text?: string;
+        reader_profile?: { criteria: unknown[] };
+      };
+      if (!data.requirements) {
+        await writeOutput(cwd, input, { requirements: f.requirements });
+        return JSON.stringify({ type: "turn.completed" });
+      }
+      if (data.requirements[0]!.id === "r1") {
+        await bothStarted;
+        await writeOutput(cwd, input, { criteria: [] });
+        return JSON.stringify({ type: "turn.completed" });
+      }
+      secondStarted();
+      await new Promise<void>((resolve) =>
+        signal.addEventListener("abort", () => resolve(), { once: true }),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      cleaned = true;
+      throw new LabError("cancelled");
+    });
+    await expect(
+      new CodexReasoner().profile(f.text, new AbortController().signal),
+    ).rejects.toMatchObject({ validationReason: "reader_criterion_missing" });
+    expect(cleaned).toBe(true);
+    expect(runCommand).toHaveBeenCalledTimes(3);
+  });
+  it("still rejects whole-posting coverage omissions and does not compile context as a skill", async () => {
+    const f = posting(10);
+    const requirements = f.requirements.slice(0, 9);
+    vi.mocked(runCommand).mockImplementation(async ({ cwd, input }) => {
+      const payload = JSON.parse(input.split("UNTRUSTED_DATA_JSON:\n")[1]!) as {
+        requirements?: { id: string; kind: string }[];
+        job_text?: string;
+        reader_profile?: { criteria: unknown[] };
+      };
+      const value = !payload.requirements
+        ? { requirements }
+        : payload.reader_profile
+          ? { valid: false, issues: ["마지막 우대 항목이 누락되었습니다."] }
+          : checksFor(payload.requirements);
+      await writeOutput(cwd, input, value);
+      return JSON.stringify({ type: "turn.completed" });
+    });
+    await expect(
+      new CodexReasoner().profile(f.text, new AbortController().signal),
+    ).rejects.toMatchObject({
+      validationReason: "profile_semantic_review_failed",
+    });
+  });
+  it("logs only fixed preparation reasons, excluding model issues and arbitrary exception strings", () => {
+    expect(
+      preparationFailureReason(
+        new LabError(
+          "engine_output_invalid",
+          503,
+          "profile_semantic_review_failed",
+          { source: "PRIVATE" },
+        ),
+      ),
+    ).toBe("profile_semantic_review_failed");
+    expect(
+      preparationFailureReason(new LabError("PRIVATE", 503, "PRIVATE")),
+    ).toBe("preparation_failed");
+    expect(preparationFailureReason(new Error("PRIVATE"))).toBe(
+      "preparation_failed",
+    );
   });
 });
