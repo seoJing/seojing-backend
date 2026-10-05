@@ -1,0 +1,66 @@
+{
+  "version": "public-good-writing-v1",
+  "purpose": "Offline evaluation only; no fine-tuning, prompt demonstrations or contest republication.",
+  "source_type": "publicly_published_anonymized_application_essays",
+  "accessed_at": "2026-10-05T22:22:26.723Z",
+  "posting_mode": "role_and_original_application_questions_reconstructed_brief_not_historic_job_advert",
+  "model_input_exclusions": [
+    "expert grades and commentary",
+    "good/bad markers",
+    "author profile sidebar",
+    "selection rationale and expected outcomes"
+  ],
+  "cases": [
+    {
+      "id": "lg_hr",
+      "source_id": "199333",
+      "company": "LG전자",
+      "role": "인사담당 인턴",
+      "year": "2019 상반기",
+      "expected_questions": 2,
+      "quality_selection": "Publisher expert overall score 5; realistic intern scope and preparation linked to HR.",
+      "source_url": "https://www.jobkorea.co.kr/starter/PassAssay/View/199333?FavorCo_Stat=0&OrderBy=2&Page=1&Pass_An_Stat=0",
+      "source_sha256": "081a8caecde693790a7b1431a07deea176627e9d6d2e73dbf8cd99c90c47d737",
+      "input_sha256": "700d747665a1490451bfdbbe9915d06ebc84bdaf1387584779d2f6bf186d2ecf",
+      "text_sha256": "b5fd733da412ee4ddff52a2cc783694ece3999de21c5bafabf083c67e56ef32d",
+      "question_count": 2,
+      "unit_count": 28,
+      "answer_characters": 1462,
+      "normalization": "Extract qnaLists question spans and answer div.tx, remove sup editorial labels and txSpllChk character-count UI nodes, unwrap bold, normalize NFC/line whitespace, retain all answers and original questions as heading blocks. No translation, content rewrite or truncation."
+    },
+    {
+      "id": "bosch_scm",
+      "source_id": "201763",
+      "company": "한국로버트보쉬",
+      "role": "물류·SCM 인턴",
+      "year": "2019 하반기",
+      "expected_questions": 3,
+      "quality_selection": "Publisher expert overall score 5; relevant logistics experience and realistic internship goals. Header says new hire/materials; questions explicitly say internship.",
+      "source_url": "https://www.jobkorea.co.kr/starter/PassAssay/View/201763?FavorCo_Stat=0&OrderBy=2&Page=1&Pass_An_Stat=0",
+      "source_sha256": "6eca72ecdb3daecb723cb61d764ef129e630a8f4738097e459abaeb51e2bf1f5",
+      "input_sha256": "f54495bdfbc72c72da35f8a7e03ac449bbabbc05a8ba8260e3ccf40e7972834d",
+      "text_sha256": "86356cf7abc8f8053b7db729965a5a2d73c1e645fb884c0bb0614e7caf028acb",
+      "question_count": 3,
+      "unit_count": 32,
+      "answer_characters": 1545,
+      "normalization": "Extract qnaLists question spans and answer div.tx, remove sup editorial labels and txSpllChk character-count UI nodes, unwrap bold, normalize NFC/line whitespace, retain all answers and original questions as heading blocks. No translation, content rewrite or truncation."
+    },
+    {
+      "id": "hynix_process",
+      "source_id": "193547",
+      "company": "SK하이닉스",
+      "role": "반도체 Device 공정개발 신입",
+      "year": "2017 하반기",
+      "expected_questions": 4,
+      "quality_selection": "Publisher expert overall score 5; job-related research and complete responses. Site category says quality manager; application body explicitly names Device process development.",
+      "source_url": "https://www.jobkorea.co.kr/starter/PassAssay/View/193547?FavorCo_Stat=0&OrderBy=2&Page=1&Pass_An_Stat=0",
+      "source_sha256": "1c6b56f4f2d8d0ffaa6103f6b130c8454200241967f2aa768be4ab326ce1fa70",
+      "input_sha256": "4f0bf136fa8fcd1469d161633f70804399a121c6d205aa94541871e013143a15",
+      "text_sha256": "cf9b2ff441ad2316a35613f1e9647b74e457be9a00fa0344cde88d6242da1425",
+      "question_count": 4,
+      "unit_count": 48,
+      "answer_characters": 2710,
+      "normalization": "Extract qnaLists question spans and answer div.tx, remove sup editorial labels and txSpllChk character-count UI nodes, unwrap bold, normalize NFC/line whitespace, retain all answers and original questions as heading blocks. No translation, content rewrite or truncation."
+    }
+  ]
+}
