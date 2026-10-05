@@ -11,7 +11,12 @@ import type {
 } from "./contracts.js";
 import { LabError } from "./errors.js";
 import { runCommand } from "./process.js";
-import { readerProfileSchema, validateReaderProfile } from "./profile.js";
+import {
+  MAX_JOB_REQUIREMENTS,
+  PROFILE_BATCH_SIZE,
+  readerProfileSchema,
+  validateReaderProfile,
+} from "./profile.js";
 import {
   entailmentSchema,
   citationAuditSchema,
@@ -48,7 +53,7 @@ import {
 // Share this boundary across generation and review so an invented burden cannot
 // propagate from the posting profile into an unresolved question and final report.
 const explanationBoundary =
-  "판단 대상은 문서 서술의 충분성이며 실제 사실 인증이 아니다. facet별 판단을 분리한다. role은 그 경험에서 본인이 실제 맡아 수행한 구체적인 부분이 설명되면 충족한다. 공고의 복합 업무 전부를 수행했는지, method/result/basis까지 충족했는지를 role의 해소 조건으로 덧붙이지 않는다. 기존 role 질문에 공고 업무명이 함께 적혀 있어도 그중 본인이 실제 맡은 범위를 설명하면 된다. 수행했다고 주장하지 않은 별도 업무를 하지 않았다는 이유로 역할 설명을 미해소/부족 처리하지 않는다. 이는 직무의 모든 요건을 갖췄다는 판정은 아니며 타인의 업무를 본인에게 귀속하지 않는다. 비교 성과는 동일 지표의 전후 값(또는 계산 관계), 대상·범위, 비교 기간이 설명되면 basis를 충족한다. 단순 개수·기간 진술에 불필요한 전후 비교를 강요하지 않는다. 측정 담당자·계산 방식이 제시되면 그 설명을 활용한다. 공고가 명시적으로 제출을 요구하지 않은 원본 기록·첨부파일·증빙·별도 확인 자료를 충족 조건으로 추가하거나 없다는 이유로 미해소/부족 처리하지 않는다. 공고의 명시 제출 요건은 보존하고 해당 요건에만 연결한다. 문서 속 기록을 설명하는 것과 실제 기록 제출 의무는 다르다. 기준이나 기존 질문에 모호한 '확인 근거'가 있어도 문서의 비교 설명으로 판단한다. 충분한 서술에 선택 보완을 제안한다면 필수 결함으로 표현하지 않는다. ";
+  "판단 대상은 문서 서술의 충분성이며 실제 사실 인증이 아니다. facet별 판단을 분리한다. role은 그 경험에서 본인이 실제 맡아 수행한 구체적인 부분이 설명되면 충족한다. 공고의 복합 업무 전부를 수행했는지, method/result/basis까지 충족했는지를 role의 해소 조건으로 덧붙이지 않는다. 기존 role 질문에 공고 업무명이 함께 적혀 있어도 그중 본인이 실제 맡은 범위를 설명하면 된다. 수행했다고 주장하지 않은 별도 업무를 하지 않았다는 이유로 역할 설명을 미해소/부족 처리하지 않는다. 이는 직무의 모든 요건을 갖췄다는 판정은 아니며 타인의 업무를 본인에게 귀속하지 않는다. 비교 성과는 동일 지표의 전후 값(또는 계산 관계), 대상·범위, 비교 기간이 설명되면 basis를 충족한다. 단순 개수·기간 진술에 불필요한 전후 비교를 강요하지 않는다. 측정 담당자·계산 방식이 제시되면 그 설명을 활용한다. 공고가 명시적으로 제출을 요구하지 않은 원본 기록·첨부파일·증빙·별도 확인 자료를 충족 조건으로 추가하거나 없다는 이유로 미해소/부족 처리하지 않는다. 공고의 명시 제출 요건은 보존하고 해당 요건에만 연결한다. other의 고용조건·지원절차·제출 서류는 역량 평가 대상이 아니다. 이력서 한 파일만 보고 포트폴리오 등 다른 서류가 미제출되었다거나 고용조건을 수용하지 못한다고 단정하지 않는다. 문서 속 기록을 설명하는 것과 실제 기록 제출 의무는 다르다. 기준이나 기존 질문에 모호한 '확인 근거'가 있어도 문서의 비교 설명으로 판단한다. 충분한 서술에 선택 보완을 제안한다면 필수 결함으로 표현하지 않는다. ";
 
 const evidenceDecisionSchema = z
   .object({
@@ -75,6 +80,9 @@ const profileAuditSchema = z
   })
   .strict();
 
+const postingScope =
+  "담당업무(duty), 자격요건(required), 우대사항(preferred)의 명시 항목을 모두 보존한다. 중요도나 개수로 일부만 선별하지 않는다. 서로 다른 요건을 한 인용에 무리하게 합치지 않는다. 인턴의 보조·일부 업무, 선택 가능한 기술, 필수/우대, 예외·조건을 보존한다. 인턴 범위가 전체 업무에 적용되면 각 업무 label에도 그 범위를 표시한다. 고용형태·근무기간·지원자에게 요구하는 제출 서류와 제출 방법은 other로 보존하되 역량 평가나 독해 질문으로 만들지 않는다. 업무 범위를 한정하는 문장도 other로 보존한다. 회사 소개·미션·복지·일반 전형 순서·조기마감 안내는 원문에 남겨 두며 요건으로 추출하지 않는다. 이 배경 설명이 requirements에 없다는 이유로 누락이라고 하지 않는다. ";
+
 const profileSchema = z
   .object({
     requirements: z
@@ -87,7 +95,7 @@ const profileSchema = z
           })
           .strict(),
       )
-      .max(8),
+      .max(MAX_JOB_REQUIREMENTS),
   })
   .strict();
 const reportSchema = z
@@ -204,12 +212,19 @@ export function codexArgs(
 
 export function validateProfile(value: unknown, text: string): JobPosting {
   const result = profileSchema.safeParse(value);
-  if (!result.success) throw new LabError("engine_output_invalid", 503);
+  if (!result.success)
+    throw new LabError("engine_output_invalid", 503, "profile_schema_invalid");
   const seen = new Set<string>();
   const requirements = result.data.requirements.map((item, i) => {
     const start = text.indexOf(item.quote);
-    if (start < 0 || seen.has(item.quote))
-      throw new LabError("engine_output_invalid", 503);
+    if (start < 0)
+      throw new LabError("engine_output_invalid", 503, "profile_quote_missing");
+    if (seen.has(item.quote))
+      throw new LabError(
+        "engine_output_invalid",
+        503,
+        "profile_quote_duplicate",
+      );
     seen.add(item.quote);
     return { id: `r${i + 1}`, ...item, start, end: start + item.quote.length };
   });
@@ -436,7 +451,8 @@ export class CodexReasoner implements Reasoner {
     const job = validateProfile(
       await this.ask(
         profileSchema,
-        "공고에 명시된 담당업무·필수·우대 요건을 최대 8개 추출한다. quote는 원문에서 공백까지 완전히 일치하는 연속 구절이어야 한다. 요건이 없으면 빈 배열을 반환한다. 회사 홍보나 복지는 지원자 요건으로 만들지 않는다.",
+        postingScope +
+          `공고 전체를 읽고 모든 해당 항목을 추출한다. ${MAX_JOB_REQUIREMENTS}개는 안전 상한이며 요건을 생략하거나 합쳐서 상한에 맞추지 않는다. quote는 원문에서 공백까지 완전히 일치하는 연속 구절이어야 한다. 요건과 지원 안내가 없으면 빈 배열을 반환한다.`,
         { job_text: text },
         signal,
       ),
@@ -444,21 +460,69 @@ export class CodexReasoner implements Reasoner {
     );
     // Extraction is frozen before the resume is read. No applicant-dependent
     // requirements or invented weights are introduced by the reader profile.
-    job.reader_profile = validateReaderProfile(
-      await this.ask(
-        readerProfileSchema,
-        explanationBoundary +
-          "각 requirement 중 duty/required/preferred마다 독해 확인 조건을 만든다. other는 제외한다. 한국어로 쓴다. 요건을 추가하거나 채용 가중치를 만들지 않는다. role/method는 해당 경험을 주장할 때 필요한 설명, result는 결과를 주장할 때만, basis는 수치·비교 성과를 주장할 때만 trigger한다. 모든 문장에 수치·결과를 요구하지 않는다. sufficient는 문서에서 찾을 구체적 설명, insufficient는 팀 성과/계획/다른 경험/키워드만 있음 같은 반례다. 질문 정의는 간결하고 서로 겹치지 않게 한다.",
-        { requirements: job.requirements },
-        signal,
-      ),
-      job,
+    const relevant = job.requirements.filter((r) => r.kind !== "other");
+    const batches = Array.from(
+      { length: Math.ceil(relevant.length / PROFILE_BATCH_SIZE) },
+      (_, i) =>
+        relevant.slice(i * PROFILE_BATCH_SIZE, (i + 1) * PROFILE_BATCH_SIZE),
     );
+    const controller = new AbortController();
+    const batchSignal = AbortSignal.any([signal, controller.signal]);
+    let firstFailure: { error: unknown } | undefined;
+    const criteria: Array<
+      z.infer<typeof readerProfileSchema>["criteria"][number]
+    > = [];
+    // At most two independent CLI processes. Every batch sees all posting
+    // context so a later intern qualifier cannot be lost at a batch boundary.
+    for (let i = 0; i < batches.length; i += 2) {
+      const results = await Promise.allSettled(
+        batches.slice(i, i + 2).map(async (requirements) => {
+          try {
+            const value = await this.ask(
+              readerProfileSchema.extend({
+                criteria: z
+                  .array(
+                    readerProfileSchema.shape.criteria.element.extend({
+                      checks:
+                        readerProfileSchema.shape.criteria.element.shape.checks.max(
+                          2,
+                        ),
+                    }),
+                  )
+                  .length(requirements.length),
+              }),
+              explanationBoundary +
+                postingScope +
+                "이번 requirements 각각에만 독해 확인 조건을 만든다. job_text는 범위·조건 확인용이며 여기서 새 요건을 추가하지 않는다. 한국어로 간결하게 쓴다. 요건당 실제로 필요한 확인 조건만 1~2개 작성한다. role은 해당 경험을 주장할 때의 본인 수행 설명, basis는 해당 경험의 수치·비교 성과를 주장할 때만 적용한다. 성과를 주장하지 않은 문장이나 성장 의지·성향·계획에 실제 경험·수치·결과를 요구하지 않는다. 충분한 서술의 조건과 팀 성과/계획/다른 경험/키워드만 있음 같은 반례를 구분한다. 인턴에게 전체 업무 주도를 요구하지 않는다.",
+              { requirements, job_text: text },
+              batchSignal,
+            );
+            return validateReaderProfile(value, { ...job, requirements })
+              .criteria;
+          } catch (error) {
+            firstFailure ??= { error };
+            controller.abort();
+            throw error;
+          }
+        }),
+      );
+      if (firstFailure) throw firstFailure.error;
+      for (const result of results)
+        if (result.status === "fulfilled")
+          criteria.push(
+            ...result.value.map(({ requirement_id, checks }) => ({
+              requirement_id,
+              checks,
+            })),
+          );
+    }
+    job.reader_profile = validateReaderProfile({ criteria }, job);
     const audit = profileAuditSchema.parse(
       await this.ask(
         profileAuditSchema,
         explanationBoundary +
-          "공고 원문과 추출 요건·독해 기준을 대조한다. 필수/우대/업무/예외를 뒤집거나 복지·홍보를 요건으로 만들면 valid=false. 독해 기준은 서술의 충분성을 확인하는 질문이며 새로운 자격·경력·기술·수치 의무를 추가하면 안 된다. role/method/result/basis는 해당 경험이나 결과를 주장할 때만 적용해야 한다. 원문의 명시 요건을 누락한 경우도 오류다. 인용이 존재하는 것만으로 의미가 맞다고 판단하지 않는다.",
+          postingScope +
+          "공고 전체와 추출 요건·독해 기준을 대조한다. 명시된 업무·필수·우대 요건의 누락, 종류 변경, 인턴 범위·선택지·예외의 왜곡은 valid=false. other의 고용·제출 안내는 평가 기준이 아니므로 reader_profile에 없어야 한다. 독해 조건은 해당 경험이나 성과를 주장할 때만 적용하며 새로운 자격·경력·기술·수치 의무를 추가하면 안 된다. 모든 facet이 있을 필요는 없다. 인용이 존재하는 것만으로 의미나 전체 범위가 맞다고 판단하지 않는다. 문제없으면 valid=true, issues=[]로 반환한다.",
         {
           job_text: text,
           requirements: job.requirements,

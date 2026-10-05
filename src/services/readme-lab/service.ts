@@ -12,7 +12,7 @@ import type { Reasoner } from "./codex.js";
 import type { Classifier } from "./laya.js";
 import type { JevReader } from "./jev.js";
 import { readSemanticPrefix } from "./semantic-reader.js";
-import { LabError, errorCode } from "./errors.js";
+import { LabError, errorCode, preparationFailureReason } from "./errors.js";
 import { judgePrefix } from "./judgment.js";
 import {
   createMemory,
@@ -58,6 +58,11 @@ export interface LabOptions {
   now?: () => number;
   ttlMs?: number;
   leaseMs?: number;
+  onPrepareFailure?: (event: {
+    stage: "document" | "profile";
+    reason: string;
+    elapsed_ms: number;
+  }) => void;
 }
 
 export class ReadmeLab {
@@ -182,6 +187,8 @@ export class ReadmeLab {
     this.enqueue(value.controller.signal, async () => {
       if (value.controller.signal.aborted) return;
       const timer = setTimeout(() => value.controller.abort(), 180000);
+      const started = this.clock();
+      let stage: "document" | "profile" = "document";
       try {
         value.view.status = "extracting";
         const document = await this.options.parse(
@@ -191,6 +198,7 @@ export class ReadmeLab {
         if (value.controller.signal.aborted) return;
         value.view.document = document;
         value.view.status = "analyzing_job";
+        stage = "profile";
         const job = await this.options.reasoner.profile(
           input.job_text,
           value.controller.signal,
@@ -199,6 +207,15 @@ export class ReadmeLab {
         value.view.job = job;
         value.view.status = "ready";
       } catch (error) {
+        try {
+          this.options.onPrepareFailure?.({
+            stage,
+            reason: preparationFailureReason(error),
+            elapsed_ms: this.clock() - started,
+          });
+        } catch {
+          /* Telemetry must not change the preparation outcome. */
+        }
         if (value.view.status !== "cancelled") {
           value.view.status = "failed";
           value.view.error = errorCode(error);

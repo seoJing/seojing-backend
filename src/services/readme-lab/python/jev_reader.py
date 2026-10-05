@@ -9,7 +9,10 @@ from decision_providers import ProviderError
 from jev_grounded import GroundedJev, EN_BOUNDARY, ROLE_EXPLANATION_BOUNDARY, accepted
 from runtime import choice
 
-READER_VERSION = "jev-reader-v6"
+READER_VERSION = "jev-reader-v7"
+# Internal request-size policy, not a provider head-count limit. Every chunk
+# sees the same full prefix; no criterion is dropped to fit a trigger request.
+TRIGGER_BATCH_SIZE = 32
 QUESTIONS = {
     "role": "이 경험에서 본인이 직접 맡아 수행한 구체적인 업무는 무엇인가요?",
     "basis": "이 개선 결과는 무엇과 비교했으며, 변화는 어떻게 확인했나요?",
@@ -279,7 +282,16 @@ class JevReader:
             trigger_state = {"requirements": job["requirements"],
                 "units": [{"id": u["id"], "text": u["text"]} for u in prefix],
                 "current_unit": current["id"], "open_questions": questions}
-            answers = self.provider.ask(trigger_state, heads)["answers"]
+            answers = {}
+            head_items = list(heads.items())
+            for offset in range(0, len(head_items), TRIGGER_BATCH_SIZE):
+                chunk = dict(head_items[offset:offset + TRIGGER_BATCH_SIZE])
+                response = self.provider.ask(deepcopy(trigger_state), chunk)["answers"]
+                if set(response) != set(chunk) or set(answers).intersection(response):
+                    raise ProviderError("invalid_answer_distribution_keys")
+                answers.update(response)
+            # Select only after all chunks pass; step() rolls back semantic
+            # state on a later failure while keeping physical budget usage.
             confirmed = set()
             # One bounded focused check can separate comparison, criterion
             # relevance and missing explanation when a crowded trigger batch
