@@ -814,7 +814,7 @@ function renderInlineMarkdown(text: string): string {
 }
 
 function uniqueSlug(text: string, existing: string[]): string {
-  const base = normalizeSlug(text) || "section";
+  const base = normalizeSlug(text).toLowerCase() || "section";
   let candidate = base;
   let suffix = 2;
   while (existing.includes(candidate)) {

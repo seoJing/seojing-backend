@@ -24,6 +24,7 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "mdx:ingest": "tsx scripts/ingest-mdx.ts",
+    "mdx:import-drafts": "tsx scripts/import-mdx-drafts.ts",
     "study:migration-audit": "tsx scripts/audit-study-migration.ts",
     "db:local:start": "bash scripts/local-postgres.sh start",
     "db:local:stop": "bash scripts/local-postgres.sh stop",

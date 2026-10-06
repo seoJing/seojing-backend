@@ -87,9 +87,33 @@ const articleContentInclude = {
 export class ArticleRepository {
   constructor(private readonly db: ArticleRepositoryDb) {}
 
+  async listForReview() {
+    return this.db.article.findMany({
+      select: {
+        slug: true,
+        title: true,
+        category: true,
+        status: true,
+        sourceFormat: true,
+        sourceText: true,
+        updatedAt: true,
+      },
+      orderBy: { slug: "asc" },
+    });
+  }
+
   async findBySlug(slug: string): Promise<ArticleWithContent | null> {
     return this.db.article.findUnique({
       where: { slug },
+      include: articleContentInclude,
+    });
+  }
+
+  async findBySlugCaseInsensitive(
+    slug: string,
+  ): Promise<ArticleWithContent | null> {
+    return this.db.article.findFirst({
+      where: { slug: { equals: slug, mode: "insensitive" } },
       include: articleContentInclude,
     });
   }

@@ -48,10 +48,10 @@ function articleFixture(
 
 describe("ArticleService", () => {
   it("normalizes slug, defaults to MDX draft, and derives initial blocks", async () => {
-    const findBySlug = vi.fn().mockResolvedValue(null);
+    const findBySlugCaseInsensitive = vi.fn().mockResolvedValue(null);
     const createDraft = vi.fn().mockResolvedValue(articleFixture());
     const repository = {
-      findBySlug,
+      findBySlugCaseInsensitive,
       createDraft,
     } as unknown as ArticleRepository;
     const service = new ArticleService(repository);
@@ -63,10 +63,12 @@ describe("ArticleService", () => {
       renderedHtml: "<h1>Article Schema MVP</h1><p>본문 첫 문단</p>",
     });
 
-    expect(findBySlug).toHaveBeenCalledWith("article-schema-mvp");
+    expect(findBySlugCaseInsensitive).toHaveBeenCalledWith(
+      "Article-Schema-MVP",
+    );
     expect(createDraft).toHaveBeenCalledWith(
       expect.objectContaining({
-        slug: "article-schema-mvp",
+        slug: "Article-Schema-MVP",
         title: "Article Schema MVP",
         sourceFormat: "MDX",
         status: "DRAFT",
@@ -79,10 +81,12 @@ describe("ArticleService", () => {
   });
 
   it("rejects duplicate slugs before writing", async () => {
-    const findBySlug = vi.fn().mockResolvedValue(articleFixture());
+    const findBySlugCaseInsensitive = vi
+      .fn()
+      .mockResolvedValue(articleFixture());
     const createDraft = vi.fn();
     const repository = {
-      findBySlug,
+      findBySlugCaseInsensitive,
       createDraft,
     } as unknown as ArticleRepository;
     const service = new ArticleService(repository);
@@ -99,7 +103,7 @@ describe("ArticleService", () => {
   });
 
   it("keeps Korean slugs while stripping noisy punctuation", () => {
-    expect(normalizeSlug("  테스트 글!! / Day 1  ")).toBe("테스트-글/day-1");
+    expect(normalizeSlug("  테스트 글!! / Day 1  ")).toBe("테스트-글/Day-1");
   });
   it("reads only published articles for the public API", async () => {
     const findPublishedBySlug = vi
@@ -117,8 +121,26 @@ describe("ArticleService", () => {
     await service.getPublicArticleBySlug(" Published API Contract ");
     await service.listPublicArticles(3);
 
-    expect(findPublishedBySlug).toHaveBeenCalledWith("published-api-contract");
+    expect(findPublishedBySlug).toHaveBeenCalledWith("Published-API-Contract");
     expect(listPublished).toHaveBeenCalledWith(3, undefined);
+  });
+
+  it("falls back to the old lowercase public slug after exact-case lookup", async () => {
+    const published = articleFixture({ status: "PUBLISHED" });
+    const findPublishedBySlug = vi
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(published);
+    const service = new ArticleService({
+      findPublishedBySlug,
+    } as unknown as ArticleRepository);
+    expect(await service.getPublicArticleBySlug("Published/API")).toBe(
+      published,
+    );
+    expect(findPublishedBySlug.mock.calls).toEqual([
+      ["Published/API"],
+      ["published/api"],
+    ]);
   });
 });
 

@@ -70,6 +70,10 @@ export interface BlockEditorUpdateInput {
 export class ArticleService {
   constructor(private readonly repository: ArticleRepository) {}
 
+  async listArticlesForReview() {
+    return this.repository.listForReview();
+  }
+
   async createInitialDraft(
     input: CreateArticleInput,
   ): Promise<ArticleWithContent> {
@@ -86,7 +90,7 @@ export class ArticleService {
       throw new Error("Article sourceText is required.");
     }
 
-    const existing = await this.repository.findBySlug(slug);
+    const existing = await this.repository.findBySlugCaseInsensitive(slug);
     if (existing) {
       throw new Error(`Article slug already exists: ${slug}`);
     }
@@ -104,13 +108,27 @@ export class ArticleService {
   }
 
   async getArticleBySlug(slug: string): Promise<ArticleWithContent | null> {
-    return this.repository.findBySlug(normalizeSlug(slug));
+    const normalized = normalizeSlug(slug);
+    const exact = await this.repository.findBySlug(normalized);
+    return (
+      exact ??
+      (normalized.toLowerCase() !== normalized
+        ? this.repository.findBySlug(normalized.toLowerCase())
+        : null)
+    );
   }
 
   async getPublicArticleBySlug(
     slug: string,
   ): Promise<ArticleWithContent | null> {
-    return this.repository.findPublishedBySlug(normalizeSlug(slug));
+    const normalized = normalizeSlug(slug);
+    const exact = await this.repository.findPublishedBySlug(normalized);
+    return (
+      exact ??
+      (normalized.toLowerCase() !== normalized
+        ? this.repository.findPublishedBySlug(normalized.toLowerCase())
+        : null)
+    );
   }
 
   async listPublicArticles(
@@ -297,9 +315,8 @@ export class ArticleService {
 export function normalizeSlug(slug: string): string {
   return slug
     .trim()
-    .toLowerCase()
     .replace(/\s*\/\s*/g, "/")
-    .replace(/[^a-z0-9가-힣/_-]+/g, "-")
+    .replace(/[^a-zA-Z0-9가-힣/_-]+/g, "-")
     .replace(/-{2,}/g, "-")
     .replace(/-\//g, "/")
     .replace(/\/-/g, "/")

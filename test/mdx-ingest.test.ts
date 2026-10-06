@@ -139,7 +139,7 @@ describe("MDX ingest pipeline", () => {
       `---\nslug: custom/Slug!!\n---\n\n# <script>alert(1)</script>`,
     );
 
-    expect(article.slug).toBe("custom/slug");
+    expect(article.slug).toBe("custom/Slug");
     expect(article.renderedHtml).toContain(
       "&lt;script&gt;alert(1)&lt;/script&gt;",
     );
