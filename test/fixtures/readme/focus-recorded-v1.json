@@ -1,0 +1,802 @@
+{
+  "synthetic": true,
+  "authored": "actual_jev_with_fixed_display_mapping",
+  "purpose": "Recorded source-grounded protocol fixtures, not independent model accuracy labels.",
+  "cases": [
+    {
+      "id": "role_then_answer",
+      "units": [
+        "# 도서관 예약 서비스",
+        "4명으로 구성된 팀에서 도서관 예약 서비스를 개발했습니다.",
+        "이 도서관 예약 서비스에서 저는 예약 중복을 막는 API와 예약 취소 기능을 직접 구현했습니다."
+      ],
+      "trace": [
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u1",
+          "context_id": null,
+          "active_question_id": null,
+          "events": []
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u2",
+          "context_id": "c1",
+          "active_question_id": "q1",
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "topic": "# 도서관 예약 서비스",
+              "source_unit_ids": [
+                "u2"
+              ]
+            },
+            {
+              "type": "inquiry",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "state_version": 1,
+              "question": {
+                "id": "q1",
+                "origin_unit_id": "u2",
+                "context_id": "c1",
+                "facet": "role",
+                "text": "이 경험에서 직접 맡아 수행한 부분은 무엇인가요?",
+                "status": "open",
+                "evidence": [],
+                "focus": "active",
+                "state_version": 1,
+                "withdrawn_evidence": [],
+                "correction_evidence": []
+              }
+            },
+            {
+              "type": "speech",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "code": "ask_role",
+              "target_unit_ids": [
+                "u2"
+              ],
+              "question_id": "q1"
+            }
+          ]
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u3",
+          "context_id": "c1",
+          "active_question_id": null,
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "topic": "# 도서관 예약 서비스",
+              "source_unit_ids": [
+                "u2",
+                "u3"
+              ]
+            },
+            {
+              "type": "revisit",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "question_id": "q1",
+              "target_unit_ids": [
+                "u2"
+              ],
+              "reason": "answer"
+            },
+            {
+              "type": "updated",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "state_version": 2,
+              "previous_status": "open",
+              "question": {
+                "id": "q1",
+                "origin_unit_id": "u2",
+                "context_id": "c1",
+                "facet": "role",
+                "text": "이 경험에서 직접 맡아 수행한 부분은 무엇인가요?",
+                "status": "resolved",
+                "evidence": [
+                  {
+                    "unit_id": "u3",
+                    "quote": "이 도서관 예약 서비스에서 저는 예약 중복을 막는 API와 예약 취소 기능을 직접 구현했습니다.",
+                    "start": 0,
+                    "end": 53
+                  }
+                ],
+                "focus": "parked",
+                "state_version": 2,
+                "withdrawn_evidence": [],
+                "correction_evidence": []
+              },
+              "target_unit_ids": [
+                "u2"
+              ]
+            },
+            {
+              "type": "speech",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "code": "resolved",
+              "target_unit_ids": [
+                "u3"
+              ],
+              "question_id": "q1"
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "origin_unit_id": "u2",
+          "context_id": "c1",
+          "facet": "role",
+          "text": "이 경험에서 직접 맡아 수행한 부분은 무엇인가요?",
+          "status": "resolved",
+          "evidence": [
+            {
+              "unit_id": "u3",
+              "quote": "이 도서관 예약 서비스에서 저는 예약 중복을 막는 API와 예약 취소 기능을 직접 구현했습니다.",
+              "start": 0,
+              "end": 53
+            }
+          ],
+          "focus": "parked",
+          "state_version": 2,
+          "withdrawn_evidence": [],
+          "correction_evidence": []
+        }
+      ]
+    },
+    {
+      "id": "resolved_then_corrected",
+      "units": [
+        "# 예약 서비스",
+        "팀에서 예약 서비스를 개발했습니다.",
+        "예약 서비스의 중복 예약 방지 API는 제가 직접 구현했습니다.",
+        "앞 문장의 API 구현자 표기를 정정합니다. 중복 예약 방지 API는 동료가 구현했고 저는 그 API를 구현하지 않았습니다."
+      ],
+      "trace": [
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u1",
+          "context_id": null,
+          "active_question_id": null,
+          "events": []
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u2",
+          "context_id": "c1",
+          "active_question_id": "q1",
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "topic": "# 예약 서비스",
+              "source_unit_ids": [
+                "u2"
+              ]
+            },
+            {
+              "type": "inquiry",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "state_version": 1,
+              "question": {
+                "id": "q1",
+                "origin_unit_id": "u2",
+                "context_id": "c1",
+                "facet": "role",
+                "text": "이 경험에서 직접 맡아 수행한 부분은 무엇인가요?",
+                "status": "open",
+                "evidence": [],
+                "focus": "active",
+                "state_version": 1,
+                "withdrawn_evidence": [],
+                "correction_evidence": []
+              }
+            },
+            {
+              "type": "speech",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "code": "ask_role",
+              "target_unit_ids": [
+                "u2"
+              ],
+              "question_id": "q1"
+            }
+          ]
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u3",
+          "context_id": "c1",
+          "active_question_id": null,
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "topic": "# 예약 서비스",
+              "source_unit_ids": [
+                "u2",
+                "u3"
+              ]
+            },
+            {
+              "type": "revisit",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "question_id": "q1",
+              "target_unit_ids": [
+                "u2"
+              ],
+              "reason": "answer"
+            },
+            {
+              "type": "updated",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "state_version": 2,
+              "previous_status": "open",
+              "question": {
+                "id": "q1",
+                "origin_unit_id": "u2",
+                "context_id": "c1",
+                "facet": "role",
+                "text": "이 경험에서 직접 맡아 수행한 부분은 무엇인가요?",
+                "status": "resolved",
+                "evidence": [
+                  {
+                    "unit_id": "u3",
+                    "quote": "예약 서비스의 중복 예약 방지 API는 제가 직접 구현했습니다.",
+                    "start": 0,
+                    "end": 35
+                  }
+                ],
+                "focus": "parked",
+                "state_version": 2,
+                "withdrawn_evidence": [],
+                "correction_evidence": []
+              },
+              "target_unit_ids": [
+                "u2"
+              ]
+            },
+            {
+              "type": "speech",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "code": "resolved",
+              "target_unit_ids": [
+                "u3"
+              ],
+              "question_id": "q1"
+            }
+          ]
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u4",
+          "context_id": "c1",
+          "active_question_id": null,
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u4",
+              "context_id": "c1",
+              "topic": "# 예약 서비스",
+              "source_unit_ids": [
+                "u2",
+                "u3",
+                "u4"
+              ]
+            },
+            {
+              "type": "revisit",
+              "at_unit_id": "u4",
+              "context_id": "c1",
+              "question_id": "q1",
+              "target_unit_ids": [
+                "u2",
+                "u3"
+              ],
+              "reason": "correction"
+            },
+            {
+              "type": "updated",
+              "at_unit_id": "u4",
+              "context_id": "c1",
+              "state_version": 3,
+              "previous_status": "resolved",
+              "question": {
+                "id": "q1",
+                "origin_unit_id": "u2",
+                "context_id": "c1",
+                "facet": "role",
+                "text": "이 경험에서 직접 맡아 수행한 부분은 무엇인가요?",
+                "status": "reopened",
+                "evidence": [],
+                "focus": "parked",
+                "state_version": 3,
+                "withdrawn_evidence": [
+                  {
+                    "unit_id": "u3",
+                    "quote": "예약 서비스의 중복 예약 방지 API는 제가 직접 구현했습니다.",
+                    "start": 0,
+                    "end": 35
+                  }
+                ],
+                "correction_evidence": [
+                  {
+                    "unit_id": "u4",
+                    "quote": "앞 문장의 API 구현자 표기를 정정합니다. 중복 예약 방지 API는 동료가 구현했고 저는 그 API를 구현하지 않았습니다.",
+                    "start": 0,
+                    "end": 69
+                  }
+                ]
+              },
+              "target_unit_ids": [
+                "u2",
+                "u3"
+              ]
+            },
+            {
+              "type": "speech",
+              "at_unit_id": "u4",
+              "context_id": "c1",
+              "code": "reopened",
+              "target_unit_ids": [
+                "u4"
+              ],
+              "question_id": "q1"
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "origin_unit_id": "u2",
+          "context_id": "c1",
+          "facet": "role",
+          "text": "이 경험에서 직접 맡아 수행한 부분은 무엇인가요?",
+          "status": "reopened",
+          "evidence": [],
+          "focus": "parked",
+          "state_version": 3,
+          "withdrawn_evidence": [
+            {
+              "unit_id": "u3",
+              "quote": "예약 서비스의 중복 예약 방지 API는 제가 직접 구현했습니다.",
+              "start": 0,
+              "end": 35
+            }
+          ],
+          "correction_evidence": [
+            {
+              "unit_id": "u4",
+              "quote": "앞 문장의 API 구현자 표기를 정정합니다. 중복 예약 방지 API는 동료가 구현했고 저는 그 API를 구현하지 않았습니다.",
+              "start": 0,
+              "end": 69
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clear_own_work",
+      "units": [
+        "# 개인 블로그",
+        "저는 직접 작성한 글을 목록과 상세 화면에 표시하는 기능을 구현했습니다.",
+        "게시글 식별자로 상세 데이터를 가져오고, 존재하지 않는 글은 오류 화면으로 안내하도록 구성했습니다."
+      ],
+      "trace": [
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u1",
+          "context_id": null,
+          "active_question_id": null,
+          "events": []
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u2",
+          "context_id": "c1",
+          "active_question_id": null,
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "topic": "# 개인 블로그",
+              "source_unit_ids": [
+                "u2"
+              ]
+            },
+            {
+              "type": "observation",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "note_id": "n1",
+              "kind": "action",
+              "evidence": [
+                {
+                  "unit_id": "u2",
+                  "quote": "저는 직접 작성한 글을 목록과 상세 화면에 표시하는 기능을 구현했습니다.",
+                  "start": 0,
+                  "end": 40
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u3",
+          "context_id": "c1",
+          "active_question_id": null,
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "topic": "# 개인 블로그",
+              "source_unit_ids": [
+                "u2",
+                "u3"
+              ]
+            }
+          ]
+        }
+      ],
+      "questions": []
+    },
+    {
+      "id": "active_question_survives_return",
+      "units": [
+        "# A 팀 예약 서비스",
+        "팀과 함께 A 예약 서비스 개발에 참여했습니다.",
+        "# B 개인 운영 도구",
+        "B 운영 도구에서 캐시를 적용해 평균 응답 시간을 40% 줄였습니다.",
+        "앞서 적은 A 예약 서비스에서는 제가 예약 중복을 검사하는 API를 구현했습니다."
+      ],
+      "trace": [
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u1",
+          "context_id": null,
+          "active_question_id": null,
+          "events": []
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u2",
+          "context_id": "c1",
+          "active_question_id": "q1",
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "topic": "# A 팀 예약 서비스",
+              "source_unit_ids": [
+                "u2"
+              ]
+            },
+            {
+              "type": "inquiry",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "state_version": 1,
+              "question": {
+                "id": "q1",
+                "origin_unit_id": "u2",
+                "context_id": "c1",
+                "facet": "role",
+                "text": "이 경험에서 직접 맡아 수행한 부분은 무엇인가요?",
+                "status": "open",
+                "evidence": [],
+                "focus": "active",
+                "state_version": 1,
+                "withdrawn_evidence": [],
+                "correction_evidence": []
+              }
+            },
+            {
+              "type": "speech",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "code": "ask_role",
+              "target_unit_ids": [
+                "u2"
+              ],
+              "question_id": "q1"
+            }
+          ]
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u3",
+          "context_id": "c1",
+          "active_question_id": "q1",
+          "events": []
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u4",
+          "context_id": "c2",
+          "active_question_id": "q2",
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u4",
+              "context_id": "c2",
+              "topic": "# B 개인 운영 도구",
+              "source_unit_ids": [
+                "u4"
+              ]
+            },
+            {
+              "type": "parked",
+              "at_unit_id": "u4",
+              "context_id": "c1",
+              "question_id": "q1"
+            },
+            {
+              "type": "speech",
+              "at_unit_id": "u4",
+              "context_id": "c1",
+              "code": "parked",
+              "target_unit_ids": [
+                "u4"
+              ],
+              "question_id": "q1"
+            },
+            {
+              "type": "inquiry",
+              "at_unit_id": "u4",
+              "context_id": "c2",
+              "state_version": 1,
+              "question": {
+                "id": "q2",
+                "origin_unit_id": "u4",
+                "context_id": "c2",
+                "facet": "basis",
+                "text": "무엇과 비교했으며 변화는 어떻게 확인했나요?",
+                "status": "open",
+                "evidence": [],
+                "focus": "active",
+                "state_version": 1,
+                "withdrawn_evidence": [],
+                "correction_evidence": []
+              }
+            },
+            {
+              "type": "speech",
+              "at_unit_id": "u4",
+              "context_id": "c2",
+              "code": "ask_basis",
+              "target_unit_ids": [
+                "u4"
+              ],
+              "question_id": "q2"
+            }
+          ]
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u5",
+          "context_id": "c2",
+          "active_question_id": "q2",
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u5",
+              "context_id": "c1",
+              "topic": "# A 팀 예약 서비스",
+              "source_unit_ids": [
+                "u2",
+                "u5"
+              ]
+            },
+            {
+              "type": "revisit",
+              "at_unit_id": "u5",
+              "context_id": "c1",
+              "question_id": "q1",
+              "target_unit_ids": [
+                "u2"
+              ],
+              "reason": "answer"
+            },
+            {
+              "type": "updated",
+              "at_unit_id": "u5",
+              "context_id": "c1",
+              "state_version": 2,
+              "previous_status": "open",
+              "question": {
+                "id": "q1",
+                "origin_unit_id": "u2",
+                "context_id": "c1",
+                "facet": "role",
+                "text": "이 경험에서 직접 맡아 수행한 부분은 무엇인가요?",
+                "status": "resolved",
+                "evidence": [
+                  {
+                    "unit_id": "u5",
+                    "quote": "앞서 적은 A 예약 서비스에서는 제가 예약 중복을 검사하는 API를 구현했습니다.",
+                    "start": 0,
+                    "end": 45
+                  }
+                ],
+                "focus": "parked",
+                "state_version": 2,
+                "withdrawn_evidence": [],
+                "correction_evidence": []
+              },
+              "target_unit_ids": [
+                "u2"
+              ]
+            },
+            {
+              "type": "speech",
+              "at_unit_id": "u5",
+              "context_id": "c1",
+              "code": "resolved",
+              "target_unit_ids": [
+                "u5"
+              ],
+              "question_id": "q1"
+            }
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "id": "q1",
+          "origin_unit_id": "u2",
+          "context_id": "c1",
+          "facet": "role",
+          "text": "이 경험에서 직접 맡아 수행한 부분은 무엇인가요?",
+          "status": "resolved",
+          "evidence": [
+            {
+              "unit_id": "u5",
+              "quote": "앞서 적은 A 예약 서비스에서는 제가 예약 중복을 검사하는 API를 구현했습니다.",
+              "start": 0,
+              "end": 45
+            }
+          ],
+          "focus": "parked",
+          "state_version": 2,
+          "withdrawn_evidence": [],
+          "correction_evidence": []
+        },
+        {
+          "id": "q2",
+          "origin_unit_id": "u4",
+          "context_id": "c2",
+          "facet": "basis",
+          "text": "무엇과 비교했으며 변화는 어떻게 확인했나요?",
+          "status": "open",
+          "evidence": [],
+          "focus": "active",
+          "state_version": 1,
+          "withdrawn_evidence": [],
+          "correction_evidence": []
+        }
+      ]
+    },
+    {
+      "id": "corrected_observation",
+      "units": [
+        "# 개인 블로그",
+        "저는 블로그의 검색 화면을 직접 구현했습니다.",
+        "앞서 적은 검색 화면 구현자 표기는 잘못됐습니다. 동료가 작성한 화면을 제가 구현했다고 적었으며, 저는 그 화면을 구현하지 않았습니다."
+      ],
+      "trace": [
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u1",
+          "context_id": null,
+          "active_question_id": null,
+          "events": []
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u2",
+          "context_id": "c1",
+          "active_question_id": null,
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "topic": "# 개인 블로그",
+              "source_unit_ids": [
+                "u2"
+              ]
+            },
+            {
+              "type": "observation",
+              "at_unit_id": "u2",
+              "context_id": "c1",
+              "note_id": "n1",
+              "kind": "action",
+              "evidence": [
+                {
+                  "unit_id": "u2",
+                  "quote": "저는 블로그의 검색 화면을 직접 구현했습니다.",
+                  "start": 0,
+                  "end": 25
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "version": "focus-reader-v1",
+          "at_unit_id": "u3",
+          "context_id": "c1",
+          "active_question_id": null,
+          "events": [
+            {
+              "type": "context",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "topic": "# 개인 블로그",
+              "source_unit_ids": [
+                "u2",
+                "u3"
+              ]
+            },
+            {
+              "type": "retracted",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "note_id": "n1",
+              "evidence": [
+                {
+                  "unit_id": "u2",
+                  "quote": "저는 블로그의 검색 화면을 직접 구현했습니다.",
+                  "start": 0,
+                  "end": 25
+                },
+                {
+                  "unit_id": "u3",
+                  "quote": "앞서 적은 검색 화면 구현자 표기는 잘못됐습니다. 동료가 작성한 화면을 제가 구현했다고 적었으며, 저는 그 화면을 구현하지 않았습니다.",
+                  "start": 0,
+                  "end": 75
+                }
+              ]
+            },
+            {
+              "type": "speech",
+              "at_unit_id": "u3",
+              "context_id": "c1",
+              "code": "revised",
+              "target_unit_ids": [
+                "u2",
+                "u3"
+              ]
+            }
+          ]
+        }
+      ],
+      "questions": []
+    }
+  ]
+}
