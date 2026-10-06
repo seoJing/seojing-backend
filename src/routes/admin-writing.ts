@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import type { FastifyInstance, FastifyRequest, FastifySchema } from "fastify";
 
 import type { ArticleWithContent } from "../repositories/articles.js";
@@ -215,6 +217,33 @@ export function registerAdminWritingRoutes(
       }),
     },
     () => ({ snippets: componentSnippets }),
+  );
+
+  app.get(
+    "/admin/article-review-queue",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary:
+          "List private CMS article review candidates without source bodies",
+      }),
+    },
+    async () => {
+      const articles = await options.articleService.listArticlesForReview();
+      return {
+        articles: articles.map((article) => ({
+          slug: article.slug,
+          title: article.title,
+          category: article.category,
+          status: article.status,
+          sourceFormat: article.sourceFormat,
+          sourceSha256: createHash("sha256")
+            .update(article.sourceText)
+            .digest("hex"),
+          updatedAt: article.updatedAt.toISOString(),
+        })),
+      };
+    },
   );
 
   app.post<{ Body: UpsertDraftBody }>(

@@ -85,6 +85,42 @@ function appWithArticleService(service: Partial<ArticleService>) {
 }
 
 describe("admin writing API", () => {
+  it("keeps the review queue private and returns source hashes without bodies", async () => {
+    const listArticlesForReview = vi.fn().mockResolvedValue([
+      {
+        slug: "SEOJing/devLog/day1",
+        title: "Day 1",
+        category: "SEOJing",
+        status: "DRAFT",
+        sourceFormat: "MDX",
+        sourceText: "# Day 1",
+        updatedAt: baseDate,
+      },
+    ]);
+    const app = await appWithArticleService({ listArticlesForReview });
+    const unauthorized = await app.inject({
+      method: "GET",
+      url: "/admin/article-review-queue",
+    });
+    expect(unauthorized.statusCode).toBe(401);
+    const response = await app.inject({
+      method: "GET",
+      url: "/admin/article-review-queue",
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(response.statusCode).toBe(200);
+    const payload = JSON.parse(response.body) as {
+      articles: Array<Record<string, unknown>>;
+    };
+    expect(payload.articles[0]).toMatchObject({
+      slug: "SEOJing/devLog/day1",
+      status: "DRAFT",
+    });
+    expect(payload.articles[0]).toHaveProperty("sourceSha256");
+    expect(payload.articles[0]).not.toHaveProperty("sourceText");
+    await app.close();
+  });
+
   it("requires the admin bearer token", async () => {
     const app = await appWithArticleService({});
 
