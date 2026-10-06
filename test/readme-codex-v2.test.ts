@@ -3,6 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   CodexReasoner,
+  validateCodexEvents,
   validateProfile,
 } from "../src/services/readme-lab/codex.js";
 import { validateReaderProfile } from "../src/services/readme-lab/profile.js";
@@ -30,6 +31,126 @@ vi.mock("../src/services/readme-lab/process.js", () => ({
   runCommand: vi.fn(),
 }));
 afterEach(() => vi.mocked(runCommand).mockReset());
+
+describe("CLI failure diagnostics", () => {
+  const reconnect = {
+    type: "error",
+    message: "Reconnecting... 2/5 (unexpected status 403 Forbidden)",
+  };
+  const fallback = {
+    type: "item.completed",
+    item: {
+      type: "error",
+      message:
+        "Falling back from WebSockets to HTTPS transport. unexpected status 403 Forbidden",
+    },
+  };
+  const complete = { type: "turn.completed" };
+  const stream = (events: unknown[]) =>
+    events.map((e) => JSON.stringify(e)).join("\n");
+  it("accepts only recognized transport recovery followed by completed turn", () => {
+    expect(() =>
+      validateCodexEvents(
+        stream([
+          reconnect,
+          fallback,
+          {
+            type: "item.completed",
+            item: { type: "agent_message", text: "{}" },
+          },
+          complete,
+        ]),
+      ),
+    ).not.toThrow();
+    expect(() =>
+      validateCodexEvents(stream([reconnect, complete])),
+    ).not.toThrow();
+  });
+  it("rejects incomplete turns, unknown errors and tool activity even with output", () => {
+    for (const events of [
+      [],
+      [reconnect],
+      [fallback],
+      [complete, reconnect],
+      [reconnect, { type: "turn.failed" }, complete],
+      [{ type: "error", message: "Unknown failure" }, complete],
+      [
+        {
+          type: "item.completed",
+          item: { type: "error", message: "Unknown failure" },
+        },
+        complete,
+      ],
+      [
+        reconnect,
+        { type: "item.completed", item: { type: "command_execution" } },
+        complete,
+      ],
+    ])
+      expect(() => validateCodexEvents(stream(events))).toThrow(
+        "engine_output_invalid",
+      );
+  });
+  it("never converts a CLI format failure during report audit into a content rewrite", async () => {
+    const { document, job, draft } = fixture();
+    draft.items = draft.items.slice(0, 1);
+    let calls = 0;
+    vi.mocked(runCommand).mockImplementation(async ({ cwd, input }) => {
+      if (calls++ === 0) {
+        await writeOutput(cwd, input, draft);
+        return JSON.stringify(complete);
+      }
+      throw new LabError("engine_output_invalid", 503, "cli_error_event");
+    });
+    await expect(
+      new CodexReasoner().report(
+        document,
+        job,
+        [],
+        [],
+        new AbortController().signal,
+      ),
+    ).rejects.toMatchObject({ validationReason: "cli_error_event" });
+    expect(runCommand).toHaveBeenCalledTimes(2);
+  });
+  it.each([
+    ["not-json PRIVATE", "{}", "cli_event_json_invalid"],
+    [
+      JSON.stringify({ type: "error", message: "PRIVATE" }),
+      "{}",
+      "cli_error_event",
+    ],
+    [
+      JSON.stringify({
+        type: "item.completed",
+        item: { type: "command_execution", command: "PRIVATE" },
+      }),
+      "{}",
+      "cli_unexpected_item",
+    ],
+    [JSON.stringify({ type: "turn.completed" }), null, "cli_result_missing"],
+    [
+      JSON.stringify({ type: "turn.completed" }),
+      "not-json PRIVATE",
+      "cli_result_json_invalid",
+    ],
+  ])(
+    "fails closed with a fixed reason without retrying (%s)",
+    async (events, result, reason) => {
+      vi.mocked(runCommand).mockImplementation(async ({ cwd }) => {
+        if (result !== null) await writeFile(join(cwd, "output.json"), result);
+        return events;
+      });
+      await expect(
+        new CodexReasoner().profile("안내 업무", new AbortController().signal),
+      ).rejects.toMatchObject({
+        code: "engine_output_invalid",
+        validationReason: reason,
+      });
+      expect(runCommand).toHaveBeenCalledTimes(1);
+    },
+  );
+});
 // Existing fake audits use terse fixtures. Add the required explanatory field
 // only for the citation schema; malformed-explicit-field tests bypass defaults.
 async function writeOutput(cwd: string, input: string, value: unknown) {
@@ -393,6 +514,7 @@ describe("Codex v2 bounded verification", () => {
     outputs([
       bad,
       { checks: [{ index: 0, supported: false, issue: "scope" }] },
+      { checks: [{ index: 0, supported: true, issue: "none" }] },
       repairDraft(draft),
       { checks: [{ index: 0, supported: true, issue: "none" }] },
       { checks: [{ index: 0, supported: true, issue: "none" }] },
@@ -405,20 +527,20 @@ describe("Codex v2 bounded verification", () => {
       new AbortController().signal,
     );
     expect(report.items[0]!.text).toContain("일정 항목");
-    expect(runCommand).toHaveBeenCalledTimes(5);
+    expect(runCommand).toHaveBeenCalledTimes(6);
     expect(
       vi.mocked(runCommand).mock.calls.map(([call]) => call.timeoutMs),
-    ).toEqual([120000, 120000, 120000, 120000, 120000]);
+    ).toEqual([120000, 120000, 120000, 120000, 120000, 120000]);
     expect(vi.mocked(runCommand).mock.calls[0]![0].input).toContain(
       "일정 항목을 직접 작성",
     );
-    expect(vi.mocked(runCommand).mock.calls[2]![0].input).toContain(
+    expect(vi.mocked(runCommand).mock.calls[3]![0].input).toContain(
       "rejected_indices",
     );
     const repair = JSON.parse(
       vi
         .mocked(runCommand)
-        .mock.calls[2]![0].input.split("UNTRUSTED_DATA_JSON:\n")[1]!,
+        .mock.calls[3]![0].input.split("UNTRUSTED_DATA_JSON:\n")[1]!,
     ) as {
       correction: { rejected_items: { index: number; item: unknown }[] };
       transitions?: unknown;
@@ -432,6 +554,85 @@ describe("Codex v2 bounded verification", () => {
     expect(repair.transitions).toBeUndefined();
     expect(repair.questions).toBeUndefined();
     expect(repair.units).toHaveLength(document.units.length);
+  });
+  it("collects citation and full-source failures together for the one repair", async () => {
+    const { document, job, draft } = fixture();
+    const valid = structuredClone(draft.items[0]!);
+    const badFact = {
+      ...valid,
+      observation: "전체 보고서를 혼자 작성했습니다.",
+    };
+    const badAdvice = {
+      ...valid,
+      suggestion: "원문에 없는 실행 경험을 추가하세요.",
+    };
+    const repairedAdvice = {
+      ...valid,
+      suggestion: "관련 경험이 있다면 실행한 단계를 추가하세요.",
+    };
+    const initial = { items: [badFact, badAdvice] };
+    vi.mocked(runCommand).mockImplementation(async ({ cwd, input }) => {
+      const payload = JSON.parse(input.split("UNTRUSTED_DATA_JSON:\n")[1]!) as {
+        repair_indices?: number[];
+        correction?: {
+          rejected_items: {
+            index: number;
+            citation_audit: unknown;
+            source_audit: unknown;
+          }[];
+        };
+        items?: { observation: string }[];
+        draft?: GroundedDraft;
+      };
+      let response: unknown;
+      if (payload.repair_indices) {
+        expect(payload.repair_indices).toEqual([0, 1]);
+        expect(payload.correction!.rejected_items).toHaveLength(2);
+        expect(
+          payload.correction!.rejected_items[0]!.citation_audit,
+        ).toMatchObject({ checks: [{ supported: false }] });
+        expect(
+          payload.correction!.rejected_items[1]!.source_audit,
+        ).toMatchObject({ supported: false });
+        response = {
+          repairs: [
+            { index: 0, item: valid },
+            { index: 1, item: repairedAdvice },
+          ],
+        };
+      } else if (payload.items) {
+        const supported = payload.items[0]!.observation !== badFact.observation;
+        response = {
+          checks: [
+            { index: 0, supported, issue: supported ? "none" : "scope" },
+          ],
+        };
+      } else if (payload.draft) {
+        response = {
+          checks: payload.draft.items.map((item, index) => ({
+            index,
+            supported: item.suggestion !== badAdvice.suggestion,
+            issue: item.suggestion === badAdvice.suggestion ? "other" : "none",
+          })),
+        };
+      } else response = initial;
+      await writeOutput(cwd, input, response);
+      return JSON.stringify({ type: "turn.completed" });
+    });
+    const report = await new CodexReasoner().report(
+      document,
+      job,
+      [],
+      [],
+      new AbortController().signal,
+    );
+    expect(report.items).toHaveLength(2);
+    expect(runCommand).toHaveBeenCalledTimes(6); // repaired fact matches previously approved exact citation input
+    expect(
+      vi
+        .mocked(runCommand)
+        .mock.calls.filter(([call]) => call.input.includes('"repair_indices"')),
+    ).toHaveLength(1);
   });
   it("checks observation against only its own quotations, then gaps against all source", async () => {
     const { document, job, draft } = fixture();
@@ -630,11 +831,11 @@ describe("Codex v2 bounded verification", () => {
       team.observation,
       good.observation,
     ]);
-    expect(runCommand).toHaveBeenCalledTimes(6);
+    expect(runCommand).toHaveBeenCalledTimes(7);
     const payload = JSON.parse(
       vi
         .mocked(runCommand)
-        .mock.calls[4]![0].input.split("UNTRUSTED_DATA_JSON:\n")[1]!,
+        .mock.calls[5]![0].input.split("UNTRUSTED_DATA_JSON:\n")[1]!,
     ) as { items: { observation: string }[] };
     expect(payload.items[0]!.observation).toBe(team.observation);
   });
@@ -648,14 +849,23 @@ describe("Codex v2 bounded verification", () => {
       const payload = JSON.parse(input.split("UNTRUSTED_DATA_JSON:\n")[1]!) as {
         repair_indices?: number[];
         items?: unknown[];
+        draft?: GroundedDraft;
       };
       const response = payload.repair_indices
         ? repairDraft(draft, payload.repair_indices)
-        : payload.items
-          ? ++checks === 1
-            ? ok
-            : reject
-          : draft;
+        : payload.draft
+          ? {
+              checks: payload.draft.items.map((_, index) => ({
+                index,
+                supported: true,
+                issue: "none",
+              })),
+            }
+          : payload.items
+            ? ++checks === 1
+              ? ok
+              : reject
+            : draft;
       await writeOutput(cwd, input, response);
       return JSON.stringify({ type: "turn.completed" });
     });
@@ -670,13 +880,14 @@ describe("Codex v2 bounded verification", () => {
     ).rejects.toMatchObject({
       validationReason: "report_repair_unchanged",
     });
-    expect(runCommand).toHaveBeenCalledTimes(4);
+    expect(runCommand).toHaveBeenCalledTimes(5);
   });
   it("fails closed when the writer deletes the only rejected item", async () => {
     const { document, job, draft } = fixture();
     outputs([
       draft,
       { checks: [{ index: 0, supported: false, issue: "actor" }] },
+      { checks: [{ index: 0, supported: true, issue: "none" }] },
       { repairs: [{ index: 0, item: null }] },
     ]);
     await expect(
@@ -688,7 +899,58 @@ describe("Codex v2 bounded verification", () => {
         new AbortController().signal,
       ),
     ).rejects.toMatchObject({ validationReason: "report_unique_item_deleted" });
-    expect(runCommand).toHaveBeenCalledTimes(3);
+    expect(runCommand).toHaveBeenCalledTimes(4);
+  });
+  it("does not delete a citation failure even when the source audit also marks it duplicate", async () => {
+    const { document, job, draft } = fixture();
+    const neighbor = {
+      ...structuredClone(draft.items[0]!),
+      observation: "일정 안내를 설명했습니다.",
+    };
+    draft.items.push(neighbor);
+    vi.mocked(runCommand).mockImplementation(async ({ cwd, input }) => {
+      const payload = JSON.parse(input.split("UNTRUSTED_DATA_JSON:\n")[1]!) as {
+        repair_indices?: number[];
+        items?: { observation: string }[];
+        draft?: GroundedDraft;
+      };
+      const response = payload.repair_indices
+        ? { repairs: [{ index: 0, item: null }] }
+        : payload.draft
+          ? {
+              checks: [
+                { index: 0, supported: false, issue: "duplicate" },
+                { index: 1, supported: true, issue: "none" },
+              ],
+            }
+          : payload.items
+            ? {
+                checks: [
+                  {
+                    index: 0,
+                    supported:
+                      payload.items[0]!.observation === neighbor.observation,
+                    issue:
+                      payload.items[0]!.observation === neighbor.observation
+                        ? "none"
+                        : "actor",
+                  },
+                ],
+              }
+            : draft;
+      await writeOutput(cwd, input, response);
+      return JSON.stringify({ type: "turn.completed" });
+    });
+    await expect(
+      new CodexReasoner().report(
+        document,
+        job,
+        [],
+        [],
+        new AbortController().signal,
+      ),
+    ).rejects.toMatchObject({ validationReason: "report_unique_item_deleted" });
+    expect(runCommand).toHaveBeenCalledTimes(5);
   });
   it("removes a semantically redundant item while preserving the approved facts and rechecking full source", async () => {
     const { document, job, draft } = fixture();
@@ -867,7 +1129,8 @@ describe("Codex v2 bounded verification", () => {
     const changed = structuredClone(draft);
     changed.items[0]!.observation =
       "일정 항목은 본인이 작성한 것으로 설명했습니다.";
-    outputs([draft, reject, repairDraft(changed), reject]);
+    const ok = { checks: [{ index: 0, supported: true, issue: "none" }] };
+    outputs([draft, reject, ok, repairDraft(changed), reject, ok]);
     await expect(
       new CodexReasoner().report(
         document,
@@ -879,7 +1142,7 @@ describe("Codex v2 bounded verification", () => {
     ).rejects.toMatchObject({
       validationReason: "grounded_report_verification_failed",
     });
-    expect(runCommand).toHaveBeenCalledTimes(4);
+    expect(runCommand).toHaveBeenCalledTimes(6);
   });
   it("repairs a real note/citation mismatch with the failed item and required source", async () => {
     const { document, job, draft } = fixture();

@@ -344,6 +344,57 @@ export interface Reasoner {
     memory?: ReaderMemory,
   ): Promise<Report>;
 }
+/** Recognized transport recovery is allowed only when that turn completes.
+ * Unknown errors and tool activity fail closed. Never log these messages.
+ */
+export function validateCodexEvents(output: string): void {
+  let lastType: string | undefined;
+  for (const line of output.trim().split("\n").filter(Boolean)) {
+    let event: {
+      type?: string;
+      message?: string;
+      item?: { type?: string; message?: string };
+    };
+    try {
+      event = JSON.parse(line) as typeof event;
+      if (!event || typeof event !== "object") throw new Error();
+    } catch {
+      throw new LabError(
+        "engine_output_invalid",
+        503,
+        "cli_event_json_invalid",
+      );
+    }
+    lastType = event.type;
+    if (event.type === "turn.failed")
+      throw new LabError("engine_output_invalid", 503, "cli_error_event");
+    if (
+      event.type === "error" &&
+      !(
+        typeof event.message === "string" &&
+        /^Reconnecting\.\.\. \d+\/\d+ \(/u.test(event.message)
+      )
+    )
+      throw new LabError("engine_output_invalid", 503, "cli_error_event");
+    if (
+      event.item?.type &&
+      !["agent_message", "reasoning"].includes(event.item.type)
+    ) {
+      const recoveredTransport =
+        event.type === "item.completed" &&
+        event.item.type === "error" &&
+        typeof event.item.message === "string" &&
+        event.item.message.startsWith(
+          "Falling back from WebSockets to HTTPS transport.",
+        );
+      if (!recoveredTransport)
+        throw new LabError("engine_output_invalid", 503, "cli_unexpected_item");
+    }
+  }
+  if (lastType !== "turn.completed")
+    throw new LabError("engine_output_invalid", 503, "cli_turn_incomplete");
+}
+
 export class CodexReasoner implements Reasoner {
   readonly model: string;
   private callId = 0;
@@ -426,6 +477,9 @@ export class CodexReasoner implements Reasoner {
     timeoutMs: number,
   ): Promise<unknown> {
     const directory = await mkdtemp(join(tmpdir(), "readme-codex-"));
+    // Fixed diagnostic labels distinguish transport/format failures from a
+    // rejected judgment without retaining model output or applicant text.
+    let validationReason = "cli_setup_invalid";
     try {
       await writeFile(
         join(directory, "schema.json"),
@@ -441,26 +495,20 @@ export class CodexReasoner implements Reasoner {
         signal,
       });
       // No process output is logged or persisted. Unexpected tool activity fails closed.
-      for (const line of output.trim().split("\n").filter(Boolean)) {
-        const event = JSON.parse(line) as {
-          type?: string;
-          item?: { type?: string };
-        };
-        if (
-          event.type === "error" ||
-          event.type === "turn.failed" ||
-          (event.item?.type &&
-            !["agent_message", "reasoning"].includes(event.item.type))
-        )
-          throw new LabError("engine_output_invalid", 503);
-      }
+      validateCodexEvents(output);
+      validationReason = "cli_result_missing";
       const result = await readFile(join(directory, "output.json"), "utf8");
       if (result.length > 100000)
-        throw new LabError("engine_output_invalid", 503);
+        throw new LabError(
+          "engine_output_invalid",
+          503,
+          "cli_result_oversized",
+        );
+      validationReason = "cli_result_json_invalid";
       return JSON.parse(result) as unknown;
     } catch (error) {
       if (error instanceof LabError) throw error;
-      throw new LabError("engine_output_invalid", 503);
+      throw new LabError("engine_output_invalid", 503, validationReason);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
@@ -783,7 +831,11 @@ export class CodexReasoner implements Reasoner {
         });
         correction = { audit, rejected_draft: step };
       } catch (error) {
-        if (!(error instanceof LabError) || !error.validationReason)
+        if (
+          !(error instanceof LabError) ||
+          !error.validationReason ||
+          error.validationReason.startsWith("cli_")
+        )
           throw error;
         this.onReview?.({
           stage: "reader",
@@ -1059,23 +1111,11 @@ export class CodexReasoner implements Reasoner {
             draft,
             audit: citationAudit,
           });
-          repair = {
-            draft: { items: draftItems },
-            indices: missingCitations,
-            policy: { citationIndices: missingCitations, deletableIndices: [] },
-            citationOnly: true,
-          };
-          correction = {
-            rejected_indices: missingCitations,
-            error: "observation_not_supported_by_own_citations",
-            rejected_items: missingCitations.map((index) => ({
-              index,
-              item: draftItems[index],
-              audit: citationAudit[index],
-            })),
-          };
-          continue;
         }
+        // Gather both independent audits before the one bounded repair. A
+        // citation error must not hide a different source/gap problem until
+        // the final attempt. Passing one audit never waives the other.
+
         const audit = await this.ask(
           entailmentSchema,
           explanationBoundary +
@@ -1085,33 +1125,58 @@ export class CodexReasoner implements Reasoner {
           signal,
         );
         const failures = failedEntailment(audit, report.items.length);
-        if (!failures.length) return report;
-        this.onReview?.({
-          stage: "report",
-          attempt: attempt + 1,
-          reason: "report_entailment_rejected",
-          draft,
-          audit,
-        });
+        if (!failures.length && !missingCitations.length) return report;
+        if (failures.length) {
+          this.onReview?.({
+            stage: "report",
+            attempt: attempt + 1,
+            reason: "report_entailment_rejected",
+            draft,
+            audit,
+          });
+        }
+        const rejected = [...new Set([...missingCitations, ...failures])].sort(
+          (a, b) => a - b,
+        );
+        const citationOnly = failures.length === 0;
         repair = {
           draft: { items: draftItems },
-          indices: failures,
+          indices: rejected,
           policy: {
-            citationIndices: [],
+            citationIndices: missingCitations,
             deletableIndices: entailmentSchema
               .parse(audit)
-              .checks.filter((c) => c.issue === "duplicate")
+              .checks.filter(
+                (c) =>
+                  c.issue === "duplicate" &&
+                  !missingCitations.includes(c.index),
+              )
               .map((c) => c.index),
           },
-          citationOnly: false,
+          citationOnly,
         };
         correction = {
-          rejected_indices: failures,
+          rejected_indices: rejected,
+          error: missingCitations.length
+            ? "observation_not_supported_by_own_citations"
+            : "report_entailment_rejected",
+          rejected_items: rejected.map((index) => ({
+            index,
+            item: draftItems[index],
+            citation_audit: citationAudit[index],
+            source_audit: entailmentSchema
+              .parse(audit)
+              .checks.find((c) => c.index === index),
+          })),
           audit,
-          rejected_draft: draft,
+          ...(citationOnly ? {} : { rejected_draft: draft }),
         };
       } catch (error) {
-        if (!(error instanceof LabError) || !error.validationReason)
+        if (
+          !(error instanceof LabError) ||
+          !error.validationReason ||
+          error.validationReason.startsWith("cli_")
+        )
           throw error;
         this.onReview?.({
           stage: "report",
