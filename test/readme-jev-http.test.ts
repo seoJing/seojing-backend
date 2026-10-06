@@ -189,6 +189,68 @@ const startBody = (p: PrepareView) => ({
 });
 
 describe("acknowledged Jev HTTP contract", () => {
+  it("logs only aggregate reading diagnostics and survives a failing log sink", async () => {
+    const onReadingDiagnostic = vi.fn<
+      NonNullable<LabOptions["onReadingDiagnostic"]>
+    >(() => {
+      throw new Error("sink unavailable");
+    });
+    const { app } = setup({ onReadingDiagnostic });
+    const headers = await login(app),
+      prepared = await prepare(app, headers);
+    const created = await app.inject({
+      method: "POST",
+      url: "/readme/lab/jobs",
+      headers,
+      payload: startBody(prepared),
+    });
+    const id = created.json<JobView>().job_id;
+    await vi.waitFor(async () => {
+      const view = (
+        await app.inject({ url: `/readme/lab/jobs/${id}`, headers })
+      ).json<JobView>();
+      expect(view.status).toBe("completed");
+    });
+    expect(onReadingDiagnostic.mock.calls.map(([e]) => e.phase)).toEqual([
+      "reading_completed",
+      "finished",
+    ]);
+    const last = onReadingDiagnostic.mock.calls.at(-1)![0];
+    expect(last).toMatchObject({
+      status: "completed",
+      read_units: 2,
+      total_units: 2,
+      question_count: 1,
+      error: null,
+    });
+    expect(Object.keys(last).sort()).toEqual(
+      [
+        "job_id",
+        "phase",
+        "status",
+        "read_units",
+        "total_units",
+        "question_count",
+        "note_count",
+        "evidence_count",
+        "retracted_count",
+        "elapsed_ms",
+        "reading_ms",
+        "error",
+        "metrics",
+        "decisions",
+      ].sort(),
+    );
+    const logged = JSON.stringify(onReadingDiagnostic.mock.calls);
+    for (const secret of [
+      invite,
+      input.job_text,
+      input.resume_filename,
+      input.resume_base64,
+      "안내문",
+    ])
+      expect(logged).not.toContain(secret);
+  });
   it("requires current explicit consent before any parsing or model work", async () => {
     const { app, parse, reasoner, open } = setup();
     for (const payload of [
@@ -290,7 +352,7 @@ describe("acknowledged Jev HTTP contract", () => {
       view.events.map((_, i) => i + 1),
     );
     expect(view.report?.questions[0]?.status).toBe("resolved");
-    expect(view.report?.limitations.join(" ")).toContain("근거만 확인");
+    expect(view.report?.limitations.join(" ")).toContain("공고에서 만든 기준");
     expect(view.report?.limitations.join(" ")).not.toMatch(
       /확률 보정|설명됨|순차 독해|Laya/,
     );

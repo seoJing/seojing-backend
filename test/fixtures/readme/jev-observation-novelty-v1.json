@@ -1,0 +1,205 @@
+{
+  "version": "jev-observation-novelty-v1",
+  "synthetic": true,
+  "purpose": "Repeated work plus new relevant outcome versus unrelated trivia; exact source admission and no forced memo. These are semantic regression inputs, not prompt demonstrations.",
+  "criterion_label": "고객 문의 분류와 안내",
+  "cases": [
+    {
+      "id": "repeated_with_trivia",
+      "prior_source": "고객 문의를 유형별로 분류했습니다.",
+      "current_source": "고객 문의를 유형별로 분류했고, 점심에는 김밥을 먹었습니다.",
+      "expected_new_evidence": false
+    },
+    {
+      "id": "repeated_with_result",
+      "prior_source": "고객 문의를 유형별로 분류했습니다.",
+      "current_source": "고객 문의를 유형별로 분류한 뒤, 담당자가 확인한 재문의 건수는 20건에서 8건으로 줄었습니다.",
+      "expected_new_evidence": true
+    },
+    {
+      "id": "same_fact",
+      "prior_source": "고객 문의를 유형별로 분류했습니다.",
+      "current_source": "고객 문의를 각각의 유형에 따라 나눴습니다.",
+      "expected_new_evidence": false
+    }
+  ],
+  "focused_comparison_cases": [
+    {
+      "id": "same_fact",
+      "topic": "고객 안내 경험과 결과",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "text": "저는 고객 문의를 유형별로 분류했습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "text": "고객 문의를 각각의 유형에 따라 나눴습니다."
+      },
+      "expected_focused_admission": false
+    },
+    {
+      "id": "irrelevant_addition",
+      "topic": "고객 안내 경험과 결과",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "text": "고객 문의를 유형별로 분류했습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "text": "고객 문의를 유형별로 분류했고 점심에는 김밥을 먹었습니다."
+      },
+      "expected_focused_admission": false
+    },
+    {
+      "id": "new_work_result",
+      "topic": "고객 안내 경험과 결과",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "text": "고객 문의를 유형별로 분류했습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "text": "분류 체계를 적용한 후 담당자가 확인한 재문의가 20건에서 8건으로 줄었습니다."
+      },
+      "expected_focused_admission": true
+    },
+    {
+      "id": "different_activity",
+      "topic": "고객 안내 경험과 결과",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "text": "봄 행사에서는 취소 요청을 안내했습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "text": "별개인 가을 행사에서도 저는 취소 요청 안내를 맡았습니다."
+      },
+      "expected_focused_admission": true
+    },
+    {
+      "id": "goal_not_result",
+      "topic": "고객 안내 경험과 결과",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "text": "목표는 안내문 열 장을 만드는 것이었습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "text": "안내문 열 장을 모두 완성했습니다."
+      },
+      "expected_focused_admission": true
+    },
+    {
+      "id": "already_completed",
+      "topic": "고객 안내 경험과 결과",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "text": "안내문 열 장을 모두 완성했습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "text": "계획한 열 장의 안내문이 전부 완성되었습니다."
+      },
+      "expected_focused_admission": false
+    },
+    {
+      "id": "missing_activity",
+      "topic": "지원자의 수행 경험",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "order": 1,
+          "text": "그 프로젝트에서 조건을 바꾸며 반복 실험했습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "order": 2,
+        "text": "그 프로젝트에서 조건을 바꾸며 반복 실험했습니다."
+      },
+      "expected_focused_admission": false
+    },
+    {
+      "id": "missing_actor",
+      "topic": "지원자의 수행 경험",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "order": 1,
+          "text": "그가 안내문 열 장을 완성했습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "order": 2,
+        "text": "그가 안내문 열 장을 완성했습니다."
+      },
+      "expected_focused_admission": false
+    },
+    {
+      "id": "unresolved_object",
+      "topic": "지원자의 문서 검수 업무",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "order": 1,
+          "text": "원본 안내문 다섯 장의 내용을 검수했습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "order": 2,
+        "text": "그것도 다섯 장 모두 검수했습니다."
+      },
+      "expected_focused_admission": false
+    },
+    {
+      "id": "intensity_only",
+      "topic": "지원자의 문서 검수 업무",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "order": 1,
+          "text": "안내문의 오탈자를 검토했습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "order": 2,
+        "text": "밤낮없이 열심히 안내문의 오탈자를 검토했습니다."
+      },
+      "expected_focused_admission": false
+    },
+    {
+      "id": "mixed_unrelated_work",
+      "topic": "민원 안내",
+      "prior_sources": [
+        {
+          "id": "u1",
+          "order": 1,
+          "text": "취소 문의를 접수순서대로 안내했습니다."
+        }
+      ],
+      "current_source": {
+        "id": "u2",
+        "order": 2,
+        "text": "취소 문의를 접수순서대로 안내했고, 별도 편집 아르바이트에서 사진 색상을 보정했습니다."
+      },
+      "expected_focused_admission": false
+    }
+  ],
+  "measured_artifact": ".local/readme-lab-production/good-writing-v2/quality-target-v3/topic-scope-probe-c17.json",
+  "scope": "These focused gate inputs do not replace full reading/attribution/relevance/quote audits. Uncertain comparisons cannot admit evidence."
+}

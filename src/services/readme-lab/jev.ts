@@ -41,9 +41,32 @@ const metricsSchema = z
     omitted_proofs: z.number().int().nonnegative(),
   })
   .strict();
+const count = z.number().int().nonnegative();
+export const jevDiagnosticsSchema = z
+  .object({
+    steps: count,
+    question_candidates: count,
+    trigger_no: count,
+    trigger_abstained: count,
+    questions_created: count,
+    question_cap_steps: count,
+    evidence_candidates: count,
+    evidence_abstained: count,
+    evidence_created: count,
+    evidence_retracted: count,
+    evidence_audit_rejected: count,
+    evidence_cap_steps: count,
+    proof_omitted: count,
+    evidence_irrelevant: count.optional(),
+    evidence_repeated: count.optional(),
+    evidence_linked: count.optional(),
+    understanding_focus_uncertain: count.optional(),
+  })
+  .strict();
 export interface JevReader extends SequentialReasoner {
   metadata: JevMetadata;
   metrics: z.infer<typeof metricsSchema>;
+  diagnostics?: z.infer<typeof jevDiagnosticsSchema>;
   contextReviews?: ContextReview[];
   close(): void;
 }
@@ -312,6 +335,8 @@ export function openJev(
               .parse(message.retries);
             for (const retry of retries) options.onRetry?.(retry);
           }
+          if (message.diagnostics !== undefined)
+            ready.diagnostics = jevDiagnosticsSchema.parse(message.diagnostics);
           if (message.error) {
             if (message.metrics !== undefined)
               ready.metrics = metricsSchema.parse(message.metrics);

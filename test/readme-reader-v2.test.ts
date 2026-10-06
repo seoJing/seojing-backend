@@ -566,73 +566,84 @@ describe("grounded final source review", () => {
       validateGroundedReport(draft, s.document, s.job, [], []),
     ).toThrow("engine_output_invalid");
   });
-  it("discloses linked unresolved reading history without deriving an answer from a shared citation", () => {
-    const s = setup();
-    const origin = s.document.units[0]!;
-    const question: Question = {
-      id: "q1",
-      unit_id: origin.id,
-      scope_id: origin.scope_id,
-      text: "본인이 맡은 역할은 무엇인가요?",
-      status: "open_at_end",
-      candidate_unit_ids: [],
-      state_version: 2,
-    };
-    const note: Note = {
-      id: "n1",
-      unit_id: origin.id,
-      span: { block_id: origin.block_id, start: origin.start, end: origin.end },
-      kind: "question",
-      text: question.text,
-      question_id: "q1",
-      evidence_unit_ids: [origin.id],
-      requirement_ids: ["r1"],
-      review_required: true,
-    };
-    const item = {
-      category: "explained",
-      observation: "안내문 작성을 직접 맡았다고 설명했습니다.",
-      gap: "",
-      suggestion: "운영 지원 문장에 담당 업무를 연결해 주세요.",
-      evidence: [
-        { unit_id: origin.id, quote: origin.text },
-        { unit_id: "u2", quote: "직접 안내문 작성을 맡았습니다." },
-      ],
-      note_ids: ["n1"],
-      requirement_ids: ["r1"],
-    };
-    const before = structuredClone({ question, note });
-    const report = validateGroundedReport(
-      { items: [item] },
-      s.document,
-      s.job,
-      [note],
-      [question],
-      "jev",
-    );
-    expect(report.items[0]!.reason).toContain(
-      "연결된 메모에는 읽는 중 확정하지 못한 질문이 남아 있습니다.",
-    );
-    expect(report.items[0]!.reason.endsWith(item.suggestion)).toBe(true);
-    expect(report.questions[0]!.status).toBe("open_at_end");
-    expect({ question, note }).toEqual(before);
-    for (const [otherItem, otherNote, otherQuestion] of [
-      [{ ...item, note_ids: [] }, note, question],
-      [item, { ...note, kind: "evidence" as const }, question],
-      [item, note, { ...question, status: "resolved" as const }],
-      [{ ...item, category: "improve" }, note, question],
-    ] as const) {
-      const other = validateGroundedReport(
-        { items: [otherItem] },
+  it.each(["question", "hold", "resolves"] as const)(
+    "discloses directly linked unresolved %s history without deriving an answer from a shared citation",
+    (kind) => {
+      const s = setup();
+      const origin = s.document.units[0]!;
+      const question: Question = {
+        id: "q1",
+        unit_id: origin.id,
+        scope_id: origin.scope_id,
+        text: "본인이 맡은 역할은 무엇인가요?",
+        status: kind === "hold" ? "partial" : "open_at_end",
+        candidate_unit_ids: [],
+        state_version: 2,
+      };
+      const note: Note = {
+        id: "n1",
+        unit_id: origin.id,
+        span: {
+          block_id: origin.block_id,
+          start: origin.start,
+          end: origin.end,
+        },
+        kind,
+        text: question.text,
+        question_id: "q1",
+        evidence_unit_ids: [origin.id],
+        requirement_ids: ["r1"],
+        review_required: true,
+      };
+      const item = {
+        category: "explained",
+        observation: "안내문 작성을 직접 맡았다고 설명했습니다.",
+        gap: "",
+        suggestion: "운영 지원 문장에 담당 업무를 연결해 주세요.",
+        evidence: [
+          { unit_id: origin.id, quote: origin.text },
+          { unit_id: "u2", quote: "직접 안내문 작성을 맡았습니다." },
+        ],
+        note_ids: ["n1"],
+        requirement_ids: ["r1"],
+      };
+      const before = structuredClone({ question, note });
+      const report = validateGroundedReport(
+        { items: [item] },
         s.document,
         s.job,
-        [otherNote],
-        [otherQuestion],
+        [note],
+        [question],
         "jev",
       );
-      expect(other.items[0]!.reason).toBe(item.suggestion);
-    }
-  });
+      expect(report.items[0]!.reason).toContain(
+        "연결된 메모에는 읽는 중 확정하지 못한 질문이 남아 있습니다.",
+      );
+      expect(report.items[0]!.reason.endsWith(item.suggestion)).toBe(true);
+      expect(report.questions[0]!.status).toBe(question.status);
+      expect({ question, note }).toEqual(before);
+      for (const [otherItem, otherNote, otherQuestion] of [
+        [{ ...item, note_ids: [] }, note, question],
+        [
+          item,
+          { ...note, kind: "evidence" as const, question_id: undefined },
+          question,
+        ],
+        [item, note, { ...question, status: "resolved" as const }],
+        [{ ...item, category: "improve" }, note, question],
+      ] as const) {
+        const other = validateGroundedReport(
+          { items: [otherItem] },
+          s.document,
+          s.job,
+          [otherNote],
+          [otherQuestion],
+          "jev",
+        );
+        expect(other.items[0]!.reason).toBe(item.suggestion);
+      }
+    },
+  );
   it("requires semantic audit coverage for every item and rejects flagged distortions", () => {
     expect(
       failedEntailment(

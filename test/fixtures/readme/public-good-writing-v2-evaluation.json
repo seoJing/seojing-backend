@@ -1,0 +1,680 @@
+{
+  "version": "public-good-writing-quality-v2",
+  "date": "2026-10-06",
+  "base_commit": "4092aeed07462205b2b009dce6c7f03aae62a9b9",
+  "purpose": "Offline source-grounded reader quality improvement; not fine-tuning, a hiring verdict or an unattended-release approval.",
+  "corpus_manifests": [
+    "public-good-writing-v1.json",
+    "public-good-writing-transfer-v1.json"
+  ],
+  "evaluation_scope": [
+    "Three published expert-rated essays used for development; one later-selected retail/sales transfer case. These public texts may exist in model pretraining.",
+    "Original historic adverts unavailable: role and original application questions form explicitly reconstructed briefs.",
+    "Expert grade/commentary, selection rationale and expected outcomes were excluded from model input. Full texts and raw outputs remain ignored local artifacts.",
+    "All failed attempts retained. No company/sample-specific production rules or forced memo/question counts.",
+    "V4 generated fresh profiles. V5/V6 freeze those same profiles to compare reading/report changes; cached-run times exclude new profile generation.",
+    "The final report disclosure change is deterministic rendering only; original V6 model outputs remain untouched and separate replay preserves facts, citations, categories, notes and question state.",
+    "V6 execution completion is not automatic quality acceptance: Bosch had foreign-language prose and is explicitly rejected below. The observed draft was then replayed once to exercise the bounded live correction path on the identical report input.",
+    "Final source has two report-only changes after full V6 runs: explicit reading/final distinction for directly linked unresolved notes, and Korean-prose validation/correction. Reader/profile source hashes remain those of V6. Transfer-final-v2 used grounded v23, not final v24.",
+    "Expert scores select public examples, not model ground truth; acceptance uses what the actual source states and what the reconstructed question asks."
+  ],
+  "guards": {
+    "threshold": 0.75,
+    "reader_request_ceiling": 600,
+    "reader_input_token_ceiling": 2000000,
+    "standalone_evidence_note_ceiling": 12,
+    "source_prefix_only": true,
+    "independent_exact_quote_and_full_prefix_audits": true,
+    "no_fine_tuning": true,
+    "no_deployment": true
+  },
+  "acceptance_frozen_before_edits": {
+    "baseline_commit": "4092aeed07462205b2b009dce6c7f03aae62a9b9",
+    "frozen_before_edits": true,
+    "public_cases": {
+      "lg_hr": {
+        "recognize": [
+          "HR preparation activities/motivation u5-u8",
+          "statistics/tool learning and grades u11-u12",
+          "current study and future exam distinguished u17"
+        ],
+        "forbid": [
+          "asserting past HR employment",
+          "invented applied-analysis project",
+          "exam success/qualification"
+        ],
+        "question_rule": "Recognize available partial support for any broad question; no forced complete or question quota."
+      },
+      "hynix_process": {
+        "recognize": [
+          "stated research goal attainment u9",
+          "repeated process experiments u30",
+          "individual teaching and shared mural completion u43/u46"
+        ],
+        "forbid": [
+          "sole authorship or hiring verdict",
+          "invented experimental conditions",
+          "sole leadership of team outcome"
+        ],
+        "note_rule": "Source-based recognition across these independent activities, not arbitrary per-criterion note quotas."
+      },
+      "bosch_scm": {
+        "profile": "Consistent content-prompt versus submission classification; preserve required/optional/conditional clauses. Fresh pipeline must not need user retry to repair one semantic classification error.",
+        "recognize": [
+          "personal logistics coordination",
+          "reported comparison result without changing statistic"
+        ],
+        "forbid": [
+          "20%-to-under5% represented as15% relative reduction",
+          "optional experience becoming mandatory"
+        ]
+      }
+    },
+    "negative_controls": [
+      "other actor",
+      "different experience",
+      "future-only plan",
+      "later explicit retraction",
+      "same-fact paraphrase",
+      "unsubstantiated result"
+    ],
+    "guards": [
+      "no provider threshold reduction",
+      "no sample/company branching",
+      "no future source",
+      "exact evidence and all final audits",
+      "600 request / 2M reader token budget retained",
+      "old artifacts never overwritten"
+    ]
+  },
+  "source_sha256": {
+    "src/services/readme-lab/browser-client.ts": "3c628eb6b9546af70f635064b39f73cf909c2ed1eeed30fd5111df1a72ef2570",
+    "src/services/readme-lab/codex.ts": "4217412cf0f1b12b89bb8488fc8db4272687c14386818ddf20be69cdd76d14ea",
+    "src/services/readme-lab/contracts.ts": "ee5e165c1157b746c4118b220d4e8aa0355356142b2030a8da9fcf391f096b52",
+    "src/services/readme-lab/document.ts": "ee6453291a4c2838a47ea8b3e521ca3955df37ce8c8764160b64f32e247275ac",
+    "src/services/readme-lab/errors.ts": "f482ab88a00869e098c46263b9e0dc3f3894173bb2e1cf387dcc784d8cdfc306",
+    "src/services/readme-lab/jev-pipeline.ts": "b8a6013724c5c321d5316cf91d7a27a93bd034da321c91175f0645addc78a2b4",
+    "src/services/readme-lab/jev.ts": "4ff734429ba7993fff29a87dded70044640379da4377c38d8b28472988b9a9f4",
+    "src/services/readme-lab/judgment.ts": "edcc4046547de0348102e4c15dc2acdf10c1a3d3d7ef0af5aff5e860bdd35e3a",
+    "src/services/readme-lab/laya.ts": "080414c6fc6a1bc75e8a5f20efe6f5f68c6f61e0108c574837435a12a8607802",
+    "src/services/readme-lab/parser-worker.ts": "30bb46b946850908f13a309d15183d5f2b12b83588defd106ba78053d46bf6e2",
+    "src/services/readme-lab/parser.ts": "eb166118878e29c80f5a22e24b71d773e91d72debc9928ec1da6ba2cf4118c6a",
+    "src/services/readme-lab/process.ts": "b3f049961737b22a930ac09cb5885a3a1b6e81b96384f4758188aa44edf8e9f0",
+    "src/services/readme-lab/profile.ts": "3e1f4eb63adacf6d2a9dd00d36a44de7c97b203f3310d203f3d6b2bb15d90288",
+    "src/services/readme-lab/python/atomic_decisions.py": "6da6801bf1a42b6642fc1f8dd5158a48703b8d6c9899642f2c71d5dfd40ee28e",
+    "src/services/readme-lab/python/bootstrap.py": "b68c4ccdbaf38994dd84b5351a627e894a14861336ec948df09aad59877b7985",
+    "src/services/readme-lab/python/candidate_probe.py": "74d6635791b9710bba60d177be697f24d975c7005ba884dccaa410e70b69afa9",
+    "src/services/readme-lab/python/data_validation.py": "5426638f7561ce220f522067d28172b7be81798c2d96e10ff8575b6e0e188c68",
+    "src/services/readme-lab/python/decision_context_probe.py": "d6554d9a8a313e5fd0889eb0791d335cf1508e2247de33eac980d25b54c5944f",
+    "src/services/readme-lab/python/decision_eval.py": "31a5e95a453f21d6e871da1f09d0344e42dab56c0cc2f976c6d3bce645fb7127",
+    "src/services/readme-lab/python/decision_providers.py": "fd9a513c0a968cc3ec228fc09ec345d89d243edf2ab09b7b15ab38b92f4df90b",
+    "src/services/readme-lab/python/experiment.py": "4024f08c35e2b34b1f28eb9df7ca5a5e6376cb1a12153cab71b7c359ea5473df",
+    "src/services/readme-lab/python/experiment_data.py": "686b67328d2d2330031802506906f5cf77003383d9a9798e2d339c7cc013970b",
+    "src/services/readme-lab/python/jev_grounded.py": "1011c5a772a207e7983f57ad9f02efc28f76aeb702edd9ba567617799558d52f",
+    "src/services/readme-lab/python/jev_grounded_eval.py": "49474be4f74ce7b6c78dbfb12c7a61f1d5b967035b01a0c72817cf68e08b4a37",
+    "src/services/readme-lab/python/jev_reader.py": "b8a2441282c8c4b7234affd539346fee862635f30dc515415166cf4f52dcea45",
+    "src/services/readme-lab/python/jev_role_eval.py": "5be2d567c645dbfd05183118aeb109eb91d6542b588ae805847955f3bbebae83",
+    "src/services/readme-lab/python/jev_runtime.py": "c2db8b06840442d673f146b7fa8a77671efd78fb47c9548aa040fc0ca9c2aa76",
+    "src/services/readme-lab/python/jev_stream_eval.py": "aec0cdd51d565b73bca29434059fb211dd702027abc003ec4319694a5b1661fb",
+    "src/services/readme-lab/python/jev_trigger_eval.py": "ad7f883b7d7199ad6d16e949b16172d4087b676adc6db39a04d31c7247b70016",
+    "src/services/readme-lab/python/jev_understanding.py": "14ef334f09d38c08519ea60cd02199f32222d45e2cf4a2e1d89419859cda84ac",
+    "src/services/readme-lab/python/quality_probe.py": "33a0a78e9206fb16322510f826293fe619b6281f3c8d52fa9f9ec69b4bd2b073",
+    "src/services/readme-lab/python/runtime.py": "5944d10749824000341d5da58177970adb0148c289e760bd25425d295cd015a4",
+    "src/services/readme-lab/python/train.py": "519ab4652d7688f91a97887e9e1cf12e89837f0b59fffaac18e6718139b1ee0f",
+    "src/services/readme-lab/reader.ts": "19c3de21dc5f2ab5f0c04d5432c5e60a0fe3510cfeb78c1213d8a4c99aea6832",
+    "src/services/readme-lab/report-v2.ts": "929bc611ea8af02e99506ac7d77851bb7b2692648b9085874c8922e37555d79c",
+    "src/services/readme-lab/role-context.ts": "02b9f8f0cad42fc20e8f5080aaf0e5f396c99ca3044a5e37c625739980acd652",
+    "src/services/readme-lab/semantic-pipeline.ts": "a53469cc708de081bfeecf7cf6e8b3df6be00443f4bef19e9a228d790b54e976",
+    "src/services/readme-lab/semantic-reader.ts": "9c13078d019680db1616fc73baa172ed2747329c15e64f72bd72088e518f4600",
+    "src/services/readme-lab/service.ts": "3d3365513bf43f03ef8961fd1b45e23dfe32d0a43e852d49d8ae09443112fb27",
+    "src/services/readme-lab/tools/codex-quality-probe.ts": "cb53995a684ee8fb4432cba9df55a53a2f108ab6e7a6f36dc24837c74bc4eef1",
+    "src/services/readme-lab/tools/design-fixtures-v2.ts": "38ba84b11f8ad8a3934b70174a5ab72f050e760589d6219f0ae1fc0a2b22536d",
+    "src/services/readme-lab/tools/design-fixtures.ts": "c39e950ed6a127238d6c864323ad1ca4c615e3c0830ea4d9c586e5a965678d7c",
+    "src/services/readme-lab/tools/jev-context-eval.ts": "0ef7ee26bb660b29550502a57aa709cb03fdfe96b31fc50ee1b706d5408651f6",
+    "src/services/readme-lab/tools/jev-flow-eval.ts": "1d14551562c19f05c1f1740ee226f07913c403261c1eccedff3547ca8f87bed1",
+    "src/services/readme-lab/tools/jev-http-eval.ts": "e34126d7364c140247da2f8b8c644dbb992877cd078ba618a142452c21d2e0dd",
+    "src/services/readme-lab/tools/reader-quality-eval.ts": "377586c0a9bff8952cebe7b580ba95150b26f9dfaa2bc3f8e2a9923384076079",
+    "src/services/readme-lab/tools/semantic-flow-eval.ts": "ca399abe42dda6aef914ba2b7447bb4e97bfb30ca390c438c88d967994aeb1d1",
+    "src/services/readme-lab/tools/semantic-quality-eval.ts": "c996d2a16891ec8da2d5b0f11742dbcf2f90b6d833ba969b79e4dddabb413716",
+    "src/services/readme-lab/tools/semantic-report-eval.ts": "fc3f114a02fa980eec1ee0ec4abf257d8236c31cfcf98f923809692a3934e89b",
+    "src/services/readme-lab/tools/semantic-resume-report.ts": "6e0d3bad870acd149cda0078be85189ab765ba203ab9d1062b159d02d1999f02",
+    "src/services/readme-lab/tools/smoke.ts": "93ecb91d1bb1db5a642acfaf3151914b311f099f8bc7462e696098bd90bb397f"
+  },
+  "runs": [
+    {
+      "run": "full-v1",
+      "case": "bosch_scm",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v1/bosch_scm-result.json",
+      "wall_ms": 149934,
+      "profile_ms": 47796,
+      "profile_mode": "fresh",
+      "reading_ms": 32129,
+      "report_ms": 69907,
+      "note_count": 6,
+      "question_count": 0,
+      "question_statuses": [],
+      "report_items": 2,
+      "citations": 8,
+      "usage": {
+        "calls": 127,
+        "input_tokens": 656546,
+        "output_tokens": 36862,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0
+    },
+    {
+      "run": "full-v1",
+      "case": "hynix_process",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v1/hynix_process-result.json",
+      "wall_ms": 193808,
+      "profile_ms": 45759,
+      "profile_mode": "fresh",
+      "reading_ms": 73026,
+      "report_ms": 74899,
+      "note_count": 13,
+      "question_count": 1,
+      "question_statuses": ["open_at_end"],
+      "report_items": 5,
+      "citations": 17,
+      "usage": {
+        "calls": 274,
+        "input_tokens": 1662137,
+        "output_tokens": 74013,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 6
+    },
+    {
+      "run": "full-v1",
+      "case": "lg_hr",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v1/lg_hr-result.json",
+      "wall_ms": 119008,
+      "profile_ms": 37739,
+      "profile_mode": "fresh",
+      "reading_ms": 30468,
+      "report_ms": 50726,
+      "note_count": 5,
+      "question_count": 0,
+      "question_statuses": [],
+      "report_items": 4,
+      "citations": 11,
+      "usage": {
+        "calls": 115,
+        "input_tokens": 517158,
+        "output_tokens": 27063,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0
+    },
+    {
+      "run": "full-v2",
+      "case": "lg_hr",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v2/lg_hr-result.json",
+      "wall_ms": 160852,
+      "profile_ms": 47176,
+      "profile_mode": "fresh",
+      "reading_ms": 50500,
+      "report_ms": 63077,
+      "note_count": 8,
+      "question_count": 2,
+      "question_statuses": ["partial", "open_at_end"],
+      "report_items": 4,
+      "citations": 14,
+      "usage": {
+        "calls": 185,
+        "input_tokens": 734366,
+        "output_tokens": 34179,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0
+    },
+    {
+      "run": "full-v2",
+      "case": "bosch_scm",
+      "status": "failed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v2/bosch_scm-failed.json",
+      "wall_ms": 114954,
+      "profile_ms": 108977,
+      "profile_mode": "fresh",
+      "phase": "reading",
+      "code": "engine_unavailable",
+      "reason": null,
+      "completed_units": 3
+    },
+    {
+      "run": "full-v2",
+      "case": "hynix_process",
+      "status": "failed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v2/hynix_process-failed.json",
+      "wall_ms": 115379,
+      "profile_ms": null,
+      "profile_mode": "fresh",
+      "phase": "profile",
+      "code": "engine_output_invalid",
+      "reason": "profile_semantic_review_failed",
+      "completed_units": 0
+    },
+    {
+      "run": "full-v2",
+      "case": "korea7_sales",
+      "status": "failed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v2/korea7_sales-failed.json",
+      "wall_ms": 169492,
+      "profile_ms": 51772,
+      "profile_mode": "fresh",
+      "phase": "reading",
+      "code": "engine_budget_exceeded",
+      "reason": null,
+      "completed_units": 66
+    },
+    {
+      "run": "full-v3",
+      "case": "bosch_scm",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v3/bosch_scm-result.json",
+      "wall_ms": 243190,
+      "profile_ms": 104138,
+      "profile_mode": "fresh",
+      "reading_ms": 59711,
+      "report_ms": 79236,
+      "note_count": 6,
+      "question_count": 1,
+      "question_statuses": ["resolved"],
+      "report_items": 4,
+      "citations": 12,
+      "usage": {
+        "calls": 190,
+        "input_tokens": 793188,
+        "output_tokens": 40230,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0
+    },
+    {
+      "run": "full-v3",
+      "case": "hynix_process",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v3/hynix_process-result.json",
+      "wall_ms": 267025,
+      "profile_ms": 118511,
+      "profile_mode": "fresh",
+      "reading_ms": 88447,
+      "report_ms": 59940,
+      "note_count": 7,
+      "question_count": 1,
+      "question_statuses": ["resolved"],
+      "report_items": 4,
+      "citations": 12,
+      "usage": {
+        "calls": 331,
+        "input_tokens": 1788382,
+        "output_tokens": 81986,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0
+    },
+    {
+      "run": "full-v3",
+      "case": "lg_hr",
+      "status": "failed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v3/lg_hr-failed.json",
+      "wall_ms": 30886,
+      "profile_ms": null,
+      "profile_mode": "fresh",
+      "phase": "profile",
+      "code": "engine_output_invalid",
+      "reason": "reader_criterion_reference_invalid",
+      "completed_units": 0
+    },
+    {
+      "run": "full-v4",
+      "case": "bosch_scm",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v4/bosch_scm-result.json",
+      "wall_ms": 156349,
+      "profile_ms": 45903,
+      "profile_mode": "fresh",
+      "reading_ms": 34288,
+      "report_ms": 76024,
+      "note_count": 8,
+      "question_count": 0,
+      "question_statuses": [],
+      "report_items": 4,
+      "citations": 13,
+      "usage": {
+        "calls": 134,
+        "input_tokens": 627813,
+        "output_tokens": 35821,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0
+    },
+    {
+      "run": "full-v4",
+      "case": "lg_hr",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v4/lg_hr-result.json",
+      "wall_ms": 144998,
+      "profile_ms": 41752,
+      "profile_mode": "fresh",
+      "reading_ms": 43381,
+      "report_ms": 59788,
+      "note_count": 4,
+      "question_count": 1,
+      "question_statuses": ["open_at_end"],
+      "report_items": 4,
+      "citations": 11,
+      "usage": {
+        "calls": 177,
+        "input_tokens": 580069,
+        "output_tokens": 29431,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0
+    },
+    {
+      "run": "full-v4",
+      "case": "hynix_process",
+      "status": "failed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v4/hynix_process-failed.json",
+      "wall_ms": 165056,
+      "profile_ms": 50141,
+      "profile_mode": "fresh",
+      "phase": "reading",
+      "code": "engine_budget_exceeded",
+      "reason": null,
+      "completed_units": 45
+    },
+    {
+      "run": "full-v5",
+      "case": "bosch_scm",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v5/bosch_scm-result.json",
+      "wall_ms": 94582,
+      "profile_ms": 3,
+      "profile_mode": "cached_validated_profile",
+      "reading_ms": 33273,
+      "report_ms": 61240,
+      "note_count": 6,
+      "question_count": 0,
+      "question_statuses": [],
+      "report_items": 4,
+      "citations": 15,
+      "usage": {
+        "calls": 132,
+        "input_tokens": 544442,
+        "output_tokens": 33785,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0
+    },
+    {
+      "run": "full-v5",
+      "case": "hynix_process",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v5/hynix_process-result.json",
+      "wall_ms": 178136,
+      "profile_ms": 2,
+      "profile_mode": "cached_validated_profile",
+      "reading_ms": 119805,
+      "report_ms": 58201,
+      "note_count": 14,
+      "question_count": 4,
+      "question_statuses": [
+        "open_at_end",
+        "resolved",
+        "open_at_end",
+        "partial"
+      ],
+      "report_items": 4,
+      "citations": 12,
+      "usage": {
+        "calls": 494,
+        "input_tokens": 1985549,
+        "output_tokens": 82796,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0
+    },
+    {
+      "run": "full-v5",
+      "case": "lg_hr",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v5/lg_hr-result.json",
+      "wall_ms": 126938,
+      "profile_ms": 1,
+      "profile_mode": "cached_validated_profile",
+      "reading_ms": 43471,
+      "report_ms": 83380,
+      "note_count": 5,
+      "question_count": 2,
+      "question_statuses": ["open_at_end", "open_at_end"],
+      "report_items": 4,
+      "citations": 13,
+      "usage": {
+        "calls": 179,
+        "input_tokens": 556605,
+        "output_tokens": 29542,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0
+    },
+    {
+      "run": "full-v6",
+      "case": "bosch_scm",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v6/bosch_scm-result.json",
+      "wall_ms": 84712,
+      "profile_ms": 3,
+      "profile_mode": "cached_validated_profile",
+      "reading_ms": 33214,
+      "report_ms": 51413,
+      "note_count": 6,
+      "question_count": 0,
+      "question_statuses": [],
+      "report_items": 3,
+      "citations": 13,
+      "usage": {
+        "calls": 133,
+        "input_tokens": 552316,
+        "output_tokens": 34672,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0,
+      "quality_status": "rejected_foreign_language_report_requires_separate_repair"
+    },
+    {
+      "run": "full-v6",
+      "case": "hynix_process",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v6/hynix_process-result.json",
+      "wall_ms": 148370,
+      "profile_ms": 3,
+      "profile_mode": "cached_validated_profile",
+      "reading_ms": 86714,
+      "report_ms": 61554,
+      "note_count": 13,
+      "question_count": 2,
+      "question_statuses": ["open_at_end", "open_at_end"],
+      "report_items": 4,
+      "citations": 12,
+      "usage": {
+        "calls": 352,
+        "input_tokens": 1634358,
+        "output_tokens": 76693,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0,
+      "quality_status": "incomplete_frozen_recall_target_u30_missing"
+    },
+    {
+      "run": "full-v6",
+      "case": "lg_hr",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/full-v6/lg_hr-result.json",
+      "wall_ms": 95784,
+      "profile_ms": 1,
+      "profile_mode": "cached_validated_profile",
+      "reading_ms": 41167,
+      "report_ms": 54522,
+      "note_count": 5,
+      "question_count": 1,
+      "question_statuses": ["partial"],
+      "report_items": 4,
+      "citations": 12,
+      "usage": {
+        "calls": 172,
+        "input_tokens": 507817,
+        "output_tokens": 29385,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 0,
+      "quality_status": "selected_source_recognition_met_disclosure_fixed_separately"
+    },
+    {
+      "run": "transfer-final-v1",
+      "case": "korea7_sales",
+      "status": "failed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/transfer-final-v1/korea7_sales-failed.json",
+      "wall_ms": 95210,
+      "profile_ms": 2,
+      "profile_mode": "cached_validated_profile",
+      "phase": "reading",
+      "code": "engine_budget_exceeded",
+      "reason": null,
+      "completed_units": 60
+    },
+    {
+      "run": "transfer-final-v2",
+      "case": "korea7_sales",
+      "status": "completed",
+      "artifact": ".local/readme-lab-production/good-writing-v2/transfer-final-v2/korea7_sales-result.json",
+      "wall_ms": 157198,
+      "profile_ms": 6,
+      "profile_mode": "cached_validated_profile",
+      "reading_ms": 94368,
+      "report_ms": 62754,
+      "note_count": 12,
+      "question_count": 0,
+      "question_statuses": [],
+      "report_items": 4,
+      "citations": 20,
+      "usage": {
+        "calls": 368,
+        "input_tokens": 1988107,
+        "output_tokens": 101187,
+        "omitted_proofs": 0
+      },
+      "evidence_cap_steps": 29,
+      "reader_version_note": "grounded v23 / reader v13; final reader grounded v24; report-only final changes not applied in this original artifact"
+    }
+  ],
+  "control_results": {
+    "final-v24-answer-controls-result.json": {
+      "passed": 9,
+      "total": 10,
+      "failed_ids": ["general_preparation_across_activities"],
+      "mode": "direct_observation_heads_with_seeded_question_and_note_state_not_full_pipeline"
+    },
+    "final-v24-boundaries-result.json": {
+      "passed": 5,
+      "total": 6,
+      "failed_ids": ["method_distributed"],
+      "mode": "direct_grounded_decisions; downstream evidence-less partial rejection belongs to the reader, not this head alone"
+    },
+    "scope-final-result.json": {
+      "passed": 5,
+      "total": 5,
+      "failed_ids": [],
+      "mode": "forced_weak_initial_scope_then_real_focused_head_not_full_pipeline"
+    },
+    "controls-final-v4": {
+      "mode": "real_Jev_reading_cached_profiles_stub_report_not_live_final_report",
+      "source_hash_count": 51,
+      "cases": [
+        "operations",
+        "development",
+        "customer_support",
+        "content",
+        "memo_progression",
+        "memo_other_actor",
+        "memo_correction",
+        "memo_irrelevant"
+      ],
+      "observed_passes": [
+        "customer question resolved by classification procedure",
+        "two developer questions resolved",
+        "FAQ method and operations authority recognized",
+        "no false adoption of other-actor or irrelevant examples",
+        "two earlier notes retracted after explicit correction"
+      ],
+      "remaining_misses": [
+        "new role after correction",
+        "progression method and authority details"
+      ]
+    }
+  },
+  "verification": {
+    "typescript_tests": 180,
+    "python_tests": 140,
+    "build": "passed",
+    "independent_code_review": "No remaining blocker after scope, disclosure and report-language corrections; independent related TypeScript61 and diff checks passed.",
+    "semantic_review": "Final artifacts independently reviewed. LG selected source-recognition passed, Hynix remains incomplete at u30, transfer limits retained. Original V6 Bosch language rejected; separate bounded live Korean repair passed exact-source and semantic review.",
+    "commands": [
+      "pnpm exec vitest run test/readme*.test.ts",
+      ".local/readme-laya/venv/bin/python -m unittest discover -s test -p \"readme*_test.py\"",
+      "pnpm build",
+      "pnpm exec eslint src/services/readme-lab/codex.ts src/services/readme-lab/report-v2.ts test/readme-codex-v2.test.ts test/readme-reader-v2.test.ts",
+      "git diff --check"
+    ],
+    "evidence_directory": ".local/readme-lab-production/good-writing-v2"
+  },
+  "remaining_limits": [
+    "Recognition varies between runs. Hynix u30 repeated-experiment passage was omitted in final V6: factual support passed, but focused novelty confidence .73 remained below unchanged .75; this is an incomplete frozen recall target, not a passed case.",
+    "A partial reading answer and a full-document explained finding are separate judgments; directly linked unresolved reading notes now carry an explicit disclosure, without rewriting reading history.",
+    "The 88-unit transfer completed in transfer-final-v2 using grounded v23, but reached the 12-note ceiling at u59 and used 1,988,107 reader input tokens; later memo coverage and budget margin remain limited.",
+    "Synthetic method_distributed still misses a sufficiently linked answer; ambiguous cross-activity learning may abstain. Control scores are not full-pipeline accuracy estimates.",
+    "Small, selected public corpus and reconstructed briefs do not establish general hiring accuracy or unseen-document reliability.",
+    "Actual controls still miss a new role after a correction and some progression details; passing negative controls is not complete positive recall.",
+    "Reader confidence values are uncalibrated routing/abstention scores, not correctness probabilities. No threshold, memo-cap or document-budget relaxation was used.",
+    "Generated profile and reading outputs vary. Cached-profile comparisons isolate reader changes; their timings are not fresh end-to-end timings.",
+    "No production deployment or model fine-tuning was performed."
+  ],
+  "acceptance_status": "partial_not_all_frozen_targets_met",
+  "report_only_verification": {
+    "language_repair": {
+      "artifact": ".local/readme-lab-production/good-writing-v2/report-final-v1/bosch_scm-result.json",
+      "mode": "observed_rejected_draft_seed_then_live_bounded_correction_and_all_audits",
+      "case": "bosch_scm",
+      "wall_ms": 45703,
+      "live_model_calls": 5,
+      "profile_and_reading_rerun": false,
+      "initial_bad_writer_is_observed_replay": true,
+      "correction_writer_calls": 1,
+      "citation_audit_calls": 3,
+      "full_source_audit_calls": 1,
+      "report_items": 3,
+      "exact_citations": 13,
+      "status": "passed_independent_semantic_review",
+      "other_existing_reports_pass_new_revision_guard": [
+        "lg_hr",
+        "hynix_process"
+      ],
+      "guard_limitation": "Hangul-presence check rejects foreign-only prose; mixed-language prose still depends on full-source semantic audit, not a complete deterministic language classifier.",
+      "independent_review": "All three Korean items preserve actual tasks, comparison conditions and future plans. Exact citations, note/requirement/category links and question ledger remain those of the original artifact; all source hashes match final source."
+    },
+    "disclosure_replay": {
+      "artifact_directory": ".local/readme-lab-production/good-writing-v2/report-disclosure-v1",
+      "mode": "deterministic_renderer_only_no_new_model_judgment",
+      "lg_hr_changed_reason_items": ["report4"],
+      "hynix_process_changed_items": [],
+      "facts_citations_categories_note_links_question_state_unchanged": true,
+      "independent_review": "confirmed"
+    }
+  }
+}

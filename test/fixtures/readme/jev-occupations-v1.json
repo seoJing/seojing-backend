@@ -1,0 +1,26 @@
+[
+  {
+    "id": "development",
+    "job_text": "프론트엔드 인턴을 모집합니다. 담당 업무는 사용자 화면과 API 연동 기능 개발 보조입니다. 자격요건은 재사용성을 고려한 컴포넌트 구성 경험입니다. 인턴에게 서비스 전체 설계나 수치 성과를 요구하지 않습니다.",
+    "resume": "공동 예약 화면 개발에 참여했습니다.\n저는 취소 버튼과 서버 오류 안내 화면을 구현했습니다.\n입력 필드를 공통 컴포넌트로 구성했습니다.\n공통 검증 규칙이 있는 필드만 묶고 화면마다 다른 부분은 별도로 두었습니다.\n취소 요청이 실패하면 입력값을 보존하고 다시 시도하도록 안내했습니다.\n동아리 행사에서는 제가 좌석 안내를 맡았습니다.",
+    "expectation": "Role answer preserved; job-linked component approach can be asked and answered; concrete API/error handling yields useful evidence; no demand for numeric results or full-service ownership."
+  },
+  {
+    "id": "customer_support",
+    "job_text": "고객지원 신입 담당자를 모집합니다. 고객 문의를 유형별로 분류하고 긴급도에 따라 답변 순서를 정합니다. 고객 상황에 맞게 처리 절차를 설명하는 능력을 요구합니다. 개발 경험이나 매출 성과는 요구하지 않습니다.",
+    "resume": "고객 문의를 분류하고 답변 순서를 정했습니다.\n서비스 이용이 중단된 문의는 먼저 답하고 일반 사용법 문의는 접수 순서로 처리했습니다.\n취소 문의에는 취소 접수 여부와 다음 처리 절차를 안내했습니다.\n본인 확인이 필요한 경우 확인 절차가 끝난 뒤 안내를 이어갔습니다.\n앞으로 응답 시간을 절반으로 줄이고 싶습니다.",
+    "expectation": "Method-specific priority question/resolution or grounded evidence; future improvement is not an actual measured outcome; no technical/numeric obligation."
+  },
+  {
+    "id": "operations",
+    "job_text": "교육 프로그램 운영 보조를 모집합니다. 참여자 일정 조정과 회차별 안내문 작성을 지원합니다. 장소와 일정 변경 시 참여자에게 대안을 안내하는 업무를 담당합니다. 경력과 정량 성과는 필수가 아닙니다.",
+    "resume": "주말 교육 프로그램 운영을 지원했습니다.\n저는 참여자의 가능 시간을 모아 일정표를 작성했습니다.\n장소가 갑자기 폐쇄되면 이용 가능한 인근 장소와 다음 주 일정 중 선택하도록 안내했습니다.\n참여자들의 선택을 모아 담당자에게 전달하고 확정된 장소와 시간을 안내문에 반영했습니다.\n최종 장소 결정은 운영 책임자가 했고 저는 안내를 맡았습니다.",
+    "expectation": "One concrete personal task answers role; contingency approach is job-relevant; do not require responsibility for every duty or invent leadership/numeric results."
+  },
+  {
+    "id": "content",
+    "job_text": "생활정보 콘텐츠 기획자를 모집합니다. 대상 독자의 상황에 맞춰 정보의 순서와 구성을 정하는 업무입니다. 제작 후 독자 반응을 살펴 후속 안내에 반영한 경험을 우대합니다. 조회수나 매출 수치는 필수가 아닙니다.",
+    "resume": "초보자를 위한 이용 안내 글을 작성했습니다.\n처음 이용할 때 필요한 신청 순서와 비용 정보를 앞부분에 배치했습니다.\n게시 뒤 독자가 남긴 질문을 모아 누락된 내용을 정리했습니다.\n정정하면 앞서 말한 안내 글 작성과 정보 배치는 동료의 작업이었습니다.\n저는 독자의 질문을 분류하고 반복된 질문에 대한 추가 안내 FAQ를 작성했습니다.\n다른 동아리에서 만든 포스터는 이 안내 글과 별개의 작업입니다.",
+    "expectation": "Audience and qualitative reader reaction are meaningful; correction must withdraw any adopted authorship evidence or reopen its question; subsequent independent FAQ work may support a new note."
+  }
+]

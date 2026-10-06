@@ -23,7 +23,10 @@ import {
 } from "../src/services/readme-lab/semantic-reader.js";
 import { runCommand } from "../src/services/readme-lab/process.js";
 import { readSemanticDocument } from "../src/services/readme-lab/semantic-pipeline.js";
-import { validateGroundedReport } from "../src/services/readme-lab/report-v2.js";
+import {
+  reportInput,
+  validateGroundedReport,
+} from "../src/services/readme-lab/report-v2.js";
 import { LabError } from "../src/services/readme-lab/errors.js";
 import type {
   EventPayload,
@@ -210,6 +213,33 @@ describe("semantic reader source and state boundary", () => {
       { note_id: "n1", at_unit_id: "u3" },
     ]);
     expect(f.events.at(-1)).toEqual({ type: "note", note: f.notes[1] });
+    expect(f.notes[1]!.retracted_note_id).toBe("n1");
+    expect(
+      reportInput(f.document, f.job, f.notes, f.questions, f.memory)
+        .note_retractions,
+    ).toEqual(f.memory.note_retractions);
+    expect(() =>
+      validateGroundedReport(
+        {
+          items: [
+            {
+              category: "explained",
+              observation: "안내문 작성 설명",
+              gap: "",
+              suggestion: "",
+              evidence: [f.proof(1)],
+              note_ids: ["n1"],
+              requirement_ids: ["r1"],
+            },
+          ],
+        },
+        f.document,
+        f.job,
+        f.notes,
+        f.questions,
+        "jev",
+      ),
+    ).toThrow("engine_output_invalid");
   });
   it("rejects missing, repeated, already withdrawn and question-linked targets atomically", async () => {
     const f = fixture();

@@ -1,0 +1,67 @@
+{
+  "version": "public-good-writing-transfer-v1",
+  "purpose": "Offline evaluation only; no fine-tuning, prompt demonstrations or contest republication.",
+  "source_type": "publicly_published_anonymized_application_essays",
+  "accessed_at": "2026-10-05T22:59:12.635Z",
+  "posting_mode": "role_and_original_application_questions_reconstructed_brief_not_historic_job_advert",
+  "model_input_exclusions": [
+    "expert grades and commentary",
+    "good/bad markers",
+    "author profile sidebar",
+    "selection rationale and expected outcomes"
+  ],
+  "cases": [
+    {
+      "id": "korea7_sales",
+      "source_id": "146542",
+      "company": "코리아세븐",
+      "role": "영업관리 신입",
+      "year": "2016 상반기",
+      "expected_questions": 5,
+      "quality_selection": "Publisher expert overall score 5. Transfer case selected after implementation without inspecting model output; retail/sales. Header category sales support.",
+      "source_url": "https://www.jobkorea.co.kr/starter/PassAssay/View/146542?FavorCo_Stat=0&OrderBy=2&Page=1&Pass_An_Stat=0",
+      "source_sha256": "17639c2b1b0653213d5aae9ca99df833e7cb3f426a48e275b3dc0bbe36faf0ef",
+      "input_sha256": "90700261fc6148e3973f686382b12c7355f908cf9af262e73ee2aa29c84a4dd1",
+      "text_sha256": "9759cb523c97fda9607560352ea2ab975c4ce1b8869d6263b4ad3ba57ef6dd25",
+      "question_count": 5,
+      "unit_count": 88,
+      "answer_characters": 3314,
+      "normalization": "Extract qnaLists question spans and answer div.tx, remove sup editorial labels and txSpllChk character-count UI nodes, unwrap bold, normalize NFC/line whitespace, retain all answers and original questions as heading blocks. No translation, content rewrite or truncation."
+    }
+  ],
+  "acceptance": {
+    "id": "korea7_sales",
+    "frozen_before_model_run": true,
+    "selected_after_implementation": true,
+    "not_blind_to_model_pretraining": true,
+    "posting_mode": "reconstructed_original_questions_not_historic_advert",
+    "checks": [
+      {
+        "topic": "motivation_and_future_improvements",
+        "units": ["u6", "u8", "u10", "u14", "u15"],
+        "expected": "Recognize observed inconvenience as a personal reason; proposed layout/data/order changes are future plans, not accomplished sales improvement."
+      },
+      {
+        "topic": "sales_learning",
+        "units": ["u24", "u30", "u31", "u32", "u33", "u34"],
+        "expected": "Recognize concrete persuasion and sales learning. 120 of target 200 is partial actual sales with an unmet target, never full attainment."
+      },
+      {
+        "topic": "team_work",
+        "units": ["u40", "u43", "u44", "u46", "u49"],
+        "expected": "Recognize stated leader role, weather-based work adaptation and shared completion of nine facilities. Do not assign sole construction."
+      },
+      {
+        "topic": "negotiation",
+        "units": ["u61", "u64", "u66", "u68"],
+        "expected": "Recognize concrete negotiation offer and resulting unit price. Claimed 500 dollar saving is against 2.2-dollar offline price, not the 2000-dollar budget. No invented causal verification."
+      },
+      {
+        "topic": "future_learning",
+        "units": ["u77", "u81", "u82", "u85"],
+        "expected": "Current coursework and future work/certifications stay distinguished; no earned future certificates."
+      }
+    ],
+    "not_expected": "No memo count quota, no forced new flaw, no requirement for numerical evidence beyond the supplied writing prompt; recognition may be in source-linked memos or question updates/report."
+  }
+}
