@@ -4,7 +4,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { registerReadmeLabRoutes } from "../src/routes/readme-lab.js";
-import { ReadmeLab } from "../src/services/readme-lab/service.js";
+import {
+  ReadmeLab,
+  type LabOptions,
+} from "../src/services/readme-lab/service.js";
 import { openFocusJev } from "../src/services/readme-lab/focus-jev.js";
 import { LabError } from "../src/services/readme-lab/errors.js";
 import type { Reasoner } from "../src/services/readme-lab/codex.js";
@@ -90,6 +93,7 @@ function setup(mode: "normal" | "fail" | "finish-fail" | "stall" = "normal") {
     },
   );
   const readContexts: string[] = [];
+  const diagnostics = vi.fn<NonNullable<LabOptions["onReadingDiagnostic"]>>();
   const open = vi.fn(async (signal: AbortSignal, total: number) => {
     const worker = await openFocusJev(signal, total, {
       apiKey: "synthetic-no-remote-credential",
@@ -101,7 +105,7 @@ function setup(mode: "normal" | "fail" | "finish-fail" | "stall" = "normal") {
       readContexts.push(context);
       return read(
         prefix,
-        mode === "normal" || mode === "finish-fail" ? context : mode,
+        mode === "normal" || mode === "finish-fail" ? "diagnostics" : mode,
       );
     };
     if (mode === "finish-fail")
@@ -118,11 +122,12 @@ function setup(mode: "normal" | "fail" | "finish-fail" | "stall" = "normal") {
       report,
     },
     focus: open,
+    onReadingDiagnostic: diagnostics,
   });
   const app = Fastify();
   apps.push(app);
   registerReadmeLabRoutes(app, lab);
-  return { app, open, parse, report, readContexts };
+  return { app, open, parse, report, readContexts, diagnostics };
 }
 async function start(app: FastifyInstance) {
   const login = await app.inject({
@@ -183,7 +188,7 @@ describe("opt-in focus HTTP stream", () => {
     expect(parse).not.toHaveBeenCalled();
   });
   it("streams validated windows, completes before reporting, and reconnects without new events", async () => {
-    const { app, report, readContexts, open } = setup(),
+    const { app, report, readContexts, open, diagnostics } = setup(),
       { headers, url } = await start(app);
     let view: JobView;
     await vi.waitFor(async () => {
@@ -215,6 +220,16 @@ describe("opt-in focus HTTP stream", () => {
     expect(replay.events).toEqual(full.events.filter((e) => e.seq > after));
     expect(replay.next_seq).toBe(full.next_seq);
     expect(open).toHaveBeenCalledTimes(1);
+    expect(diagnostics.mock.calls.map(([d]) => d.phase)).toEqual([
+      "reading_completed",
+      "finished",
+    ]);
+    for (const [d] of diagnostics.mock.calls) {
+      expect(d.decisions).toMatchObject({ fallback_rechecks: 1 });
+      for (const source of texts)
+        expect(JSON.stringify(d)).not.toContain(source);
+    }
+    expect(JSON.stringify(full)).not.toContain("fallback_rechecks");
   });
   it("does not publish a failed window or run a partial report", async () => {
     const { app, report } = setup("fail"),

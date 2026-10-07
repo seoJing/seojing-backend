@@ -11,7 +11,7 @@ import type {
 import type { Reasoner } from "./codex.js";
 import type { Classifier } from "./laya.js";
 import type { JevReader } from "./jev.js";
-import type { FocusReader } from "./focus-jev.js";
+import type { FocusDiagnostics, FocusReader } from "./focus-jev.js";
 import { focusReportState } from "./focus-report.js";
 import { readSemanticPrefix } from "./semantic-reader.js";
 import { LabError, errorCode, preparationFailureReason } from "./errors.js";
@@ -81,7 +81,7 @@ export interface LabOptions {
     reading_ms: number | null;
     error: string | null;
     metrics: JevReader["metrics"] | FocusReader["metrics"] | null;
-    decisions: JevReader["diagnostics"] | null;
+    decisions: JevReader["diagnostics"] | FocusDiagnostics | null;
   }) => void;
 }
 
@@ -352,7 +352,7 @@ export class ReadmeLab {
       const started = Date.now();
       let readingMs: number | null = null;
       let metrics: JevReader["metrics"] | FocusReader["metrics"] | null = null;
-      let decisions: JevReader["diagnostics"] | null = null;
+      let decisions: JevReader["diagnostics"] | FocusDiagnostics | null = null;
       const diagnostic = (phase: "reading_completed" | "finished") => {
         // An explicit allowlist, never model text, inputs, errors or credentials.
         try {
@@ -381,7 +381,9 @@ export class ReadmeLab {
             reading_ms: readingMs,
             error: reading.view.error ?? null,
             metrics: structuredClone(focus?.metrics ?? jev?.metrics ?? metrics),
-            decisions: structuredClone(jev?.diagnostics ?? decisions),
+            decisions: structuredClone(
+              focus?.diagnostics ?? jev?.diagnostics ?? decisions,
+            ),
           });
         } catch {
           /* diagnostics must not change an analysis outcome */
@@ -489,7 +491,9 @@ export class ReadmeLab {
         }
         readingMs = Date.now() - started;
         metrics = structuredClone(focus?.metrics ?? jev?.metrics ?? null);
-        decisions = jev?.diagnostics ? structuredClone(jev.diagnostics) : null;
+        decisions = structuredClone(
+          focus?.diagnostics ?? jev?.diagnostics ?? null,
+        );
         if (jev?.contextReviews && reading.memory)
           reading.memory.context_reviews = structuredClone(jev.contextReviews);
         jev?.close();
