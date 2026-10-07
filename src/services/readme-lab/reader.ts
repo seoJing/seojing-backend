@@ -10,6 +10,7 @@ import type {
 import type { Classifier, Decision, DecisionKind } from "./laya.js";
 import { LabError } from "./errors.js";
 import type { ContextReview } from "./jev.js";
+import type { FocusLedger } from "./focus-contract.js";
 
 export const facetLabels: Record<Facet, string> = {
   role: "본인 역할",
@@ -36,6 +37,8 @@ export interface ReaderMemory {
   note_retractions?: { note_id: string; at_unit_id: string }[];
   /** Private provenance; failed optional checks are not evidence of absence. */
   context_reviews?: ContextReview[];
+  /** New opt-in inquiry ledger, independent of posting criteria. */
+  focus?: Pick<FocusLedger, "version" | "questions">;
 }
 export interface TransitionCandidate {
   question: Question;

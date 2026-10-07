@@ -1036,6 +1036,7 @@ export class CodexReasoner implements Reasoner {
           questions,
           memory?.engine ?? "laya",
           memory?.context_reviews ?? [],
+          Boolean(memory?.focus),
         );
         if (!report.items.length) return report;
         // Check the displayed source links independently of the full document.
