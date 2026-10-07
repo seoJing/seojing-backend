@@ -1,18 +1,24 @@
 import { createHash } from "node:crypto";
 
-import type { FastifyInstance, FastifyRequest, FastifySchema } from "fastify";
+import type {
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+  FastifySchema,
+} from "fastify";
 
 import type { ArticleWithContent } from "../repositories/articles.js";
-import type {
-  ArticleEditorDraftInput,
-  ArticleService,
-  BlockEditorDraftInput,
-  BlockEditorMutationInput,
-  BlockEditorUpdateInput,
-  CreateArticleInput,
+import {
+  ArticlePublicationBlocked,
+  type ArticleEditorDraftInput,
+  type ArticleService,
+  type BlockEditorDraftInput,
+  type BlockEditorMutationInput,
+  type BlockEditorUpdateInput,
+  type CreateArticleInput,
 } from "../services/articles.js";
 import type { BlockEditorBlockInput } from "../services/block-renderer.js";
-import { ingestMdxArticle } from "../services/mdx-ingest.js";
+import { renderMdxForEditor } from "../services/mdx-editor-renderer.js";
 
 interface RegisterAdminWritingRoutesOptions {
   articleService: ArticleService;
@@ -531,9 +537,12 @@ export function registerAdminWritingRoutes(
       }),
     },
     async (request, reply) => {
-      const article = await options.articleService.publishCurrentRevision(
+      const article = await publishOrReply(
+        options.articleService,
         request.params.slug,
+        reply,
       );
+      if (article === "blocked") return;
       if (!article) {
         return reply.status(404).send({ error: "Article not found" });
       }
@@ -689,11 +698,13 @@ export function registerAdminWritingRoutes(
         return reply.status(400).send({ error: "Invalid article block body" });
       }
       if (["publish", "unpublish", "archive"].includes(action.name)) {
-        const article = await (action.name === "publish"
-          ? options.articleService.publishCurrentRevision(action.slug)
-          : action.name === "unpublish"
-            ? options.articleService.unpublishArticle(action.slug)
-            : options.articleService.archiveArticle(action.slug));
+        const article =
+          action.name === "publish"
+            ? await publishOrReply(options.articleService, action.slug, reply)
+            : action.name === "unpublish"
+              ? await options.articleService.unpublishArticle(action.slug)
+              : await options.articleService.archiveArticle(action.slug);
+        if (article === "blocked") return;
         if (!article) {
           return reply.status(404).send({ error: "Article not found" });
         }
@@ -875,7 +886,7 @@ function toCreateArticleInput(body: UpsertDraftBody): CreateArticleInput {
   const sourceText = requiredString(body.sourceText, "sourceText");
   const slug = requiredString(body.slug, "slug");
   const title = requiredString(body.title, "title");
-  const ingest = ingestMdxArticle(sourceText, { fallbackSlug: slug });
+  const ingest = renderMdxForEditor(sourceText, { fallbackSlug: slug });
   return {
     slug,
     title,
@@ -883,7 +894,7 @@ function toCreateArticleInput(body: UpsertDraftBody): CreateArticleInput {
     category: optionalString(body.category),
     sourceFormat: "MDX",
     sourceText,
-    renderedHtml: optionalString(body.renderedHtml) ?? ingest.renderedHtml,
+    renderedHtml: ingest.renderedHtml,
     changeSummary: optionalString(body.changeSummary) ?? "Admin editor draft",
     authorName: optionalString(body.authorName),
     blocks: ingest.blocks,
@@ -893,13 +904,13 @@ function toCreateArticleInput(body: UpsertDraftBody): CreateArticleInput {
 
 function toEditorDraftInput(body: UpsertDraftBody): ArticleEditorDraftInput {
   const sourceText = requiredString(body.sourceText, "sourceText");
-  const ingest = ingestMdxArticle(sourceText);
+  const ingest = renderMdxForEditor(sourceText);
   return {
     title: optionalString(body.title) ?? ingest.title,
     description: optionalString(body.description) ?? ingest.description,
     category: optionalString(body.category),
     sourceText,
-    renderedHtml: optionalString(body.renderedHtml) ?? ingest.renderedHtml,
+    renderedHtml: ingest.renderedHtml,
     changeSummary:
       optionalString(body.changeSummary) ?? "Admin editor revision",
     authorName: optionalString(body.authorName),
@@ -958,6 +969,8 @@ function toEditorPayload(article: ArticleWithContent) {
   const revision = article.revisions[0] ?? article.currentRevision;
   const sourceFormat = revision?.sourceFormat ?? article.sourceFormat;
   const sourceText = revision?.sourceText ?? article.sourceText;
+  const mdxPreview =
+    sourceFormat === "MDX" ? renderMdxForEditor(sourceText) : null;
   const blocks = article.blocks
     .filter((block) => block.revisionId === revision?.id)
     .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -981,11 +994,8 @@ function toEditorPayload(article: ArticleWithContent) {
       sourceText,
       renderedHtml: revision ? revision.renderedHtml : article.renderedHtml,
       previewRenderedHtml:
-        sourceFormat === "MDX"
-          ? ingestMdxArticle(sourceText).renderedHtml
-          : revision
-            ? revision.renderedHtml
-            : article.renderedHtml,
+        mdxPreview?.renderedHtml ??
+        (revision ? revision.renderedHtml : article.renderedHtml),
       blocks,
       currentRevisionId: article.currentRevisionId,
       currentRevisionNumber: article.currentRevision?.revisionNumber ?? null,
@@ -993,6 +1003,7 @@ function toEditorPayload(article: ArticleWithContent) {
       hasUnpublishedChanges: Boolean(
         revision && revision.id !== article.currentRevisionId,
       ),
+      previewIssues: mdxPreview?.unsupportedComponents ?? [],
       revisions: article.revisions.map((item) => ({
         revisionNumber: item.revisionNumber,
         changeSummary: item.changeSummary,
@@ -1023,6 +1034,20 @@ function toEditorPayload(article: ArticleWithContent) {
       ],
     },
   };
+}
+
+async function publishOrReply(
+  articleService: ArticleService,
+  slug: string,
+  reply: FastifyReply,
+): Promise<ArticleWithContent | null | "blocked"> {
+  try {
+    return await articleService.publishCurrentRevision(slug);
+  } catch (error) {
+    if (!(error instanceof ArticlePublicationBlocked)) throw error;
+    reply.status(409).send({ error: error.message, issues: error.issues });
+    return "blocked";
+  }
 }
 
 function requiredString(value: string | undefined, field: string): string {

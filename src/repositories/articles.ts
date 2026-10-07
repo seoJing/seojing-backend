@@ -227,6 +227,7 @@ export class ArticleRepository {
 
   async publishLatestRevision(
     slug: string,
+    expectedRevisionId?: string,
   ): Promise<ArticleWithContent | null> {
     return this.db.$transaction(async (tx) => {
       const article = await tx.article.findUnique({
@@ -235,6 +236,9 @@ export class ArticleRepository {
       });
       const revision = article?.revisions[0];
       if (!article || !revision) {
+        return null;
+      }
+      if (expectedRevisionId && revision.id !== expectedRevisionId) {
         return null;
       }
 

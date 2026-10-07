@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 import { buildApp } from "../src/app.js";
 import type { ArticleWithContent } from "../src/repositories/articles.js";
-import type { ArticleService } from "../src/services/articles.js";
+import {
+  ArticlePublicationBlocked,
+  type ArticleService,
+} from "../src/services/articles.js";
 
 interface SnippetPayload {
   snippets: Array<{ id: string; label: string }>;
@@ -215,7 +218,12 @@ describe("admin writing API", () => {
         blocks: [
           expect.objectContaining({
             type: "HEADING",
-            content: { level: 1, text: "Admin Draft", id: "admin-draft" },
+            content: {
+              level: 1,
+              text: "Admin Draft",
+              id: "admin-draft",
+              html: "Admin Draft",
+            },
           }),
         ],
       }),
@@ -236,14 +244,14 @@ describe("admin writing API", () => {
       expect.objectContaining({
         sourceText: "# Admin Draft v2\n\n<Callout />",
         renderedHtml: expect.stringContaining(
-          'data-mdx-component="Callout"',
+          'data-callout-tone="note"',
         ) as string,
         blocks: [
           expect.objectContaining({ type: "HEADING" }),
           expect.objectContaining({
             type: "CALLOUT",
             content: expect.objectContaining({
-              componentName: "Callout",
+              tone: "note",
             }) as unknown,
           }),
         ],
@@ -630,6 +638,29 @@ describe("admin writing API", () => {
         "Published article edits require a separate unpublished draft model.",
     });
 
+    await app.close();
+  });
+
+  it("returns publication issues for unsupported MDX", async () => {
+    const publishCurrentRevision = vi
+      .fn()
+      .mockRejectedValue(
+        new ArticlePublicationBlocked(
+          "MDX contains content the CMS renderer cannot preserve.",
+          [{ name: "UnknownWidget", line: 12 }],
+        ),
+      );
+    const app = await appWithArticleService({ publishCurrentRevision });
+    const response = await app.inject({
+      method: "POST",
+      url: "/admin/articles/post/publish",
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      error: "MDX contains content the CMS renderer cannot preserve.",
+      issues: [{ name: "UnknownWidget", line: 12 }],
+    });
     await app.close();
   });
 

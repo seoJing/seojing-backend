@@ -1,3 +1,5 @@
+import { isDeepStrictEqual } from "node:util";
+
 import type {
   ArticleBlockType,
   ArticleSourceFormat,
@@ -17,6 +19,7 @@ import {
   renderArticleBlocks,
   type BlockEditorBlockInput,
 } from "./block-renderer.js";
+import { renderMdxForEditor } from "./mdx-editor-renderer.js";
 
 export interface CreateArticleInput {
   slug: string;
@@ -153,6 +156,8 @@ export class ArticleService {
       throw new Error("Article sourceText is required.");
     }
 
+    const rendered = renderMdxForEditor(input.sourceText);
+
     return this.repository.createEditorRevision({
       ...input,
       slug: normalizedSlug,
@@ -160,7 +165,9 @@ export class ArticleService {
       description: input.description?.trim(),
       category: input.category ? normalizeCategory(input.category) : undefined,
       sourceFormat: "MDX",
-      blocks: input.blocks ?? deriveBlocksFromSource(input.sourceText),
+      renderedHtml: rendered.renderedHtml,
+      blocks: rendered.blocks,
+      assets: rendered.assets,
     });
   }
 
@@ -260,7 +267,48 @@ export class ArticleService {
   async publishCurrentRevision(
     slug: string,
   ): Promise<ArticleWithContent | null> {
-    return this.repository.publishLatestRevision(normalizeSlug(slug));
+    const article = await this.getArticleBySlug(slug);
+    const latest = article?.revisions[0];
+    if (!article || !latest) return null;
+    if (latest.sourceFormat === "MDX") {
+      const rendered = renderMdxForEditor(latest.sourceText);
+      if (rendered.unsupportedComponents.length) {
+        throw new ArticlePublicationBlocked(
+          "MDX contains content the CMS renderer cannot preserve.",
+          rendered.unsupportedComponents,
+        );
+      }
+      if (latest.renderedHtml !== rendered.renderedHtml) {
+        throw new ArticlePublicationBlocked(
+          "Save a fresh revision before publishing this MDX article.",
+          [],
+        );
+      }
+      const savedBlocks = article.blocks
+        .filter((block) => block.revisionId === latest.id)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((block) => ({ type: block.type, content: block.content }));
+      const previewBlocks = rendered.blocks.map((block) => ({
+        type: block.type,
+        content: JSON.parse(JSON.stringify(block.content)) as unknown,
+      }));
+      if (!isDeepStrictEqual(savedBlocks, previewBlocks)) {
+        throw new ArticlePublicationBlocked(
+          "Save a fresh revision before publishing this MDX article's blocks.",
+          [],
+        );
+      }
+    }
+    const published = await this.repository.publishLatestRevision(
+      normalizeSlug(slug),
+      latest.id,
+    );
+    if (!published)
+      throw new ArticlePublicationBlocked(
+        "Article revision changed before publication. Reload and retry.",
+        [],
+      );
+    return published;
   }
 
   async restoreRevision(
@@ -309,6 +357,16 @@ export class ArticleService {
       authorName: input.authorName,
       blocks,
     });
+  }
+}
+
+export class ArticlePublicationBlocked extends Error {
+  constructor(
+    message: string,
+    readonly issues: Array<{ name: string; line: number }>,
+  ) {
+    super(message);
+    this.name = "ArticlePublicationBlocked";
   }
 }
 

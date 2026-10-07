@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { parseFragment } from "parse5";
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
@@ -206,7 +207,7 @@ function toPublicArticleDetail(
         id: block.id,
         type: block.type,
         sortOrder: block.sortOrder,
-        content: scrubJsonValue(block.content),
+        content: scrubPublicBlockContent(block.content),
         plainText: block.plainText ? scrubLocalPaths(block.plainText) : null,
       })),
     },
@@ -304,21 +305,92 @@ function scrubAssetUrl(url: string): string {
   return scrubbed;
 }
 
-function scrubJsonValue(value: unknown): unknown {
-  if (typeof value === "string") {
-    return scrubLocalPaths(value);
-  }
-  if (Array.isArray(value)) {
-    return value.map(scrubJsonValue);
-  }
-  if (isRecord(value)) {
-    return Object.fromEntries(
-      Object.entries(value)
-        .filter(([key]) => key !== "storageKey")
-        .map(([key, entry]) => [key, scrubJsonValue(entry)]),
-    );
-  }
-  return value;
+function scrubPublicBlockContent(value: unknown): unknown {
+  const visit = (entry: unknown, key = ""): unknown => {
+    if (typeof entry === "string") {
+      return /html$/i.test(key)
+        ? sanitizeInlineHtml(scrubLocalPaths(entry))
+        : scrubLocalPaths(entry);
+    }
+    if (Array.isArray(entry)) return entry.map((item) => visit(item, key));
+    if (isRecord(entry)) {
+      return Object.fromEntries(
+        Object.entries(entry)
+          .filter(([childKey]) => childKey !== "storageKey")
+          .map(([childKey, item]) => [childKey, visit(item, childKey)]),
+      );
+    }
+    return entry;
+  };
+  return visit(value);
+}
+
+function sanitizeInlineHtml(value: string): string {
+  const allowed = new Set([
+    "strong",
+    "em",
+    "code",
+    "del",
+    "span",
+    "br",
+    "a",
+    "p",
+    "ul",
+    "ol",
+    "li",
+    "pre",
+  ]);
+  const fragment = parseFragment(value);
+  const visit = (node: (typeof fragment.childNodes)[number]): string => {
+    if (node.nodeName === "#text")
+      return escapeInlineText("value" in node ? String(node.value) : "");
+    if (node.nodeName === "#comment") return "";
+    const element = node as typeof node & {
+      tagName?: string;
+      attrs?: Array<{ name: string; value: string }>;
+      childNodes?: typeof fragment.childNodes;
+    };
+    const tag = element.tagName;
+    if (!tag || !allowed.has(tag))
+      return (element.childNodes ?? []).map(visit).join("");
+    const children = (element.childNodes ?? []).map(visit).join("");
+    if (tag === "br") return "<br />";
+    if (tag === "a") {
+      const href =
+        element.attrs?.find((attr) => attr.name === "href")?.value ?? "";
+      return /^(https?:\/\/[^\s]+|\/(?!\/)[^\s]*|#[^\s]+)$/i.test(href)
+        ? `<a href="${escapeInlineText(href)}">${children}</a>`
+        : children;
+    }
+    if (tag === "span") {
+      const style =
+        element.attrs?.find((attr) => attr.name === "style")?.value ?? "";
+      return /^(?:(?:color:#[0-9a-f]{3,8}|color:rgb\([\d,\s]+\)|font-size:\d{1,2}px|font-family:(?:sans-serif|serif|monospace))(?:;|$))+$/i.test(
+        style,
+      )
+        ? `<span style="${escapeInlineText(style)}">${children}</span>`
+        : children;
+    }
+    if (tag === "ol") {
+      const start = Number(
+        element.attrs?.find((attr) => attr.name === "start")?.value,
+      );
+      return Number.isInteger(start) && start > 1 && start < 1_000_000
+        ? `<ol start="${start}">${children}</ol>`
+        : `<ol>${children}</ol>`;
+    }
+    return `<${tag}>${children}</${tag}>`;
+  };
+  return fragment.childNodes.map(visit).join("");
+}
+
+function escapeInlineText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function scrubLocalPaths(value: string): string {

@@ -260,6 +260,17 @@ describe("public article API", () => {
       publicArticleFixture({
         renderedHtml:
           '<h1 onclick="alert(1)">Title</h1><script>alert(1)</script><a href="javascript:alert(1)">bad</a><img src="/safe.svg" onerror="alert(1)" />',
+        blocks: publicArticleFixture().blocks.map((block, index) =>
+          index === 1
+            ? {
+                ...block,
+                content: {
+                  text: "safe",
+                  html: '<strong onclick="alert(1)">safe</strong><a href="javascript:alert(1)">link</a><span style="background-image:url(javascript:bad)">bad</span>',
+                },
+              }
+            : block,
+        ),
       }),
     );
     const app = await appWithArticleService({ getPublicArticleBySlug });
@@ -270,7 +281,9 @@ describe("public article API", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    const payload: { body: { html: string } } = response.json();
+    const payload: {
+      body: { html: string; blocks: Array<{ content: { html?: string } }> };
+    } = response.json();
     expect(payload.body.html).toContain("<h1>Title</h1>");
     expect(payload.body.html).toContain('href="#removed-javascript-url"');
     expect(payload.body.html).toContain('src="/safe.svg"');
@@ -278,6 +291,11 @@ describe("public article API", () => {
     expect(payload.body.html).not.toContain("onclick");
     expect(payload.body.html).not.toContain("onerror");
     expect(payload.body.html).not.toContain("javascript:alert");
+    expect(payload.body.blocks[1]?.content.html).toContain(
+      "<strong>safe</strong>",
+    );
+    expect(payload.body.blocks[1]?.content.html).not.toContain("onclick");
+    expect(payload.body.blocks[1]?.content.html).not.toContain("javascript:");
 
     await app.close();
   });
