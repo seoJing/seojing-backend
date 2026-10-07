@@ -46,6 +46,9 @@ importers:
       unified:
         specifier: 11.0.5
         version: 11.0.5
+      yaml:
+        specifier: ^2.8.1
+        version: 2.9.0
       zod:
         specifier: ^4.1.13
         version: 4.4.3

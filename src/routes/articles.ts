@@ -6,8 +6,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { ArticleWithContent } from "../repositories/articles.js";
 import type { ArticleService } from "../services/articles.js";
 
-const publicCacheControl =
-  "public, max-age=60, s-maxage=300, stale-while-revalidate=86400";
+const publicCacheControl = "no-store";
 
 interface RegisterArticleRoutesOptions {
   articleService: ArticleService;
@@ -31,6 +30,11 @@ interface PublicArticleSummary {
   title: string;
   description: string | null;
   category: string;
+  tags: string[];
+  cover: { src: string; alt: string; caption?: string; kind?: string } | null;
+  displayDate: string | null;
+  displayUpdatedAt: string | null;
+  summaryVideo: unknown;
   status: "PUBLISHED";
   publishedAt: string | null;
   updatedAt: string;
@@ -43,6 +47,7 @@ interface PublicArticleDetail extends PublicArticleSummary {
   body: {
     html: string;
     blocks: PublicArticleBlock[];
+    document: unknown;
   };
 }
 
@@ -183,6 +188,11 @@ function toPublicArticleSummary(
       ? scrubLocalPaths(article.description)
       : null,
     category: scrubLocalPaths(article.category),
+    tags: article.tags.map(scrubLocalPaths),
+    cover: publicCover(article.cover),
+    displayDate: article.displayDate?.toISOString() ?? null,
+    displayUpdatedAt: article.displayUpdatedAt?.toISOString() ?? null,
+    summaryVideo: publicSummaryVideo(article.summaryVideo),
     status: "PUBLISHED",
     publishedAt: article.publishedAt?.toISOString() ?? null,
     updatedAt: article.updatedAt.toISOString(),
@@ -192,12 +202,16 @@ function toPublicArticleSummary(
   };
 }
 
-function toPublicArticleDetail(
+export function toPublicArticleDetail(
   article: ArticleWithContent,
 ): PublicArticleDetail {
   return {
     ...toPublicArticleSummary(article),
     body: {
+      document:
+        article.currentRevision?.sourceFormat === "DOCUMENT"
+          ? article.currentRevision.document
+          : null,
       html: sanitizePublicHtml(
         scrubLocalPaths(
           article.renderedHtml ?? article.currentRevision?.renderedHtml ?? "",
@@ -212,6 +226,51 @@ function toPublicArticleDetail(
       })),
     },
   };
+}
+
+function publicCover(
+  value: unknown,
+): { src: string; alt: string; caption?: string; kind?: string } | null {
+  if (
+    !isRecord(value) ||
+    typeof value.src !== "string" ||
+    typeof value.alt !== "string"
+  )
+    return null;
+  return {
+    src: scrubAssetUrl(value.src),
+    alt: scrubLocalPaths(value.alt),
+    ...(typeof value.caption === "string"
+      ? { caption: scrubLocalPaths(value.caption) }
+      : {}),
+    ...(typeof value.kind === "string"
+      ? { kind: scrubLocalPaths(value.kind) }
+      : {}),
+  };
+}
+
+function publicSummaryVideo(value: unknown): unknown {
+  if (!isRecord(value) || typeof value.src !== "string") return null;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(
+        ([key, entry]) =>
+          [
+            "src",
+            "title",
+            "caption",
+            "poster",
+            "subtitles",
+            "provider",
+          ].includes(key) && typeof entry === "string",
+      )
+      .map(([key, entry]) => [
+        key,
+        ["src", "poster", "subtitles"].includes(key)
+          ? scrubAssetUrl(entry as string)
+          : scrubLocalPaths(entry as string),
+      ]),
+  );
 }
 
 function isHeadingBlock(block: ArticleWithContent["blocks"][number]): boolean {

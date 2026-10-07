@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ArticleDocumentValidationError } from "../src/services/article-document.js";
+
 import { buildApp } from "../src/app.js";
 import type { ArticleWithContent } from "../src/repositories/articles.js";
 import {
@@ -45,6 +47,12 @@ function articleFixture(
     title: "Admin Draft",
     description: "Writing UX fixture",
     category: "SEOJing",
+    tags: [],
+    cover: null,
+    summaryVideo: null,
+    displayDate: null,
+    displayUpdatedAt: null,
+    document: null,
     sourceFormat: "MDX" as const,
     sourceText: "# Admin Draft\n\n<ArticleQuiz />",
     renderedHtml: "<h1>Admin Draft</h1>",
@@ -65,6 +73,11 @@ function articleFixture(
     title: "Admin Draft",
     description: "Writing UX fixture",
     category: "SEOJing",
+    tags: [],
+    cover: null,
+    summaryVideo: null,
+    displayDate: null,
+    displayUpdatedAt: null,
     status: "DRAFT",
     sourceFormat: "MDX",
     sourceText: revision.sourceText,
@@ -89,6 +102,73 @@ function appWithArticleService(service: Partial<ArticleService>) {
 }
 
 describe("admin writing API", () => {
+  it("serves a protected published snapshot for a nested slug", async () => {
+    const article = articleFixture({
+      slug: "study/typescript/day1",
+      status: "PUBLISHED",
+      publishedAt: baseDate,
+    });
+    const read = vi.fn().mockResolvedValue(article);
+    const app = await appWithArticleService({ getPublicArticleBySlug: read });
+    const path = "/admin/articles/study%2Ftypescript%2Fday1/public-snapshot";
+    const denied = await app.inject({ method: "GET", url: path });
+    expect(denied.statusCode).toBe(401);
+    const response = await app.inject({
+      method: "GET",
+      url: path,
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      slug: "study/typescript/day1",
+      status: "PUBLISHED",
+    });
+    expect(read).toHaveBeenCalledWith("study/typescript/day1");
+    await app.close();
+  });
+
+  it("exports a converted draft only through the protected migration snapshot path", async () => {
+    const original = articleFixture({ slug: "study/typescript/day1" });
+    const revision = {
+      ...original.revisions[0]!,
+      sourceFormat: "DOCUMENT" as const,
+      document: {
+        type: "doc",
+        content: [
+          { type: "paragraph", content: [{ type: "text", text: "Converted" }] },
+        ],
+      },
+      renderedHtml: "<p>Converted</p>",
+      displayDate: baseDate,
+      changeSummary: `Convert MDX to document: ${"a".repeat(64)}`,
+    };
+    const article = {
+      ...original,
+      revisions: [revision],
+      currentRevision: original.currentRevision,
+    } as ArticleWithContent;
+    const app = await appWithArticleService({
+      getArticleBySlug: vi.fn().mockResolvedValue(article),
+    });
+    const path = "/admin/articles/study%2Ftypescript%2Fday1/migration-snapshot";
+    expect((await app.inject({ method: "GET", url: path })).statusCode).toBe(
+      401,
+    );
+    const response = await app.inject({
+      method: "GET",
+      url: path,
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      slug: "study/typescript/day1",
+      status: "PUBLISHED",
+      migrationSourceSha256: "a".repeat(64),
+      body: { document: { type: "doc" } },
+    });
+    await app.close();
+  });
+
   it("re-renders the saved MDX source for preview without overwriting an old stored revision", async () => {
     const article = articleFixture({
       sourceText:
@@ -124,6 +204,12 @@ describe("admin writing API", () => {
         status: "DRAFT",
         sourceFormat: "MDX",
         sourceText: "# Day 1",
+        revisions: [
+          {
+            sourceFormat: "DOCUMENT",
+            changeSummary: `Convert MDX to document: ${"a".repeat(64)}`,
+          },
+        ],
         updatedAt: baseDate,
       },
     ]);
@@ -145,9 +231,56 @@ describe("admin writing API", () => {
     expect(payload.articles[0]).toMatchObject({
       slug: "SEOJing/devLog/day1",
       status: "DRAFT",
+      latestRevisionFormat: "DOCUMENT",
+      migrationSourceSha256: "a".repeat(64),
     });
     expect(payload.articles[0]).toHaveProperty("sourceSha256");
     expect(payload.articles[0]).not.toHaveProperty("sourceText");
+    await app.close();
+  });
+
+  it("returns an actionable 400 for invalid JSON document drafts and nested-slug revisions", async () => {
+    const invalid = new ArticleDocumentValidationError("Invalid quiz item.");
+    const app = await appWithArticleService({
+      createDocumentDraft: vi.fn().mockRejectedValue(invalid),
+      saveDocumentRevision: vi.fn().mockRejectedValue(invalid),
+    });
+    const headers = { authorization: "Bearer test-admin-token" };
+    const created = await app.inject({
+      method: "POST",
+      url: "/admin/articles/documents",
+      headers,
+      payload: {
+        slug: "native",
+        title: "Native",
+        document: { type: "doc", content: [] },
+      },
+    });
+    expect(created.statusCode).toBe(400);
+    expect(created.json()).toMatchObject({ error: "Invalid quiz item." });
+    const flatUpdated = await app.inject({
+      method: "PUT",
+      url: "/admin/articles/native/document",
+      headers,
+      payload: {
+        title: "Native",
+        expectedRevisionId: "revision-1",
+        document: { type: "doc", content: [] },
+      },
+    });
+    expect(flatUpdated.statusCode).toBe(400);
+    const updated = await app.inject({
+      method: "PUT",
+      url: "/admin/articles/study/native/document",
+      headers,
+      payload: {
+        title: "Native",
+        expectedRevisionId: "revision-1",
+        document: { type: "doc", content: [] },
+      },
+    });
+    expect(updated.statusCode).toBe(400);
+    expect(updated.json()).toMatchObject({ error: "Invalid quiz item." });
     await app.close();
   });
 

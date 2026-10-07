@@ -16,9 +16,12 @@ import {
   type BlockEditorMutationInput,
   type BlockEditorUpdateInput,
   type CreateArticleInput,
+  type DocumentEditorInput,
 } from "../services/articles.js";
 import type { BlockEditorBlockInput } from "../services/block-renderer.js";
+import { ArticleDocumentValidationError } from "../services/article-document.js";
 import { renderMdxForEditor } from "../services/mdx-editor-renderer.js";
+import { toPublicArticleDetail } from "./articles.js";
 
 interface RegisterAdminWritingRoutesOptions {
   articleService: ArticleService;
@@ -78,6 +81,50 @@ interface BlockDeleteBody {
   changeSummary?: string;
   authorName?: string;
 }
+
+interface DocumentDraftBody extends DocumentEditorInput {
+  slug?: string;
+}
+
+const documentDraftBodySchema = {
+  type: "object",
+  required: ["title", "document"],
+  properties: {
+    slug: { type: "string" },
+    title: { type: "string", minLength: 1 },
+    description: { type: "string" },
+    category: { type: "string" },
+    tags: { type: "array", items: { type: "string" } },
+    cover: {
+      type: ["object", "null"],
+      required: ["src", "alt"],
+      properties: {
+        src: { type: "string" },
+        alt: { type: "string" },
+        caption: { type: "string" },
+        kind: { type: "string" },
+      },
+      additionalProperties: false,
+    },
+    summaryVideo: {
+      type: ["object", "null"],
+      required: ["src"],
+      properties: Object.fromEntries(
+        ["src", "title", "caption", "poster", "subtitles", "provider"].map(
+          (key) => [key, { type: "string" }],
+        ),
+      ),
+      additionalProperties: false,
+    },
+    displayDate: { type: ["string", "null"] },
+    displayUpdatedAt: { type: ["string", "null"] },
+    document: { type: "object", additionalProperties: true },
+    expectedRevisionId: { type: "string" },
+    changeSummary: { type: "string" },
+    authorName: { type: "string" },
+  },
+  additionalProperties: false,
+};
 
 const componentSnippets = [
   {
@@ -246,9 +293,69 @@ export function registerAdminWritingRoutes(
           sourceSha256: createHash("sha256")
             .update(article.sourceText)
             .digest("hex"),
+          latestRevisionFormat: article.revisions[0]?.sourceFormat ?? null,
+          migrationSourceSha256:
+            /^Convert MDX to document: ([a-f0-9]{64})$/.exec(
+              article.revisions[0]?.changeSummary ?? "",
+            )?.[1] ?? null,
           updatedAt: article.updatedAt.toISOString(),
         })),
       };
+    },
+  );
+
+  app.get(
+    "/admin/articles/published-slugs",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary:
+          "List every published article slug for snapshot reconciliation",
+      }),
+    },
+    async () => ({ slugs: await options.articleService.listPublishedSlugs() }),
+  );
+
+  app.get<{ Params: ArticleSlugParams }>(
+    "/admin/articles/:slug/public-snapshot",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Read a published article snapshot without public rate limits",
+        params: articleSlugParamSchema,
+      }),
+    },
+    async (request, reply) => {
+      const article = await options.articleService.getPublicArticleBySlug(
+        request.params.slug,
+      );
+      return article
+        ? toPublicArticleDetail(article)
+        : reply.status(404).send({ error: "Published article not found" });
+    },
+  );
+
+  app.get<{ Params: ArticleSlugParams }>(
+    "/admin/articles/:slug/migration-snapshot",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary:
+          "Preview an imported public article's converted document for edge cutover",
+        params: articleSlugParamSchema,
+      }),
+    },
+    async (request, reply) => {
+      const article = await options.articleService.getArticleBySlug(
+        request.params.slug,
+      );
+      const snapshot = article && toMigrationSnapshot(article);
+      return (
+        snapshot ??
+        reply
+          .status(404)
+          .send({ error: "Converted migration document not found" })
+      );
     },
   );
 
@@ -292,6 +399,32 @@ export function registerAdminWritingRoutes(
       );
 
       return reply.status(201).send(toEditorPayload(article));
+    },
+  );
+
+  app.post<{ Body: DocumentDraftBody }>(
+    "/admin/articles/documents",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Create an unpublished JSON document article",
+        body: {
+          ...documentDraftBodySchema,
+          required: ["slug", "title", "document"],
+        },
+      }),
+    },
+    async (request, reply) => {
+      try {
+        const article = await options.articleService.createDocumentDraft(
+          request.body,
+        );
+        return reply.status(201).send(toEditorPayload(article));
+      } catch (error) {
+        if (error instanceof ArticleDocumentValidationError)
+          return reply.status(400).send({ error: error.message });
+        throw error;
+      }
     },
   );
 
@@ -498,6 +631,43 @@ export function registerAdminWritingRoutes(
     },
   );
 
+  app.put<{ Params: ArticleSlugParams; Body: DocumentDraftBody }>(
+    "/admin/articles/:slug/document",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary: "Save a JSON document as a new unpublished revision",
+        params: articleSlugParamSchema,
+        body: {
+          ...documentDraftBodySchema,
+          required: ["title", "document", "expectedRevisionId"],
+        },
+      }),
+    },
+    async (request, reply) => {
+      try {
+        const article = await options.articleService.saveDocumentRevision(
+          request.params.slug,
+          request.body,
+        );
+        if (!article)
+          return reply.status(404).send({ error: "Article not found" });
+        return reply.status(201).send(toEditorPayload(article));
+      } catch (error) {
+        if (error instanceof ArticleDocumentValidationError)
+          return reply.status(400).send({ error: error.message });
+        if (
+          error instanceof Error &&
+          error.message ===
+            "Article revision changed before save. Reload and retry."
+        ) {
+          return reply.status(409).send({ error: error.message });
+        }
+        throw error;
+      }
+    },
+  );
+
   app.post<{ Params: ArticleRevisionParams }>(
     "/admin/articles/:slug/revisions/:revisionNumber/restore",
     {
@@ -617,11 +787,30 @@ export function registerAdminWritingRoutes(
       const slug = wildcardSlugForAction(request.params["*"], [
         "blocks",
         "editor",
+        "document",
+        "public-snapshot",
+        "migration-snapshot",
       ]);
       if (!slug) {
         return reply.status(404).send({ error: "Article not found" });
       }
+      if (request.params["*"].endsWith("/public-snapshot")) {
+        const published =
+          await options.articleService.getPublicArticleBySlug(slug);
+        return published
+          ? toPublicArticleDetail(published)
+          : reply.status(404).send({ error: "Published article not found" });
+      }
       const article = await options.articleService.getArticleBySlug(slug);
+      if (request.params["*"].endsWith("/migration-snapshot")) {
+        const snapshot = article && toMigrationSnapshot(article);
+        return (
+          snapshot ??
+          reply
+            .status(404)
+            .send({ error: "Converted migration document not found" })
+        );
+      }
       if (!article) {
         return reply.status(404).send({ error: "Article not found" });
       }
@@ -632,7 +821,7 @@ export function registerAdminWritingRoutes(
 
   app.put<{
     Params: WildcardArticleParams;
-    Body: BlockDraftBody | UpsertDraftBody;
+    Body: BlockDraftBody | UpsertDraftBody | DocumentDraftBody;
   }>(
     "/admin/articles/*",
     { schema: { hide: true } },
@@ -640,6 +829,7 @@ export function registerAdminWritingRoutes(
       const action = wildcardArticleAction(request.params["*"], [
         "blocks",
         "revisions",
+        "document",
       ]);
       if (!action) {
         return reply.status(404).send({ error: "Article not found" });
@@ -647,23 +837,49 @@ export function registerAdminWritingRoutes(
       const body = request.body as Record<string, unknown>;
       if (
         (action.name === "blocks" && !Array.isArray(body.blocks)) ||
-        (action.name === "revisions" && typeof body.sourceText !== "string")
+        (action.name === "revisions" && typeof body.sourceText !== "string") ||
+        (action.name === "document" &&
+          (typeof body.title !== "string" ||
+            !body.document ||
+            typeof body.document !== "object" ||
+            Array.isArray(body.document) ||
+            typeof body.expectedRevisionId !== "string"))
       ) {
         return reply
           .status(400)
           .send({ error: "Invalid article revision body" });
       }
-      const article = await rejectPublishedArticleEdits(async () =>
-        action.name === "blocks"
-          ? options.articleService.replaceArticleBlocks(
-              action.slug,
-              toBlockDraftInput(request.body),
-            )
-          : options.articleService.createEditorRevision(
-              action.slug,
-              toEditorDraftInput(request.body),
-            ),
-      );
+      let article: ArticleWithContent | null | "published-edit-rejected";
+      try {
+        article =
+          action.name === "document"
+            ? await options.articleService.saveDocumentRevision(
+                action.slug,
+                request.body as DocumentDraftBody,
+              )
+            : await rejectPublishedArticleEdits(async () =>
+                action.name === "blocks"
+                  ? options.articleService.replaceArticleBlocks(
+                      action.slug,
+                      toBlockDraftInput(request.body as BlockDraftBody),
+                    )
+                  : options.articleService.createEditorRevision(
+                      action.slug,
+                      toEditorDraftInput(request.body as UpsertDraftBody),
+                    ),
+              );
+      } catch (error) {
+        if (error instanceof ArticleDocumentValidationError)
+          return reply.status(400).send({ error: error.message });
+        if (
+          error instanceof Error &&
+          error.message ===
+            "Article revision changed before save. Reload and retry."
+        ) {
+          return reply.status(409).send({ error: error.message });
+        }
+        throw error;
+      }
       if (article === "published-edit-rejected") {
         return reply.status(409).send({
           error:
@@ -871,13 +1087,50 @@ function isPublishedArticleEditError(error: unknown): boolean {
   );
 }
 
+function toMigrationSnapshot(article: ArticleWithContent) {
+  const revision = article.revisions[0];
+  const sourceSha256 = /^Convert MDX to document: ([a-f0-9]{64})$/.exec(
+    revision?.changeSummary ?? "",
+  )?.[1];
+  if (
+    !revision ||
+    revision.sourceFormat !== "DOCUMENT" ||
+    !revision.document ||
+    !sourceSha256
+  )
+    return null;
+  const projected: ArticleWithContent = {
+    ...article,
+    status: "PUBLISHED",
+    currentRevisionId: revision.id,
+    currentRevision: revision,
+    sourceFormat: "DOCUMENT",
+    sourceText: "",
+    renderedHtml: revision.renderedHtml,
+    title: revision.title ?? article.title,
+    description: revision.description ?? article.description,
+    category: revision.category ?? article.category,
+    tags: revision.tags,
+    cover: revision.cover,
+    summaryVideo: revision.summaryVideo,
+    displayDate: revision.displayDate,
+    displayUpdatedAt: revision.displayUpdatedAt,
+    publishedAt:
+      article.publishedAt ?? revision.displayDate ?? article.createdAt,
+  };
+  return {
+    ...toPublicArticleDetail(projected),
+    migrationSourceSha256: sourceSha256,
+  };
+}
+
 function openApiSchema(schema: OpenApiFastifySchema): FastifySchema {
   return { ...schema };
 }
 
 function isAuthorized(request: FastifyRequest, adminToken: string | undefined) {
   if (!adminToken) {
-    return true;
+    return false;
   }
   return request.headers.authorization === `Bearer ${adminToken}`;
 }
@@ -992,6 +1245,20 @@ function toEditorPayload(article: ArticleWithContent) {
       status: article.status,
       sourceFormat,
       sourceText,
+      document: revision?.document ?? null,
+      tags: revision?.tags ?? article.tags,
+      cover: revision ? revision.cover : article.cover,
+      summaryVideo: revision ? revision.summaryVideo : article.summaryVideo,
+      displayDate:
+        (revision
+          ? revision.displayDate
+          : article.displayDate
+        )?.toISOString() ?? null,
+      displayUpdatedAt:
+        (revision
+          ? revision.displayUpdatedAt
+          : article.displayUpdatedAt
+        )?.toISOString() ?? null,
       renderedHtml: revision ? revision.renderedHtml : article.renderedHtml,
       previewRenderedHtml:
         mdxPreview?.renderedHtml ??
@@ -1000,12 +1267,14 @@ function toEditorPayload(article: ArticleWithContent) {
       currentRevisionId: article.currentRevisionId,
       currentRevisionNumber: article.currentRevision?.revisionNumber ?? null,
       editingRevisionNumber: revision?.revisionNumber ?? null,
+      editingRevisionId: revision?.id ?? null,
       hasUnpublishedChanges: Boolean(
         revision && revision.id !== article.currentRevisionId,
       ),
       previewIssues: mdxPreview?.unsupportedComponents ?? [],
       revisions: article.revisions.map((item) => ({
         revisionNumber: item.revisionNumber,
+        sourceFormat: item.sourceFormat,
         changeSummary: item.changeSummary,
         createdAt: item.createdAt.toISOString(),
         isPublished:
@@ -1016,11 +1285,18 @@ function toEditorPayload(article: ArticleWithContent) {
       updatedAt: article.updatedAt.toISOString(),
     },
     editor: {
-      mode: revision?.sourceFormat === "BLOCKS" ? "blocks" : "mdx",
+      mode:
+        revision?.sourceFormat === "DOCUMENT"
+          ? "document"
+          : revision?.sourceFormat === "BLOCKS"
+            ? "blocks"
+            : "mdx",
       autosaveTarget:
-        revision?.sourceFormat === "BLOCKS"
-          ? `/admin/articles/${article.slug}/blocks`
-          : `/admin/articles/${article.slug}/revisions`,
+        revision?.sourceFormat === "DOCUMENT"
+          ? `/admin/articles/${article.slug}/document`
+          : revision?.sourceFormat === "BLOCKS"
+            ? `/admin/articles/${article.slug}/blocks`
+            : `/admin/articles/${article.slug}/revisions`,
       publishTarget: `/admin/articles/${article.slug}/publish`,
       insertButtons: componentSnippets,
       blockTypes: [

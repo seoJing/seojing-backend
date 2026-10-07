@@ -15,6 +15,11 @@ function publicArticleFixture(
     title: "Published API Contract",
     description: "Public article contract fixture",
     category: "Study",
+    tags: [],
+    cover: null,
+    summaryVideo: null,
+    displayDate: null,
+    displayUpdatedAt: null,
     status: "PUBLISHED",
     sourceFormat: "MDX",
     sourceText: "# Published API Contract\n\nDo not expose this source.",
@@ -31,6 +36,12 @@ function publicArticleFixture(
       title: "Published API Contract",
       description: "Public article contract fixture",
       category: "Study",
+      tags: [],
+      cover: null,
+      summaryVideo: null,
+      displayDate: null,
+      displayUpdatedAt: null,
+      document: null,
       sourceFormat: "MDX",
       sourceText: "# Published API Contract",
       renderedHtml: "<h1>Published API Contract</h1>",
@@ -129,9 +140,7 @@ describe("public article API", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.headers["cache-control"]).toContain(
-      "stale-while-revalidate",
-    );
+    expect(response.headers["cache-control"]).toBe("no-store");
     expect(response.headers.etag).toMatch(/^"[A-Za-z0-9_-]+"$/);
     expect(listPublicArticles).toHaveBeenCalledWith(1, undefined);
     expect(response.json()).toEqual(
@@ -190,7 +199,7 @@ describe("public article API", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.headers["cache-control"]).toContain("public");
+    expect(response.headers["cache-control"]).toBe("no-store");
     const payloadText = response.body;
     expect(payloadText).not.toContain("sourceText");
     expect(payloadText).not.toContain("private/storage/key");
