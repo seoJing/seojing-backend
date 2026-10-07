@@ -15,6 +15,7 @@ import type { FocusDiagnostics, FocusReader } from "./focus-jev.js";
 import { focusReportState } from "./focus-report.js";
 import { readSemanticPrefix } from "./semantic-reader.js";
 import { LabError, errorCode, preparationFailureReason } from "./errors.js";
+import { normalizeLabInput, type LabUploadInput } from "./input.js";
 import { judgePrefix } from "./judgment.js";
 import {
   createMemory,
@@ -188,7 +189,8 @@ export class ReadmeLab {
         this.pump();
       });
   }
-  prepare(session: Session, input: ReadmeUploadInput): PrepareView {
+  prepare(session: Session, input: LabUploadInput): PrepareView {
+    const normalized = normalizeLabInput(input);
     this.ensureRoom();
     const day = Math.floor(this.clock() / 86400000);
     const quota = this.quota.get(session.invitation);
@@ -205,7 +207,7 @@ export class ReadmeLab {
       controller: new AbortController(),
       view: {
         prepare_id: prepareId,
-        input_hash: hash(JSON.stringify(input)),
+        input_hash: hash(JSON.stringify(normalized)),
         status: "queued",
         expires_at: new Date(expires).toISOString(),
       },
@@ -219,15 +221,28 @@ export class ReadmeLab {
       try {
         value.view.status = "extracting";
         const document = await this.options.parse(
-          input,
+          normalized.source,
           value.controller.signal,
         );
         if (value.controller.signal.aborted) return;
-        value.view.document = document;
+        value.view.document = {
+          ...document,
+          ...(normalized.document_type === "cover_letter"
+            ? {
+                document_context: {
+                  type: "cover_letter" as const,
+                  prompts: normalized.essay_prompts.map((text, index) => ({
+                    id: `ep${index + 1}`,
+                    text,
+                  })),
+                },
+              }
+            : {}),
+        };
         value.view.status = "analyzing_job";
         stage = "profile";
         const job = await this.options.reasoner.profile(
-          input.job_text,
+          normalized.source.job_text,
           value.controller.signal,
         );
         if (value.controller.signal.aborted) return;

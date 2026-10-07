@@ -42,6 +42,11 @@ export interface ResumeDocument {
   units: Unit[];
   warnings: string[];
   truncated: false;
+  /** Writing prompts are context, never applicant source units or citations. */
+  document_context?: {
+    type: "cover_letter";
+    prompts: Array<{ id: string; text: string }>;
+  };
 }
 export interface Requirement {
   id: string;
