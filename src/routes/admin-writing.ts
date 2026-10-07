@@ -956,6 +956,8 @@ function requiredBlocks(
 
 function toEditorPayload(article: ArticleWithContent) {
   const revision = article.revisions[0] ?? article.currentRevision;
+  const sourceFormat = revision?.sourceFormat ?? article.sourceFormat;
+  const sourceText = revision?.sourceText ?? article.sourceText;
   const blocks = article.blocks
     .filter((block) => block.revisionId === revision?.id)
     .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -975,9 +977,15 @@ function toEditorPayload(article: ArticleWithContent) {
       description: revision?.description ?? article.description,
       category: revision?.category ?? article.category,
       status: article.status,
-      sourceFormat: revision?.sourceFormat ?? article.sourceFormat,
-      sourceText: revision?.sourceText ?? article.sourceText,
+      sourceFormat,
+      sourceText,
       renderedHtml: revision ? revision.renderedHtml : article.renderedHtml,
+      previewRenderedHtml:
+        sourceFormat === "MDX"
+          ? ingestMdxArticle(sourceText).renderedHtml
+          : revision
+            ? revision.renderedHtml
+            : article.renderedHtml,
       blocks,
       currentRevisionId: article.currentRevisionId,
       currentRevisionNumber: article.currentRevision?.revisionNumber ?? null,

@@ -430,6 +430,7 @@ function addComponentPlaceholder(
   component: MdxComponentBlock,
 ): void {
   const componentName = component.name;
+  if (addSupportedTextComponent(state, component)) return;
   const isQuizComponent =
     componentName === "ArticleQuiz" || componentName === "ArticleQuizItem";
   const isStructuredCandidate = isQuizComponent || componentName === "Callout";
@@ -473,6 +474,48 @@ function addComponentPlaceholder(
           : `${componentName} component omitted`,
     metadata: { line: component.line },
   });
+}
+
+function addSupportedTextComponent(
+  state: RenderState,
+  component: MdxComponentBlock,
+): boolean {
+  if (component.name !== "Subtitle" && component.name !== "Paragraph")
+    return false;
+  const allowedProps = component.name === "Subtitle" ? ["level"] : [];
+  if (Object.keys(component.props).some((key) => !allowedProps.includes(key)))
+    return false;
+  const inner = new RegExp(
+    `^<${component.name}(?:\\s+[^>]*)?>([\\s\\S]*)<\\/${component.name}>$`,
+  ).exec(component.rawMdx.trim())?.[1];
+  if (inner === undefined || /<\/?[A-Z][A-Za-z0-9_.]*\b/.test(inner))
+    return false;
+  const text = inner
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  if (!text) return false;
+
+  if (component.name === "Subtitle") {
+    const level = Number(component.props.level ?? 2);
+    if (!Number.isInteger(level) || level < 1 || level > 6) return false;
+    addHeading(
+      state,
+      level,
+      stripInlineMdx(text).replace(/<\/?(?:strong|em|code)>/g, ""),
+    );
+  } else {
+    state.html.push(`<p>${renderInlineMarkdown(text)}</p>`);
+    state.blocks.push({
+      type: "PARAGRAPH",
+      sortOrder: state.blocks.length,
+      content: { text },
+      plainText: text.replace(/<\/?(?:strong|em|code)>/g, ""),
+    });
+  }
+  return true;
 }
 
 function buildComponentContent(
@@ -802,6 +845,8 @@ function stripInlineMdx(text: string): string {
 
 function renderInlineMarkdown(text: string): string {
   return escapeHtml(text)
+    .replace(/&lt;strong&gt;([\s\S]*?)&lt;\/strong&gt;/g, "<strong>$1</strong>")
+    .replace(/&lt;em&gt;([\s\S]*?)&lt;\/em&gt;/g, "<em>$1</em>")
     .replace(/&lt;br\s*\/&gt;/g, "<br />")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/`([^`]+)`/g, "<code>$1</code>")

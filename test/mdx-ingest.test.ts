@@ -153,6 +153,37 @@ describe("MDX ingest pipeline", () => {
     expect(parsed.body).toBe("# Plain MDX\n\nBody");
   });
 
+  it("renders Fs-style Subtitle and Paragraph components as article content", () => {
+    const article = ingestMdxArticle(
+      `---\ntitle: Fs module\n---\n\n<Subtitle level={2}>문제 상황</Subtitle>\n\n<Paragraph>\n  요청은 \`/blog\`에서 <strong>404 Not Found</strong>였다.\n</Paragraph>\n\n<Subtitle level={3}>해결</Subtitle>\n\n<Paragraph>서버에서 본문을 읽는다.</Paragraph>`,
+    );
+
+    expect(article.renderedHtml).toContain('<h2 id="문제-상황">문제 상황</h2>');
+    expect(article.renderedHtml).toContain('<h3 id="해결">해결</h3>');
+    expect(article.renderedHtml).toContain("<code>/blog</code>");
+    expect(article.renderedHtml).toContain("<strong>404 Not Found</strong>");
+    expect(article.renderedHtml).not.toContain("component omitted");
+    expect(article.blocks.map((block) => block.type)).toEqual([
+      "HEADING",
+      "PARAGRAPH",
+      "HEADING",
+      "PARAGRAPH",
+    ]);
+    expect(article.unsupportedComponents).toEqual([]);
+  });
+
+  it("keeps unknown or attributed JSX as explicit unsupported content", () => {
+    const article = ingestMdxArticle(
+      `<Paragraph custom="x">Do not drop this</Paragraph>\n\n<Subtitle level={8}>Invalid</Subtitle>\n\n<Paragraph><UnknownWidget /></Paragraph>`,
+    );
+    expect(
+      article.unsupportedComponents.map((component) => component.name),
+    ).toEqual(["Paragraph", "Subtitle", "Paragraph"]);
+    expect(article.blocks.every((block) => block.type === "RAW_MDX")).toBe(
+      true,
+    );
+  });
+
   it("preserves multi-line quiz items and callout body as structured block candidates without executing MDX", () => {
     const article = ingestMdxArticle(
       `# Components\n\n<ArticleQuiz title="호이스팅 점검">\n  <ArticleQuizItem question="var는?" answer="undefined" />\n  <ArticleQuizItem question="let은?" answer="TDZ" />\n</ArticleQuiz>\n\n<Callout tone="warning" title="주의">\n  raw HTML <script>alert(1)</script> and **markdown** stay sanitized.\n</Callout>`,
