@@ -4,6 +4,18 @@
 
 ## Runtime split
 
+### Inquiry focus reader (2026-10-07, opt-in)
+
+The route factory now accepts `README_LAB_ENGINE=jev-focus` and opens the protected focus worker. It still returns `generation.engine=jev` with `generation.policy_version=readme-focus-v1`. The existing `jev` setting continues using `readme-prefix-v2`; omitted engine selection still uses Laya. No production environment is changed by this implementation.
+
+Focus requires the same explicit `consent_version=readme-jev-v1`, server-only `TYPESAFE_API_KEY`, and Codex CLI setup. `README_JEV_PYTHON` selects the shared Python executable. An optional **`README_FOCUS_JEV_SCRIPT`** selects the focus worker; the legacy `README_JEV_SCRIPT` is deliberately ignored in this mode because the worker protocols differ. The default focus worker is `src/services/readme-lab/python/jev_focus_runtime.py` relative to the backend working directory.
+
+The reader sends bounded working sets and retrieves earlier original passages to track one active inquiry, parked questions, later answers and corrections. It receives up to three main duties as background, not the per-requirement reading checklist. Deterministic `speech` codes require no extra model calls. Final Codex reporting still checks the full original document against the posting. Focus events and their exact source/transition invariants are defined in `focus-contract.ts`; transport seq/cursor/windows, authentication, ownership and failure semantics are unchanged. A final worker checkpoint and exact source binding are required before reporting.
+
+For rollout, first verify the focus-capable frontend with this backend in a non-production environment, including consent, completion/report, reconnect, cancellation and partial failure. Release that consumer before switching the server setting. Selecting `jev` again restores the older reader for new jobs after a restart; runtime jobs are ephemeral, so restarts cannot preserve in-flight analyses. Deploying code, activating the policy and measuring public readback are separate steps. Do not configure a new server against a consumer that does not recognize `readme-focus-v1`.
+
+### Existing prefix modes
+
 - The acknowledged Jev serving contract is implemented after Claude ACK `96385c`. Set `README_LAB_ENGINE=jev` explicitly; an omitted value still selects legacy Laya, and an unknown value is rejected. Jev returns `generation.engine=jev` and fixed metadata `{model:jev-1.13.0, provider:typesafe, execution:remote, calibrated_for_readme:false}` from the initial job response. It reads the complete already-read prefix, generated job conditions and current questions remotely through Typesafe, checking only personal role and measured-improvement basis. It can emit partial/resolved/reopened states; these are uncalibrated model judgments, not verified facts. Other facets are reviewed by Codex at the end. There is no Laya fallback after a Jev failure. This implementation is not a deployment or a general accuracy approval.
 - New real preparations compile `job.reader_profile` and use `generation.policy_version=readme-prefix-v2`. Old authored v1 fixtures and jobs without a profile keep v1 behavior. The accepted v2 contract and measured limitations are in [readme-reader-v2.md](readme-reader-v2.md).
 - Local Laya receives only the current/past prefix. V2 keeps all raw read units in an ephemeral ledger, checks actor/performed-vs-planned/facets and earlier questions independently of generic concreteness, and supplies sourced job-specific trigger/sufficiency conditions. It tries all same-scope past context first; only an actual tokenizer budget failure causes a compact retry and context-limited abstention. Scope is a conservative structural boundary, not semantic proof of one experience.

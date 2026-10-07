@@ -4,6 +4,7 @@ import { CodexReasoner } from "../services/readme-lab/codex.js";
 import { LabError } from "../services/readme-lab/errors.js";
 import { openLaya } from "../services/readme-lab/laya.js";
 import { openJev } from "../services/readme-lab/jev.js";
+import { openFocusJev } from "../services/readme-lab/focus-jev.js";
 import { parseDocument } from "../services/readme-lab/parser.js";
 import { ReadmeLab } from "../services/readme-lab/service.js";
 
@@ -27,11 +28,8 @@ export function registerReadmeLabRoutes(
   injected?: ReadmeLab,
 ): void {
   if (!injected && process.env.README_LAB_ENABLED !== "1") return;
-  if (
-    !injected &&
-    process.env.README_LAB_ENGINE &&
-    !["laya", "jev"].includes(process.env.README_LAB_ENGINE)
-  )
+  const engine = process.env.README_LAB_ENGINE;
+  if (!injected && engine && !["laya", "jev", "jev-focus"].includes(engine))
     throw new Error("Unknown README Lab engine");
   const reasoner = new CodexReasoner(
     process.env.README_CODEX_BIN,
@@ -49,28 +47,42 @@ export function registerReadmeLabRoutes(
         app.log.warn(event, "README preparation failed"),
       onReadingDiagnostic: (event) =>
         app.log.info(event, "README reading summary"),
-      ...(process.env.README_LAB_ENGINE === "jev"
+      ...(engine === "jev-focus"
         ? {
-            jev: (signal: AbortSignal) =>
-              openJev(signal, {
+            focus: (signal: AbortSignal, totalUnits: number) =>
+              openFocusJev(signal, totalUnits, {
                 apiKey: process.env.TYPESAFE_API_KEY ?? "",
-                reassessRole: reasoner.reassessRole,
                 ...(process.env.README_JEV_PYTHON
                   ? { python: process.env.README_JEV_PYTHON }
                   : {}),
-                ...(process.env.README_JEV_SCRIPT
-                  ? { script: process.env.README_JEV_SCRIPT }
+                // The legacy JSONL worker is not protocol-compatible.
+                ...(process.env.README_FOCUS_JEV_SCRIPT
+                  ? { script: process.env.README_FOCUS_JEV_SCRIPT }
                   : {}),
               }),
           }
-        : {
-            classifier: (signal: AbortSignal) =>
-              openLaya(
-                signal,
-                process.env.README_LAYA_HOME,
-                process.env.README_LAYA_SCRIPT,
-              ),
-          }),
+        : engine === "jev"
+          ? {
+              jev: (signal: AbortSignal) =>
+                openJev(signal, {
+                  apiKey: process.env.TYPESAFE_API_KEY ?? "",
+                  reassessRole: reasoner.reassessRole,
+                  ...(process.env.README_JEV_PYTHON
+                    ? { python: process.env.README_JEV_PYTHON }
+                    : {}),
+                  ...(process.env.README_JEV_SCRIPT
+                    ? { script: process.env.README_JEV_SCRIPT }
+                    : {}),
+                }),
+            }
+          : {
+              classifier: (signal: AbortSignal) =>
+                openLaya(
+                  signal,
+                  process.env.README_LAYA_HOME,
+                  process.env.README_LAYA_SCRIPT,
+                ),
+            }),
     });
   void app.register(
     (scoped, _options, done) => {
