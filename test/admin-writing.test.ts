@@ -14,6 +14,7 @@ interface EditorPayload {
     sourceFormat?: string;
     sourceText: string;
     renderedHtml?: string;
+    previewRenderedHtml?: string;
     status: string;
     blocks?: Array<{
       id: string;
@@ -85,6 +86,32 @@ function appWithArticleService(service: Partial<ArticleService>) {
 }
 
 describe("admin writing API", () => {
+  it("re-renders the saved MDX source for preview without overwriting an old stored revision", async () => {
+    const article = articleFixture({
+      sourceText:
+        "<Subtitle level={2}>문제 상황</Subtitle>\n\n<Paragraph>Fs 글 본문</Paragraph>",
+      renderedHtml:
+        "<aside>Paragraph component omitted by backend MDX ingest MVP</aside>",
+    });
+    const app = await appWithArticleService({
+      getArticleBySlug: vi.fn().mockResolvedValue(article),
+    });
+    const response = await app.inject({
+      method: "GET",
+      url: "/admin/articles/admin-draft/editor",
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(response.statusCode).toBe(200);
+    const payload = response.json<EditorPayload>();
+    expect(payload.article.renderedHtml).toContain("component omitted");
+    expect(payload.article.previewRenderedHtml).toContain("<h2");
+    expect(payload.article.previewRenderedHtml).toContain("<p>Fs 글 본문</p>");
+    expect(payload.article.previewRenderedHtml).not.toContain(
+      "component omitted",
+    );
+    await app.close();
+  });
+
   it("keeps the review queue private and returns source hashes without bodies", async () => {
     const listArticlesForReview = vi.fn().mockResolvedValue([
       {
