@@ -1,5 +1,6 @@
 // Versioned Lab contract. Offsets are zero-based UTF-16 [start, end) in block.text.
 import type { FocusEvent } from "./focus-contract.js";
+import type { PublicSituationEvent } from "./situation-public.js";
 export type Facet = "role" | "method" | "result" | "basis";
 export interface ReaderCheck {
   facet: Facet;
@@ -90,6 +91,7 @@ export interface Question {
 }
 export type EventPayload =
   | FocusEvent
+  | PublicSituationEvent
   | {
       type: "window_started" | "window_completed";
       window_id: string;
@@ -141,7 +143,11 @@ export interface LayaMetadata {
 }
 export interface Generation {
   engine: "laya" | "jev";
-  policy_version: "readme-prefix-v1" | "readme-prefix-v2" | "readme-focus-v1";
+  policy_version:
+    | "readme-prefix-v1"
+    | "readme-prefix-v2"
+    | "readme-focus-v1"
+    | "readme-situation-v1";
   model:
     | LayaMetadata
     | {

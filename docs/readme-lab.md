@@ -4,6 +4,27 @@
 
 ## Runtime split
 
+### Situation reader experiment (2026-10-08, local opt-in)
+
+`README_LAB_ENGINE=jev-situation` configures the existing focus fallback plus a separate selectable situation factory. Only an explicit `POST /jobs` body field `reader_policy:"readme-situation-v1"` selects the experiment; omission on this server remains focus. Existing engine settings retain their behavior. A situation request on a server without the factory returns `reader_policy_unsupported` (400). Reusing a preparation with a different policy returns `reader_policy_changed` (409); the same policy returns the existing job. Null or any other policy value is invalid input.
+
+The route requires an absolute `README_SITUATION_JEV_SCRIPT` pointing to `src/services/readme-lab/python/jev_situation_runtime.py`, the existing Jev consent and server credential, and optionally `README_JEV_PYTHON`. The production launcher/configuration is unchanged; this is a local experiment, not an activated release. The current frontend does not consume the new situation event types.
+
+One ephemeral worker owns situation and existing focus ledgers with one provider budget (600 calls, 1.5M accumulated input tokens). Each step sends only read source, rolls back both ledgers on failure, and retains consumed provider usage. Canonical source identity, exact UTF-16 proof, transitions and complete finish are also validated in TypeScript before events commit. Timeout, cancellation, duplicate/unsolicited responses and partial failures preserve the last valid prefix. Limits remain explicit: 32 entities, 24 expectations, 3 new expectations per window, 2 explicit plus 1 fair fallback recheck, 96 fallback checks; inherited focus limits including 24 contexts still apply. Semantic diagnostic counters describe committed windows, while usage includes failed attempts, so a failed limit attempt can have `limited=0` alongside `engine_budget_exceeded`.
+
+New public types are `attention_created`, `expectation_parked`, `source_revisit`, `expectation_updated` and `expectation_finished`. Public snapshots omit internal `prompt`/`sufficient`; the existing focus events follow situation events within each window. Validated finish events occur after the final `window_completed` and before `reading_completed`. A failed or cancelled finish never synthesizes expectation closure. Report input receives separate neutral `situation_reader` memory with `is_deficiency:false`; unresolved expectations are not turned into deficiency questions, and the report must independently inspect the complete source.
+
+Reproducible synthetic-only checks:
+
+```sh
+pnpm exec vitest run test/readme-situation-contract.test.ts test/readme-situation-worker.test.ts test/readme-situation-http.test.ts
+python -m unittest discover -s test -p 'readme_situation_test.py'
+pnpm exec tsx src/services/readme-lab/tools/situation-live-eval.ts --allow-remote-synthetic --config /owner-only/runtime.json --out .local/readme-situation/new-gold-run
+pnpm exec tsx src/services/readme-lab/tools/situation-flow-eval.ts --allow-remote-synthetic --config=/owner-only/runtime.json --out=.local/readme-situation/new-flow-run
+```
+
+The gold runner hashes the authored frozen source and engine, sends no expected answers to the model, preserves every case result including failures, and records source/link misses, forbidden matches, provider usage and time. Analysis-event density includes both situation and focus events and excludes window/report lifecycle envelopes. Parsing and the posting profile in the flow runner are authored synthetic inputs; Jev reading and Codex reporting are actual remote inference. Controlled tests establish protocol invariants, not model accuracy. See the shared board's `docs/SITUATION_READER_EXPERIMENT.md` for measured results and promotion gates.
+
 ### Inquiry focus reader (2026-10-07, opt-in)
 
 The route factory now accepts `README_LAB_ENGINE=jev-focus` and opens the protected focus worker. It still returns `generation.engine=jev` with `generation.policy_version=readme-focus-v1`. The existing `jev` setting continues using `readme-prefix-v2`; omitted engine selection still uses Laya. No production environment is changed by this implementation.

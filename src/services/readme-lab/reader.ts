@@ -1,3 +1,4 @@
+import type { SituationReportMemory } from "./situation-public.js";
 import type {
   EventPayload,
   Facet,
@@ -39,6 +40,7 @@ export interface ReaderMemory {
   context_reviews?: ContextReview[];
   /** New opt-in inquiry ledger, independent of posting criteria. */
   focus?: Pick<FocusLedger, "version" | "questions">;
+  situation?: SituationReportMemory;
 }
 export interface TransitionCandidate {
   question: Question;
