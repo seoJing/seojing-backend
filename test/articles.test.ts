@@ -17,6 +17,11 @@ function articleFixture(
     title: "Article Schema MVP",
     description: "Schema test fixture",
     category: "SEOJing",
+    tags: [],
+    cover: null,
+    summaryVideo: null,
+    displayDate: null,
+    displayUpdatedAt: null,
     status: "DRAFT",
     sourceFormat: "MDX",
     sourceText: "# Article Schema MVP",
@@ -32,6 +37,12 @@ function articleFixture(
       title: "Article Schema MVP",
       description: "Schema test fixture",
       category: "SEOJing",
+      tags: [],
+      cover: null,
+      summaryVideo: null,
+      displayDate: null,
+      displayUpdatedAt: null,
+      document: null,
       sourceFormat: "MDX",
       sourceText: "# Article Schema MVP",
       renderedHtml: "<h1>Article Schema MVP</h1>",
@@ -47,6 +58,42 @@ function articleFixture(
 }
 
 describe("ArticleService", () => {
+  it("publishes a valid JSON document when its derived HTML came from an older renderer", async () => {
+    const revision = {
+      ...articleFixture().currentRevision!,
+      sourceFormat: "DOCUMENT" as const,
+      sourceText: "",
+      document: {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "Current article" }],
+          },
+        ],
+      },
+      renderedHtml: "<p>Previously rendered article</p>",
+    };
+    const article = articleFixture({
+      sourceFormat: "DOCUMENT",
+      revisions: [revision],
+    });
+    const publishLatestRevision = vi
+      .fn()
+      .mockResolvedValue(articleFixture({ status: "PUBLISHED" }));
+    const service = new ArticleService({
+      findBySlug: vi.fn().mockResolvedValue(article),
+      publishLatestRevision,
+    } as unknown as ArticleRepository);
+
+    await expect(
+      service.publishCurrentRevision(article.slug),
+    ).resolves.toMatchObject({ status: "PUBLISHED" });
+    expect(publishLatestRevision).toHaveBeenCalledWith(
+      article.slug,
+      revision.id,
+    );
+  });
   it("normalizes slug, defaults to MDX draft, and derives initial blocks", async () => {
     const findBySlugCaseInsensitive = vi.fn().mockResolvedValue(null);
     const createDraft = vi.fn().mockResolvedValue(articleFixture());
