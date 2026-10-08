@@ -17,10 +17,12 @@ if (
   !arg("out")
 )
   throw new Error("explicit_synthetic_flags_required");
-const fixtureBytes = await readFile("test/fixtures/readme/situation-v1.json");
+const fixtureBytes = await readFile(
+  arg("fixture") ?? "test/fixtures/readme/situation-v1.json",
+);
 const fixture = JSON.parse(fixtureBytes.toString("utf8")) as {
   provenance: string;
-  cases: { id: string; units: string[] }[];
+  cases: { id: string; units: string[]; job_text?: string }[];
 };
 if (fixture.provenance !== "authored_synthetic_not_model_output")
   throw new Error("synthetic_required");
@@ -46,6 +48,10 @@ const hashes = Object.fromEntries(
   await Promise.all(
     [
       "python/jev_situation_reader.py",
+      "python/jev_focus_reader.py",
+      "python/decision_providers.py",
+      "python/jev_reader.py",
+      "python/jev_situation_runtime.py",
       "situation-contract.ts",
       "situation-jev.ts",
       "situation-report.ts",
@@ -81,7 +87,11 @@ const document: ResumeDocument = {
     unit_ids: [`u${i + 1}`],
   })),
 };
-const text = "서비스 개발 경험에서 직접 수행한 업무를 설명해 주세요.";
+const text =
+  selected.job_text ?? "서비스 개발 경험에서 직접 수행한 업무를 설명해 주세요.";
+const actualProfile = process.argv.includes("--actual-profile");
+if (selected.job_text && !actualProfile)
+  throw new Error("custom_posting_requires_actual_profile");
 const job: JobPosting = {
   source: "user_paste",
   text,
@@ -129,12 +139,18 @@ const reasoner = new CodexReasoner(
 const invitation = randomBytes(24).toString("hex");
 let reader: SituationReader | undefined;
 let reportMemory: unknown;
+let preparedJob = job;
 const lab = new ReadmeLab({
   invitations: [invitation],
   parse: () => Promise.resolve(document),
   reasoner: {
     model: reasoner.model,
-    profile: () => Promise.resolve(job),
+    profile: async (source, signal) => {
+      preparedJob = actualProfile
+        ? await reasoner.profile(source, signal)
+        : job;
+      return preparedJob;
+    },
     report: (doc, posting, notes, questions, signal, memory) => {
       reportMemory = structuredClone(memory);
       return reasoner.report(doc, posting, notes, questions, signal, memory);
@@ -166,7 +182,9 @@ await save("provenance.json", {
   source_sha256: hash(JSON.stringify(selected.units)),
   hashes,
   parser: "authored source units",
-  profile: "authored synthetic profile",
+  profile: actualProfile
+    ? "actual Codex CLI from authored synthetic posting"
+    : "authored synthetic profile",
   reader: "actual Jev remote",
   report: "actual Codex CLI",
   gold_supplied_to_model: false,
@@ -205,7 +223,7 @@ try {
   await save("result.json", {
     synthetic: true,
     document,
-    job,
+    job: preparedJob,
     view,
     ledger: reader?.ledger,
     memory: reportMemory,

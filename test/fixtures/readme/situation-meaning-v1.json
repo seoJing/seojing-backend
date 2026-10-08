@@ -1,0 +1,468 @@
+{
+  "provenance": "authored_synthetic_not_model_output",
+  "revision": 1,
+  "scope": "development meaning checks frozen before engine edits; not representative or blind accuracy",
+  "cases": [
+    {
+      "id": "meaning_complete_named",
+      "units": [
+        "저는 도서 반납 알림 서비스 별우편에서 반납 예정일에 안내 메일을 보내는 작업을 구현했습니다.",
+        "메일 발송 성공 여부를 운영자가 확인할 수 있도록 로그 화면도 만들었습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": ["u1", "u2"],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u1"
+        },
+        {
+          "origin_unit_id": "u2"
+        }
+      ],
+      "meaning_group": "complete_action",
+      "report_expectations": [
+        "개인 발송 작업과 로그 화면 구현이 설명되어 있음",
+        "역할이나 서비스 용도가 없다는 수정 제안 금지"
+      ],
+      "job_text": "담당 업무: 서비스 운영을 위한 알림 발송 기능과 운영 화면을 개발합니다. 지원자의 실제 수행 경험을 설명해 주세요."
+    },
+    {
+      "id": "meaning_complete_renamed",
+      "units": [
+        "저는 도서 반납 알림 서비스 잎등대에서 반납 예정일에 안내 메일을 보내는 작업을 구현했습니다.",
+        "메일 발송 성공 여부를 운영자가 확인할 수 있도록 로그 화면도 만들었습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": ["u1", "u2"],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u1"
+        },
+        {
+          "origin_unit_id": "u2"
+        }
+      ],
+      "meaning_group": "complete_action",
+      "report_expectations": [
+        "개인 발송 작업과 로그 화면 구현이 설명되어 있음",
+        "역할이나 서비스 용도가 없다는 수정 제안 금지"
+      ],
+      "job_text": "담당 업무: 서비스 운영을 위한 알림 발송 기능과 운영 화면을 개발합니다. 지원자의 실제 수행 경험을 설명해 주세요."
+    },
+    {
+      "id": "meaning_complete_masked",
+      "units": [
+        "저는 도서 반납 알림 서비스에서 반납 예정일에 안내 메일을 보내는 작업을 구현했습니다.",
+        "메일 발송 성공 여부를 운영자가 확인할 수 있도록 로그 화면도 만들었습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": ["u1", "u2"],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u1"
+        },
+        {
+          "origin_unit_id": "u2"
+        }
+      ],
+      "meaning_group": "complete_action",
+      "report_expectations": [
+        "개인 발송 작업과 로그 화면 구현이 설명되어 있음",
+        "역할이나 서비스 용도가 없다는 수정 제안 금지"
+      ],
+      "job_text": "담당 업무: 서비스 운영을 위한 알림 발송 기능과 운영 화면을 개발합니다. 지원자의 실제 수행 경험을 설명해 주세요."
+    },
+    {
+      "id": "meaning_overview_named",
+      "units": [
+        "도서 반납 알림 서비스 별우편의 발송 절차를 개선했습니다.",
+        "별우편에서 운영자가 매번 누르던 발송 버튼을 없애고 매일 오전 자동으로 안내 메일을 보내도록 바꿨습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [
+        {
+          "origin_unit_id": "u1",
+          "answer_unit_id": "u2",
+          "status": "satisfied",
+          "kind": "overview_detail",
+          "entity_name": "별우편"
+        }
+      ],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "forbidden_expectations": [
+        {
+          "origin_unit_id": "u1",
+          "kind": "entity_definition"
+        }
+      ],
+      "meaning_group": "overview_action"
+    },
+    {
+      "id": "meaning_overview_renamed",
+      "units": [
+        "도서 반납 알림 서비스 잎등대의 발송 절차를 개선했습니다.",
+        "잎등대에서 운영자가 매번 누르던 발송 버튼을 없애고 매일 오전 자동으로 안내 메일을 보내도록 바꿨습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [
+        {
+          "origin_unit_id": "u1",
+          "answer_unit_id": "u2",
+          "status": "satisfied",
+          "kind": "overview_detail",
+          "entity_name": "잎등대"
+        }
+      ],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "forbidden_expectations": [
+        {
+          "origin_unit_id": "u1",
+          "kind": "entity_definition"
+        }
+      ],
+      "meaning_group": "overview_action"
+    },
+    {
+      "id": "meaning_overview_masked",
+      "units": [
+        "도서 반납 알림 서비스의 발송 절차를 개선했습니다.",
+        "이 서비스에서 운영자가 매번 누르던 발송 버튼을 없애고 매일 오전 자동으로 안내 메일을 보내도록 바꿨습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method"
+        }
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method",
+          "status": "resolved"
+        }
+      ],
+      "meaning_group": "overview_action"
+    },
+    {
+      "id": "meaning_generic_location",
+      "units": [
+        "공방에서 쓰는 '흙달력' 프로젝트를 개발했습니다.",
+        "흙달력은 도자기 주문 제작 일정을 관리하는 서비스입니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [
+        {
+          "origin_unit_id": "u1",
+          "answer_unit_id": "u2",
+          "status": "satisfied",
+          "entity_name": "흙달력"
+        }
+      ],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "forbidden_entity_names": ["공방", "공방에서"]
+    },
+    {
+      "id": "meaning_team_role_later",
+      "units": [
+        "세 명이 함께 도서 반납 알림 서비스를 만들었습니다.",
+        "동료는 반납 예정일을 계산하는 기능을 구현했습니다.",
+        "저는 안내 메일의 발송 결과를 표시하는 로그 화면을 구현했습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role"
+        }
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "status": "resolved"
+        }
+      ],
+      "expected_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u3",
+          "status": "resolved"
+        }
+      ],
+      "report_expectations": [
+        "팀 전체 개발과 본인의 로그 화면 구현을 구분",
+        "본인 역할이 없다고 하지 않음",
+        "동료의 반납일 계산을 본인에게 귀속하지 않음"
+      ],
+      "job_text": "담당 업무: 운영자의 확인을 돕는 서비스 화면을 개발합니다. 본인이 맡아 수행한 부분을 설명해 주세요."
+    },
+    {
+      "id": "meaning_actor_correction",
+      "units": [
+        "세 명이 함께 도서 반납 알림 서비스를 만들었습니다.",
+        "저는 안내 메일을 발송하는 API를 구현했습니다.",
+        "앞 문장을 정정합니다. 발송 API를 구현한 사람은 제가 아니라 동료입니다.",
+        "저는 발송 결과를 표시하는 로그 화면을 구현했습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role"
+        }
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "status": "resolved",
+          "withdrawn_unit_ids": ["u2"],
+          "correction_unit_ids": ["u3"]
+        }
+      ],
+      "expected_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u2",
+          "status": "resolved"
+        },
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u3",
+          "status": "reopened"
+        },
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u4",
+          "status": "resolved"
+        }
+      ],
+      "report_expectations": [
+        "현재 개인 역할은 로그 화면 구현",
+        "정정된 발송 API를 본인의 수행 근거로 쓰지 않음"
+      ],
+      "job_text": "담당 업무: 서비스 API와 운영 화면 개발을 지원합니다. 본인이 맡은 개발 업무를 설명해 주세요."
+    },
+    {
+      "id": "meaning_actor_addition",
+      "units": [
+        "세 명이 함께 도서 반납 알림 서비스를 만들었습니다.",
+        "저는 발송 결과를 표시하는 로그 화면을 구현했습니다.",
+        "동료는 안내 메일을 발송하는 API를 구현했습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "status": "resolved",
+          "withdrawn_unit_ids": [],
+          "correction_unit_ids": []
+        }
+      ]
+    },
+    {
+      "id": "meaning_future_not_answer",
+      "units": [
+        "세 명이 함께 도서 반납 알림 서비스를 만들었습니다.",
+        "저는 다음 학기에 발송 결과를 표시하는 로그 화면을 구현할 계획입니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "status": "open"
+        }
+      ],
+      "report_expectations": [
+        "로그 화면은 미래 계획",
+        "실제로 한 본인 업무는 문서에서 확인되지 않음"
+      ]
+    },
+    {
+      "id": "meaning_qualitative_basis",
+      "units": [
+        "도서 반납 알림의 누락을 줄였습니다.",
+        "운영자가 같은 주간 점검표로 확인한 결과 변경 전에는 누락이 반복됐지만, 변경 후에는 누락이 없었다고 알려 주었습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "basis",
+          "status": "resolved"
+        }
+      ],
+      "report_expectations": [
+        "운영자의 정성적 관찰을 비교 설명으로 인정",
+        "숫자나 외부 증빙 제출을 필수로 요구하지 않음"
+      ]
+    },
+    {
+      "id": "meaning_missing_basis",
+      "units": [
+        "도서 반납 알림의 누락을 줄였습니다.",
+        "저는 메일 제목을 이용자가 이해하기 쉬운 문장으로 바꿨습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "basis",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "id": "meaning_posting_ui",
+      "units": [
+        "고객 문의를 유형별로 분류하고 반복되는 문제를 정리해 개발팀에 전달했습니다.",
+        "저는 문의 유형과 처리 상태를 운영자가 확인하는 화면도 구현했습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": ["u1", "u2"],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "job_text": "담당 업무: 운영자가 사용하는 서비스 화면을 개발합니다. 직접 맡은 화면 구현 경험을 설명해 주세요.",
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role"
+        },
+        {
+          "origin_unit_id": "u2",
+          "facet": "role"
+        }
+      ],
+      "report_expectations": [
+        "문의 분류와 반복 문제 전달, 화면 구현 모두 원문에 있음",
+        "공고와 관련된 경험을 우선 설명하되 없는 책임이나 결과를 만들지 않음"
+      ]
+    },
+    {
+      "id": "meaning_posting_analysis",
+      "units": [
+        "고객 문의를 유형별로 분류하고 반복되는 문제를 정리해 개발팀에 전달했습니다.",
+        "저는 문의 유형과 처리 상태를 운영자가 확인하는 화면도 구현했습니다."
+      ],
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": ["u1", "u2"],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "job_text": "담당 업무: 고객 문의를 분류하고 반복 문제를 분석해 개발팀에 전달합니다. 직접 수행한 분석 경험을 설명해 주세요.",
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role"
+        },
+        {
+          "origin_unit_id": "u2",
+          "facet": "role"
+        }
+      ],
+      "report_expectations": [
+        "문의 분류와 반복 문제 전달, 화면 구현 모두 원문에 있음",
+        "공고와 관련된 경험을 우선 설명하되 없는 책임이나 결과를 만들지 않음"
+      ]
+    },
+    {
+      "id": "meaning_common_word_as_name",
+      "units": [
+        "'작업실'이라는 이름의 프로젝트를 개발했습니다.",
+        "작업실은 도자기 주문 제작 일정을 관리하는 서비스입니다."
+      ],
+      "expected_attention_origins": ["u1"],
+      "forbidden_attention_origins": [],
+      "expected_links": [
+        {
+          "origin_unit_id": "u1",
+          "answer_unit_id": "u2",
+          "status": "satisfied",
+          "entity_name": "작업실"
+        }
+      ],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": []
+    }
+  ]
+}

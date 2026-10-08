@@ -42,6 +42,31 @@ interface GoldCase {
     correction_unit_ids?: string[];
   }>;
   expected_focus_questions: Array<{ origin_unit_id: string; facet: string }>;
+  forbidden_focus_questions?: Array<{ origin_unit_id: string; facet?: string }>;
+  expected_focus_states?: Array<{
+    origin_unit_id: string;
+    facet: string;
+    status: string;
+    evidence_unit_ids?: string[];
+    withdrawn_unit_ids?: string[];
+    correction_unit_ids?: string[];
+  }>;
+  forbidden_focus_updates?: Array<{
+    origin_unit_id: string;
+    facet: string;
+    at_unit_id: string;
+  }>;
+  forbidden_focus_evidence?: Array<{
+    origin_unit_id: string;
+    facet: string;
+    evidence_unit_id: string;
+  }>;
+  expected_focus_updates?: Array<{
+    origin_unit_id: string;
+    facet: string;
+    at_unit_id: string;
+    status: string;
+  }>;
   expected_entities?: Array<{
     name: string;
     origin_unit_id: string;
@@ -256,6 +281,73 @@ for (const c of selected) {
   const forbiddenUpdates = (c.forbidden_updates ?? []).filter((link) =>
     updates.some((e) => linkMatches(link, e)),
   );
+  const forbiddenFocus = (c.forbidden_focus_questions ?? []).filter(
+    (expected) =>
+      ledger?.focus.questions.some(
+        (q) =>
+          q.origin_unit_id === expected.origin_unit_id &&
+          (!expected.facet || q.facet === expected.facet),
+      ),
+  );
+  const missingFocusStates = (c.expected_focus_states ?? []).filter(
+    (expected) =>
+      !ledger?.focus.questions.some(
+        (q) =>
+          q.origin_unit_id === expected.origin_unit_id &&
+          q.facet === expected.facet &&
+          q.status === expected.status &&
+          (!expected.evidence_unit_ids ||
+            JSON.stringify(q.evidence.map((p) => p.unit_id)) ===
+              JSON.stringify(expected.evidence_unit_ids)) &&
+          (!expected.withdrawn_unit_ids ||
+            JSON.stringify(q.withdrawn_evidence.map((p) => p.unit_id)) ===
+              JSON.stringify(expected.withdrawn_unit_ids)) &&
+          (!expected.correction_unit_ids ||
+            JSON.stringify(q.correction_evidence.map((p) => p.unit_id)) ===
+              JSON.stringify(expected.correction_unit_ids)),
+      ),
+  );
+  const missingFocusUpdates = (c.expected_focus_updates ?? []).filter(
+    (expected) =>
+      !ledger?.steps.some((step) =>
+        step.focus.events.some(
+          (e) =>
+            e.type === "updated" &&
+            e.question.origin_unit_id === expected.origin_unit_id &&
+            e.question.facet === expected.facet &&
+            e.at_unit_id === expected.at_unit_id &&
+            e.question.status === expected.status,
+        ),
+      ),
+  );
+  const focusUpdates =
+    ledger?.steps
+      .flatMap((step) => step.focus.events)
+      .filter((e) => e.type === "updated") ?? [];
+  const focusSnapshots =
+    ledger?.steps
+      .flatMap((step) => step.focus.events)
+      .flatMap((e) =>
+        e.type === "updated" || e.type === "inquiry" ? [e.question] : [],
+      ) ?? [];
+  const forbiddenFocusUpdates = (c.forbidden_focus_updates ?? []).filter(
+    (expected) =>
+      focusUpdates.some(
+        (e) =>
+          e.question.origin_unit_id === expected.origin_unit_id &&
+          e.question.facet === expected.facet &&
+          e.at_unit_id === expected.at_unit_id,
+      ),
+  );
+  const forbiddenFocusEvidence = (c.forbidden_focus_evidence ?? []).filter(
+    (expected) =>
+      focusSnapshots.some(
+        (q) =>
+          q.origin_unit_id === expected.origin_unit_id &&
+          q.facet === expected.facet &&
+          q.evidence.some((p) => p.unit_id === expected.evidence_unit_id),
+      ),
+  );
   const pass =
     !error &&
     Boolean(ledger?.complete) &&
@@ -271,6 +363,11 @@ for (const c of selected) {
       forbiddenEntities,
       forbiddenExpectations,
       forbiddenUpdates,
+      forbiddenFocus,
+      missingFocusStates,
+      missingFocusUpdates,
+      forbiddenFocusUpdates,
+      forbiddenFocusEvidence,
     ].every((a) => !a.length);
   allPass &&= pass;
   const summary = {
@@ -295,6 +392,11 @@ for (const c of selected) {
     forbidden_entities: forbiddenEntities,
     forbidden_expectations: forbiddenExpectations,
     forbidden_updates: forbiddenUpdates,
+    forbidden_focus_questions: forbiddenFocus,
+    missing_focus_states: missingFocusStates,
+    missing_focus_updates: missingFocusUpdates,
+    forbidden_focus_updates: forbiddenFocusUpdates,
+    forbidden_focus_evidence: forbiddenFocusEvidence,
     situation_event_count: situationEventCount,
     focus_event_count: focusEventCount,
     event_count: situationEventCount + focusEventCount,

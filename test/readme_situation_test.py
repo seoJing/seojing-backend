@@ -6,7 +6,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src/services/readme-lab/python"))
 from decision_providers import ProviderError
 from focus_eval import units_for
-from jev_situation_reader import SituationReader, SituationFocusReader, spans
+from jev_situation_reader import SituationReader, SituationFocusReader, spans, name_form
 from jev_focus_reader import FocusReader
 
 
@@ -83,6 +83,143 @@ class SituationTest(unittest.TestCase):
         self.assertEqual(reader.diagnostics['new_claim_rejected'], 1)
         audit_heads = next(heads for state, heads in provider.requests if state.get('stage') == 'situation_new_source_audit')
         self.assertIn('개요 주장', audit_heads['s_claim']['instructions'])
+
+    def test_overview_is_audited_when_kind_router_picks_already_defined_name(self):
+        class OverviewProvider(Provider):
+            def ask(self, state, heads):
+                result = super().ask(state, heads)
+                if state.get('stage') == 'situation_discovery_audit':
+                    result['answers']['s_overview'] = {'label': 'yes', 'confidence': .99}
+                if state.get('stage') == 'situation_new_source_audit' and state['selected_expectation_kind'] == 'entity_definition':
+                    result['answers']['s_answered'] = {'label': 'yes', 'confidence': .99}
+                return result
+        p = OverviewProvider(); reader = SituationReader(p)
+        reader.step({'prefix': units_for(['반납 알림 서비스 달고리의 발송 절차를 개선했습니다.']), 'role_context': ''})
+        self.assertEqual([q['kind'] for q in reader.expectations], ['overview_detail'])
+        self.assertTrue(any(s.get('stage') == 'situation_new_source_audit' and s['selected_expectation_kind'] == 'overview_detail' for s, _ in p.requests))
+
+    def test_overview_route_cannot_bypass_independent_claim_or_name_audit(self):
+        class UnprovedProvider(Provider):
+            def __init__(self, failure):
+                super().__init__(); self.failure = failure
+            def ask(self, state, heads):
+                result = super().ask(state, heads)
+                if state.get('stage') == 'situation_discovery_audit':
+                    result['answers']['s_overview'] = {'label': 'yes', 'confidence': .99}
+                if state.get('stage') == 'situation_new_source_audit':
+                    result['answers'][self.failure] = {'label': 'yes', 'confidence': .74}
+                    if state['selected_expectation_kind'] == 'entity_definition':
+                        result['answers']['s_answered'] = {'label': 'yes', 'confidence': .99}
+                return result
+        for failure in ['s_grounded', 's_claim']:
+            p = UnprovedProvider(failure); reader = SituationReader(p)
+            reader.step({'prefix': units_for(['달고리라는 프로젝트를 소개합니다.']), 'role_context': ''})
+            self.assertEqual(reader.expectations, [])
+            self.assertEqual(reader.entities, [])
+
+    def test_specialized_claim_policy_leaves_default_focus_unchanged(self):
+        default = FocusReader(Provider()); opt_in = SituationFocusReader(Provider())
+        self.assertEqual(default._claim_rule('basis', 'original'), 'original')
+        self.assertEqual(opt_in._claim_rule('reason', 'original'), 'original')
+        self.assertIn('비교 주장', opt_in._claim_rule('basis', 'original'))
+
+    def test_rejected_routes_do_not_starve_later_facet_only_in_opt_in(self):
+        class Candidates(Provider):
+            def ask(self, state, heads):
+                result = super().ask(state, heads)
+                if 'context' in heads:
+                    result['answers']['context'] = {'label': 'new', 'confidence': .99}
+                    for facet, confidence in [('basis', .99), ('role', .98), ('method', .97), ('result', .96), ('reason', .95)]:
+                        result['answers']['ask_' + facet] = {'label': 'yes', 'confidence': confidence}
+                if 'claim' in heads:
+                    result['answers']['claim'] = {'label': 'yes' if state['question'] == '이 문제를 어떤 방식으로 풀었나요?' else 'no', 'confidence': .99}
+                return result
+        data = {'prefix': units_for(['안내 절차를 개선했습니다.']), 'role_context': ''}
+        original = FocusReader(Candidates()); original.step(data)
+        self.assertEqual(original.questions, [])
+        self.assertEqual(original.diagnostics['candidate_audits'], 2)
+        reader = SituationFocusReader(Candidates()); reader.step(data)
+        self.assertEqual([q['facet'] for q in reader.questions], ['method'])
+        self.assertEqual(reader.diagnostics['candidate_audits'], 3)
+        self.assertEqual(reader.diagnostics['accepted_questions'], 1)
+
+    def test_later_facet_failure_rolls_back_opt_in_state_and_retains_spend(self):
+        class FailedCandidates(Provider):
+            def ask(self, state, heads):
+                result = super().ask(state, heads)
+                if 'context' in heads:
+                    result['answers']['context'] = {'label': 'new', 'confidence': .99}
+                    for facet in ['basis', 'role', 'method']:
+                        result['answers']['ask_' + facet] = {'label': 'yes', 'confidence': .99}
+                if 'claim' in heads and state['question'] == '이 문제를 어떤 방식으로 풀었나요?':
+                    raise ProviderError('jev_timeout')
+                return result
+        reader = SituationFocusReader(FailedCandidates()); before = reader.snapshot()
+        with self.assertRaises(ProviderError):
+            reader.step({'prefix': units_for(['안내 절차를 개선했습니다.']), 'role_context': ''})
+        self.assertEqual(reader.snapshot(), before)
+        self.assertEqual(reader.metrics()['calls'], 4)
+        self.assertTrue(all(v == 0 for v in reader.diagnostics.values()))
+
+    def test_opt_in_other_actor_claim_is_rejected_without_changing_default(self):
+        class ActorClaim(Provider):
+            def ask(self, state, heads):
+                result = super().ask(state, heads)
+                if 'claim' in heads:
+                    result['answers']['claim'] = {'label': 'yes', 'confidence': .99}
+                    if 'other_actor' in heads:
+                        result['answers']['other_actor'] = {'label': 'yes', 'confidence': .99}
+                return result
+        for reader_type, expected in [(FocusReader, True), (SituationFocusReader, False)]:
+            reader = reader_type(ActorClaim())
+            reader.prefix = units_for(['동료가 입력 오류를 줄였습니다.'])
+            context = {'id': 'c1', 'source_unit_ids': ['u1'], 'heading_unit_id': None}
+            self.assertEqual(reader._new_question('basis', context, reader.prefix[0], []), expected)
+
+    def test_opt_in_filters_other_actor_proof_at_every_update(self):
+        class ActorProof(Provider):
+            def ask(self, state, heads):
+                result = super().ask(state, heads)
+                for k in heads:
+                    yes = k in ['claim', 'same', 'complete', 'proof_u2', 'proof_u3', 'actor_u3']
+                    result['answers'][k] = {'label': 'yes' if yes else 'no', 'confidence': .99}
+                return result
+        reader = SituationFocusReader(ActorProof())
+        units = units_for(['제가 절차를 개선했습니다.', '동료가 입력 화면을 바꿨습니다.', '저는 중복 확인 항목을 제거했습니다.'])
+        context = {'id': 'c1', 'source_unit_ids': ['u1'], 'heading_unit_id': None}
+        reader.prefix = units[:1]; reader.contexts = [context]
+        self.assertTrue(reader._new_question('method', context, units[0], []))
+        q = reader.questions[0]
+        reader.prefix = units[:2]; context['source_unit_ids'].append('u2')
+        self.assertFalse(reader._review_question(q, units[1], []))
+        self.assertEqual(q['evidence'], [])
+        reader.prefix = units; context['source_unit_ids'].append('u3')
+        self.assertTrue(reader._review_question(q, units[2], []))
+        self.assertEqual([p['unit_id'] for p in q['evidence']], ['u3'])
+
+    def test_naming_form_is_source_exact_including_utf16(self):
+        text = '🚀 반납 알림 서비스 달고리의 발송 절차입니다.'
+        span = next(s for s in spans(text) if s['name'] == '달고리')
+        self.assertEqual(name_form(text, span), '서비스 달고리')
+        text = "공방의 '달고리' 프로젝트입니다."
+        self.assertIsNone(name_form(text, next(s for s in spans(text) if s['name'] == '공방')))
+
+    def test_naming_form_requires_its_own_strong_source_audit(self):
+        class NamingProvider(Provider):
+            def __init__(self, label, confidence, form_confidence):
+                super().__init__(); self.ground = (label, confidence); self.form_confidence = form_confidence
+            def ask(self, state, heads):
+                result = super().ask(state, heads)
+                if state.get('stage') == 'situation_new_source_audit':
+                    label, confidence = self.ground
+                    result['answers']['s_grounded'] = {'label': label, 'confidence': confidence}
+                    if 's_named_form' in heads:
+                        result['answers']['s_named_form'] = {'label': 'yes', 'confidence': self.form_confidence}
+                return result
+        for label, confidence, form_confidence, count in [('yes', .6, .99, 1), ('yes', .6, .74, 0), ('no', .99, .99, 0)]:
+            reader = SituationReader(NamingProvider(label, confidence, form_confidence))
+            reader.step({'prefix': units_for(['달고리 프로젝트입니다.']), 'role_context': ''})
+            self.assertEqual(len(reader.expectations), count)
 
     def test_single_budget_source_bound_update_and_finish(self):
         provider = Provider(); reader = SituationReader(provider)
