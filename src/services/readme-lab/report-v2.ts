@@ -325,6 +325,13 @@ export function reportInput(
   return {
     requirements: job.requirements,
     reader_profile: job.reader_profile ?? null,
+    ...(document.document_context?.prompts.length
+      ? {
+          essay_prompts: document.document_context.prompts.map((prompt) => ({
+            ...prompt,
+          })),
+        }
+      : {}),
     // Include every processed source unit, including units with no public card.
     units: document.units.map(({ id, text, scope_id, order }) => ({
       id,
@@ -422,7 +429,8 @@ export function validateGroundedReport(
     if (
       /\b(?:[qnur]\d+|note_ids|requirement_ids|open_at_end|held|resolved|reopened)\b/u.test(
         copy,
-      )
+      ) ||
+      (document.document_context?.prompts.length && /\bep\d+\b/u.test(copy))
     )
       throw new LabError("engine_output_invalid", 503, "report_internal_copy");
     if (
@@ -532,7 +540,7 @@ export function validateGroundedReport(
                   "일부 역할의 추가 문맥 확인을 완료하지 못했습니다. 이는 문서에 설명이 없다는 뜻이 아니며, 연결된 원문을 함께 확인해 주세요.",
                 ]
               : []),
-            "공고 기준과 추출된 이력서 전체의 최종 점검은 OpenAI Codex의 클라우드 모델로 처리했습니다. 모든 피드백은 사람이 다시 확인해야 합니다.",
+            `공고 기준과 추출된 ${document.document_context?.type === "cover_letter" ? "자기소개서" : "이력서"} 전체의 최종 점검은 OpenAI Codex의 클라우드 모델로 처리했습니다. 모든 피드백은 사람이 다시 확인해야 합니다.`,
           ]
         : readingEngine === "codex_cli"
           ? [

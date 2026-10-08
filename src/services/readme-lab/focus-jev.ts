@@ -18,6 +18,35 @@ import {
 } from "./focus-contract.js";
 
 const count = z.number().int().nonnegative();
+/** Internal count-only telemetry; never allow arbitrary model/source fields. */
+export const focusDiagnosticsSchema = z
+  .object({
+    candidate_routes: count,
+    no_context_candidates: count,
+    duplicate_facet: count,
+    candidate_audits: count,
+    accepted_questions: count,
+    unsupported_claim: count,
+    uncertain_claim: count,
+    already_answered: count,
+    uncertain_answer: count,
+    cross_page_uncertain: count,
+    discovery_deferred: count,
+    explicit_rechecks: count,
+    fallback_rechecks: count,
+    fallback_deferred: count,
+    fallback_budget_skipped: count,
+    fallback_source_skipped: count,
+    fallback_updates: count,
+    different_or_uncertain_experience: count,
+    no_answer_relation: count,
+    missing_current_proof: count,
+    invalid_transition: count,
+    unchanged_answer: count,
+    verified_updates: count,
+  })
+  .strict();
+export type FocusDiagnostics = z.infer<typeof focusDiagnosticsSchema>;
 const metricsSchema = z
   .object({
     calls: count,
@@ -32,6 +61,7 @@ const metricsSchema = z
 export interface FocusReader {
   metadata: JevMetadata;
   metrics: z.infer<typeof metricsSchema>;
+  diagnostics?: FocusDiagnostics | null;
   ledger: FocusLedger;
   readStep(
     prefix: Array<Unit & { block_type?: string }>,
@@ -158,6 +188,7 @@ export function openFocusJev(
           clearTimeout(loadTimer);
           reader = {
             metadata,
+            diagnostics: null,
             metrics: {
               calls: 0,
               input_tokens: 0,
@@ -220,6 +251,10 @@ export function openFocusJev(
           return;
         }
         reader.metrics = metricsSchema.parse(value.metrics);
+        reader.diagnostics =
+          value.diagnostics === undefined
+            ? null
+            : focusDiagnosticsSchema.parse(value.diagnostics);
         if (value.error) {
           const code =
             typeof value.error === "string" &&

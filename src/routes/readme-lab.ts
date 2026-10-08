@@ -7,15 +7,8 @@ import { openJev } from "../services/readme-lab/jev.js";
 import { openFocusJev } from "../services/readme-lab/focus-jev.js";
 import { parseDocument } from "../services/readme-lab/parser.js";
 import { ReadmeLab } from "../services/readme-lab/service.js";
+import { labUploadSchema as uploadSchema } from "../services/readme-lab/input.js";
 
-const uploadSchema = z
-  .object({
-    job_text: z.string().trim().min(20).max(6000),
-    resume_filename: z.string().min(1).max(120),
-    resume_media_type: z.string().max(120),
-    resume_base64: z.string().min(1).max(2666672),
-  })
-  .strict();
 const startSchema = z
   .object({
     prepare_id: z.string().min(1).max(100),

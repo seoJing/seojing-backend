@@ -4,6 +4,7 @@ Run with --allow-remote --config /protected/runtime.json. Credentials are read
 locally and never copied into artifacts. Frozen expectations are evaluator-only.
 """
 import argparse
+from copy import deepcopy
 import hashlib
 import json
 import os
@@ -23,9 +24,10 @@ def units_for(texts):
 
 
 class CapturedProvider:
-    def __init__(self, provider):
+    def __init__(self, provider, mask_answer_routing=False):
         self.provider = provider
         self.requests = []
+        self.mask_answer_routing = mask_answer_routing
 
     def ask(self, state, questions):
         record = {"state": state, "questions": questions}
@@ -33,6 +35,15 @@ class CapturedProvider:
         try:
             result = self.provider.ask(state, questions)
             record["result"] = result
+            if self.mask_answer_routing and "context" in questions:
+                # Explicit fault injection: original Jev output is retained.
+                # Only retrieval is masked; semantic audit/proof remain real Jev.
+                result = deepcopy(result)
+                for key in questions:
+                    if key.startswith("q_"):
+                        result["answers"][key] = {"label": "none", "confidence": .99,
+                            "probabilities": {c: float(c == "none") for c in questions[key]["criteria"]}}
+                record["injected_answers"] = result["answers"]
             return result
         except ProviderError as error:
             record["error"] = str(error)
@@ -109,6 +120,8 @@ def main():
     parser.add_argument("--fixtures", type=Path, default=Path("test/fixtures/readme/focus-reader-v1.json"))
     parser.add_argument("--case", action="append")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--mask-answer-routing", action="store_true",
+                        help="Synthetic robustness probe, NOT natural-model accuracy: force question routing to none")
     args = parser.parse_args()
     corpus = json.loads(args.fixtures.read_text())
     if not corpus.get("purpose", "").startswith("Synthetic"):
@@ -126,7 +139,7 @@ def main():
     for case in corpus["cases"]:
         if args.case and case["id"] not in args.case:
             continue
-        capture = CapturedProvider(provider)
+        capture = CapturedProvider(provider, args.mask_answer_routing)
         reader = FocusReader(capture)
         units = units_for(case["units"])
         trace = []
@@ -142,12 +155,14 @@ def main():
         checks = check(case, trace, snapshot, error)
         result = {"id": case["id"], "passed": all(checks.values()), "checks": checks,
                   "error": error, "elapsed_ms": round((time.monotonic() - started) * 1000),
-                  "metrics": reader.metrics(), "trace": trace, "snapshot": snapshot}
+                  "metrics": reader.metrics(), "diagnostics": getattr(reader, "diagnostics", None),
+                  "trace": trace, "snapshot": snapshot}
         (args.output / (case["id"] + ".json")).write_text(json.dumps({**result, "synthetic_input": case,
             "requests": capture.requests}, ensure_ascii=False, indent=2))
         results.append(result)
         print(json.dumps({k: v for k, v in result.items() if k not in ("trace", "snapshot")}, ensure_ascii=False), flush=True)
-    (args.output / "summary.json").write_text(json.dumps({"synthetic": True, "hashes": hashes,
+    (args.output / "summary.json").write_text(json.dumps({"synthetic": True,
+        "mask_answer_routing": args.mask_answer_routing, "hashes": hashes,
         "results": [{k: v for k, v in r.items() if k not in ("trace", "snapshot")} for r in results]}, ensure_ascii=False, indent=2))
     lines = ["# 실제 Jev 독해 — 합성 검증", "", "개인 이력서가 아닌 고정 합성 사례입니다. 말풍선은 상태 코드의 표시 문구입니다.", ""]
     for r in results:

@@ -4,7 +4,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { registerReadmeLabRoutes } from "../src/routes/readme-lab.js";
-import { ReadmeLab } from "../src/services/readme-lab/service.js";
+import {
+  ReadmeLab,
+  type LabOptions,
+} from "../src/services/readme-lab/service.js";
 import { openFocusJev } from "../src/services/readme-lab/focus-jev.js";
 import { LabError } from "../src/services/readme-lab/errors.js";
 import type { Reasoner } from "../src/services/readme-lab/codex.js";
@@ -52,7 +55,10 @@ const apps: FastifyInstance[] = [];
 afterEach(async () => {
   for (const app of apps.splice(0)) await app.close();
 });
-function setup(mode: "normal" | "fail" | "finish-fail" | "stall" = "normal") {
+function setup(
+  mode: "normal" | "fail" | "finish-fail" | "stall" = "normal",
+  context?: ResumeDocument["document_context"],
+) {
   const job: JobPosting = {
     source: "user_paste",
     text: input.job_text,
@@ -79,7 +85,10 @@ function setup(mode: "normal" | "fail" | "finish-fail" | "stall" = "normal") {
   };
   const report = vi.fn<Reasoner["report"]>(
     (doc, posting, _notes, questions, _signal, memory) => {
-      expect(doc).toEqual(document);
+      expect(doc).toEqual({
+        ...document,
+        ...(context ? { document_context: context } : {}),
+      });
       expect(posting).toEqual(job);
       expect(memory?.focus?.questions[0]?.status).toBe("resolved");
       return Promise.resolve({
@@ -90,6 +99,7 @@ function setup(mode: "normal" | "fail" | "finish-fail" | "stall" = "normal") {
     },
   );
   const readContexts: string[] = [];
+  const diagnostics = vi.fn<NonNullable<LabOptions["onReadingDiagnostic"]>>();
   const open = vi.fn(async (signal: AbortSignal, total: number) => {
     const worker = await openFocusJev(signal, total, {
       apiKey: "synthetic-no-remote-credential",
@@ -101,14 +111,14 @@ function setup(mode: "normal" | "fail" | "finish-fail" | "stall" = "normal") {
       readContexts.push(context);
       return read(
         prefix,
-        mode === "normal" || mode === "finish-fail" ? context : mode,
+        mode === "normal" || mode === "finish-fail" ? "diagnostics" : mode,
       );
     };
     if (mode === "finish-fail")
       worker.finish = () => Promise.reject(new LabError("reader_not_complete"));
     return worker;
   });
-  const parse = vi.fn(() => Promise.resolve(document));
+  const parse = vi.fn<LabOptions["parse"]>(() => Promise.resolve(document));
   const lab = new ReadmeLab({
     invitations: [invite],
     parse,
@@ -118,13 +128,20 @@ function setup(mode: "normal" | "fail" | "finish-fail" | "stall" = "normal") {
       report,
     },
     focus: open,
+    onReadingDiagnostic: diagnostics,
   });
   const app = Fastify();
   apps.push(app);
   registerReadmeLabRoutes(app, lab);
-  return { app, open, parse, report, readContexts };
+  return { app, open, parse, report, readContexts, diagnostics };
 }
-async function start(app: FastifyInstance) {
+async function start(
+  app: FastifyInstance,
+  data: typeof input & {
+    document_type?: "cover_letter";
+    essay_prompts?: string[];
+  } = input,
+) {
   const login = await app.inject({
     method: "POST",
     url: "/readme/lab/session",
@@ -142,7 +159,7 @@ async function start(app: FastifyInstance) {
     method: "POST",
     url: "/readme/lab/prepare",
     headers,
-    payload: input,
+    payload: data,
   });
   expect(preparation.statusCode, preparation.body).toBe(202);
   let prepared = preparation.json<PrepareView>();
@@ -167,7 +184,7 @@ async function start(app: FastifyInstance) {
   });
   expect(created.statusCode).toBe(202);
   const job = created.json<JobView>();
-  return { headers, url: `/readme/lab/jobs/${job.job_id}` };
+  return { headers, url: `/readme/lab/jobs/${job.job_id}`, prepared };
 }
 describe("opt-in focus HTTP stream", () => {
   it("requires existing remote consent before model work", async () => {
@@ -183,7 +200,7 @@ describe("opt-in focus HTTP stream", () => {
     expect(parse).not.toHaveBeenCalled();
   });
   it("streams validated windows, completes before reporting, and reconnects without new events", async () => {
-    const { app, report, readContexts, open } = setup(),
+    const { app, report, readContexts, open, diagnostics } = setup(),
       { headers, url } = await start(app);
     let view: JobView;
     await vi.waitFor(async () => {
@@ -215,6 +232,16 @@ describe("opt-in focus HTTP stream", () => {
     expect(replay.events).toEqual(full.events.filter((e) => e.seq > after));
     expect(replay.next_seq).toBe(full.next_seq);
     expect(open).toHaveBeenCalledTimes(1);
+    expect(diagnostics.mock.calls.map(([d]) => d.phase)).toEqual([
+      "reading_completed",
+      "finished",
+    ]);
+    for (const [d] of diagnostics.mock.calls) {
+      expect(d.decisions).toMatchObject({ fallback_rechecks: 1 });
+      for (const source of texts)
+        expect(JSON.stringify(d)).not.toContain(source);
+    }
+    expect(JSON.stringify(full)).not.toContain("fallback_rechecks");
   });
   it("does not publish a failed window or run a partial report", async () => {
     const { app, report } = setup("fail"),
@@ -265,5 +292,35 @@ describe("opt-in focus HTTP stream", () => {
       expect(view.progress.read_unit_count).toBe(0);
     });
     expect(report).not.toHaveBeenCalled();
+  });
+});
+
+describe("essay context leaves sequential reading unchanged", () => {
+  it("keeps context for confirmation/report but out of parser/Jev/telemetry", async () => {
+    const prompt = "지원 동기와 입사 후 계획을 작성하세요.";
+    const context = {
+      type: "cover_letter" as const,
+      prompts: [{ id: "ep1", text: prompt }],
+    };
+    const { app, report, readContexts, parse, diagnostics } = setup(
+      "normal",
+      context,
+    );
+    const { headers, url, prepared } = await start(app, {
+      ...input,
+      document_type: "cover_letter",
+      essay_prompts: [prompt],
+    });
+    expect(prepared.document?.document_context).toEqual(context);
+    expect(prepared.document?.units).toEqual(document.units);
+    await vi.waitFor(async () =>
+      expect((await app.inject({ url, headers })).json<JobView>().status).toBe(
+        "completed",
+      ),
+    );
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(parse.mock.calls[0]?.[0]).toEqual(input);
+    expect(readContexts).toEqual(["개발", "개발", "개발"]);
+    expect(JSON.stringify(diagnostics.mock.calls)).not.toContain(prompt);
   });
 });

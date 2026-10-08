@@ -19,6 +19,9 @@ def main():
             reader = FocusReader(JevProvider(True))
         finally:
             os.environ.pop("TYPESAFE_API_KEY", None)
+        def reply(value):
+            # Optional internal telemetry. Public focus events and metrics stay v1.
+            send({**value, "diagnostics": reader.diagnostics})
         send({"ready": {"model": JEV_MODEL, "provider": "typesafe", "execution": "remote",
                         "calibrated_for_readme": False}, "version": VERSION})
         while True:
@@ -29,9 +32,9 @@ def main():
                 raise ValueError("invalid_input")
             if set(message) == {"id", "finish"} and message["finish"] is True:
                 if len(reader.prefix) != config["total_units"] or reader.counters["limited"]:
-                    send({"id": message["id"], "error": "reader_not_complete", "metrics": reader.metrics()})
+                    reply({"id": message["id"], "error": "reader_not_complete", "metrics": reader.metrics()})
                     return 1
-                send({"id": message["id"], "snapshot": reader.snapshot(), "metrics": reader.metrics()})
+                reply({"id": message["id"], "snapshot": reader.snapshot(), "metrics": reader.metrics()})
                 return 0
             if set(message) != {"id", "input"} or len(reader.prefix) >= config["total_units"]:
                 raise ValueError("invalid_input")
@@ -40,9 +43,9 @@ def main():
                 # Capacity limits are visible failures; never a success with
                 # silently skipped questions or unsupported absence judgments.
                 if reader.counters["limited"]:
-                    send({"id": message["id"], "error": "engine_budget_exceeded", "metrics": reader.metrics()})
+                    reply({"id": message["id"], "error": "engine_budget_exceeded", "metrics": reader.metrics()})
                     return 1
-                send({"id": message["id"], "result": result, "metrics": reader.metrics()})
+                reply({"id": message["id"], "result": result, "metrics": reader.metrics()})
             except ProviderError as error:
                 code = "engine_unavailable"
                 if str(error) == "jev_timeout":
@@ -51,7 +54,7 @@ def main():
                     code = "engine_budget_exceeded"
                 elif str(error).startswith("invalid_answer") or str(error) == "jev_model_mismatch":
                     code = "engine_output_invalid"
-                send({"id": message["id"], "error": code, "metrics": reader.metrics()})
+                reply({"id": message["id"], "error": code, "metrics": reader.metrics()})
                 return 1
     except Exception:
         send({"error": "engine_input_invalid"})

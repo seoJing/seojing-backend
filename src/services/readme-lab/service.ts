@@ -11,10 +11,11 @@ import type {
 import type { Reasoner } from "./codex.js";
 import type { Classifier } from "./laya.js";
 import type { JevReader } from "./jev.js";
-import type { FocusReader } from "./focus-jev.js";
+import type { FocusDiagnostics, FocusReader } from "./focus-jev.js";
 import { focusReportState } from "./focus-report.js";
 import { readSemanticPrefix } from "./semantic-reader.js";
 import { LabError, errorCode, preparationFailureReason } from "./errors.js";
+import { normalizeLabInput, type LabUploadInput } from "./input.js";
 import { judgePrefix } from "./judgment.js";
 import {
   createMemory,
@@ -81,7 +82,7 @@ export interface LabOptions {
     reading_ms: number | null;
     error: string | null;
     metrics: JevReader["metrics"] | FocusReader["metrics"] | null;
-    decisions: JevReader["diagnostics"] | null;
+    decisions: JevReader["diagnostics"] | FocusDiagnostics | null;
   }) => void;
 }
 
@@ -188,7 +189,8 @@ export class ReadmeLab {
         this.pump();
       });
   }
-  prepare(session: Session, input: ReadmeUploadInput): PrepareView {
+  prepare(session: Session, input: LabUploadInput): PrepareView {
+    const normalized = normalizeLabInput(input);
     this.ensureRoom();
     const day = Math.floor(this.clock() / 86400000);
     const quota = this.quota.get(session.invitation);
@@ -205,7 +207,7 @@ export class ReadmeLab {
       controller: new AbortController(),
       view: {
         prepare_id: prepareId,
-        input_hash: hash(JSON.stringify(input)),
+        input_hash: hash(JSON.stringify(normalized)),
         status: "queued",
         expires_at: new Date(expires).toISOString(),
       },
@@ -219,15 +221,28 @@ export class ReadmeLab {
       try {
         value.view.status = "extracting";
         const document = await this.options.parse(
-          input,
+          normalized.source,
           value.controller.signal,
         );
         if (value.controller.signal.aborted) return;
-        value.view.document = document;
+        value.view.document = {
+          ...document,
+          ...(normalized.document_type === "cover_letter"
+            ? {
+                document_context: {
+                  type: "cover_letter" as const,
+                  prompts: normalized.essay_prompts.map((text, index) => ({
+                    id: `ep${index + 1}`,
+                    text,
+                  })),
+                },
+              }
+            : {}),
+        };
         value.view.status = "analyzing_job";
         stage = "profile";
         const job = await this.options.reasoner.profile(
-          input.job_text,
+          normalized.source.job_text,
           value.controller.signal,
         );
         if (value.controller.signal.aborted) return;
@@ -352,7 +367,7 @@ export class ReadmeLab {
       const started = Date.now();
       let readingMs: number | null = null;
       let metrics: JevReader["metrics"] | FocusReader["metrics"] | null = null;
-      let decisions: JevReader["diagnostics"] | null = null;
+      let decisions: JevReader["diagnostics"] | FocusDiagnostics | null = null;
       const diagnostic = (phase: "reading_completed" | "finished") => {
         // An explicit allowlist, never model text, inputs, errors or credentials.
         try {
@@ -381,7 +396,9 @@ export class ReadmeLab {
             reading_ms: readingMs,
             error: reading.view.error ?? null,
             metrics: structuredClone(focus?.metrics ?? jev?.metrics ?? metrics),
-            decisions: structuredClone(jev?.diagnostics ?? decisions),
+            decisions: structuredClone(
+              focus?.diagnostics ?? jev?.diagnostics ?? decisions,
+            ),
           });
         } catch {
           /* diagnostics must not change an analysis outcome */
@@ -489,7 +506,9 @@ export class ReadmeLab {
         }
         readingMs = Date.now() - started;
         metrics = structuredClone(focus?.metrics ?? jev?.metrics ?? null);
-        decisions = jev?.diagnostics ? structuredClone(jev.diagnostics) : null;
+        decisions = structuredClone(
+          focus?.diagnostics ?? jev?.diagnostics ?? null,
+        );
         if (jev?.contextReviews && reading.memory)
           reading.memory.context_reviews = structuredClone(jev.contextReviews);
         jev?.close();

@@ -50,6 +50,25 @@ function replay(name: string, end?: number) {
   return { item, units, state };
 }
 describe("focus source-bound protocol", () => {
+  const logicTraces = JSON.parse(
+    readFileSync("test/fixtures/readme/focus-logic-recorded-v1.json", "utf8"),
+  ) as {
+    cases: {
+      id: string;
+      units: string[];
+      trace: FocusStep[];
+      questions: FocusLedger["questions"];
+    }[];
+  };
+  for (const c of logicTraces.cases)
+    it(`accepts v1 discovery/recheck trace ${c.id} without rewriting history`, () => {
+      const units = unitsFor(c.units),
+        state = ledger();
+      for (let i = 0; i < c.trace.length; i++)
+        validateFocusStep(c.trace[i], units.slice(0, i + 1), state);
+      expect(state.questions).toEqual(c.questions);
+      expect(state.steps).toEqual(c.trace);
+    });
   for (const c of cases)
     it(`accepts actual Jev trace ${c.id}`, () => {
       const { state } = replay(c.id);
@@ -154,6 +173,38 @@ describe("focus worker lifecycle", () => {
         await reader.readStep(units.slice(0, i), "test");
       await reader.finish();
       expect(reader.ledger.complete).toBe(true);
+      expect(reader.diagnostics).toBeNull(); // older worker compatibility
+    } finally {
+      reader.close();
+    }
+  });
+  it("validates count-only internal diagnostics across reading and finish", async () => {
+    const reader = await openFocusJev(new AbortController().signal, 3, options);
+    try {
+      const units = unitsFor(cases[0]!.units);
+      for (let i = 1; i <= 3; i++)
+        await reader.readStep(units.slice(0, i), "diagnostics");
+      await reader.finish();
+      expect(reader.diagnostics?.fallback_rechecks).toBe(1);
+      expect(Object.values(reader.diagnostics!)).toEqual(
+        expect.arrayContaining([0, 1]),
+      );
+      expect(JSON.stringify(reader.ledger)).not.toContain("fallback_rechecks");
+    } finally {
+      reader.close();
+    }
+  });
+  it("rejects non-allowlisted diagnostic fields before committing a window", async () => {
+    const reader = await openFocusJev(new AbortController().signal, 3, options);
+    try {
+      await expect(
+        reader.readStep(
+          unitsFor(cases[0]!.units).slice(0, 1),
+          "invalid-diagnostics",
+        ),
+      ).rejects.toThrow("engine_output_invalid");
+      expect(reader.ledger.steps).toHaveLength(0);
+      expect(reader.diagnostics).toBeNull();
     } finally {
       reader.close();
     }
