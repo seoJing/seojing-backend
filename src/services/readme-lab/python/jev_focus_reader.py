@@ -211,6 +211,14 @@ class FocusReader:
         candidates.sort(key=lambda q: (self.last_review_order.get(q["id"], -1), q["id"]))
         return candidates
 
+    def _allow_new_context(self, current, state):
+        # Extension point for the opt-in situation experiment. Default focus
+        # keeps its existing routing behavior and provider calls unchanged.
+        return True
+
+    def _rank_question_candidates(self, eligible, route):
+        return sorted(eligible, key=lambda f: -route["ask_" + f]["confidence"])
+
     def _step(self, data):
         prefix = data.get("prefix")
         role = data.get("role_context", "")
@@ -268,7 +276,7 @@ class FocusReader:
                 anchor = self._units(self._context(selected)["source_unit_ids"][:1])[0]
                 if not self._same_experience(anchor, current, state["recent_sources"]):
                     selected = None
-        elif candidate_context["label"] == "new":
+        elif candidate_context["label"] == "new" and self._allow_new_context(current, state):
             if len(self.contexts) >= MAX_CONTEXTS:
                 self._limit(events, current, "context_index_limit")
                 selected = None
@@ -336,7 +344,7 @@ class FocusReader:
             eligible = [f for f in routed
                         if not any(q["context_id"] == selected and q["facet"] == f and q["status"] != "resolved" for q in self.questions)]
             self.diagnostics["duplicate_facet"] += len(routed) - len(eligible)
-            eligible.sort(key=lambda f: -route["ask_" + f]["confidence"])
+            eligible = self._rank_question_candidates(eligible, route)
             if eligible:
                 # Candidate scores are routing, never missing-information proof.
                 # Attention and prior updates cannot veto discovery. Park the

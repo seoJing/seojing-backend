@@ -23,6 +23,7 @@ interface Link {
   answer_unit_id: string;
   status?: string;
   entity_name?: string;
+  kind?: string;
 }
 interface GoldCase {
   id: string;
@@ -36,8 +37,20 @@ interface GoldCase {
     origin_unit_id: string;
     status: string;
     is_deficiency: boolean;
+    evidence_unit_ids?: string[];
+    withdrawn_unit_ids?: string[];
+    correction_unit_ids?: string[];
   }>;
   expected_focus_questions: Array<{ origin_unit_id: string; facet: string }>;
+  expected_entities?: Array<{
+    name: string;
+    origin_unit_id: string;
+    start?: number;
+    end?: number;
+  }>;
+  forbidden_entity_names?: string[];
+  forbidden_expectations?: Array<{ origin_unit_id: string; kind: string }>;
+  forbidden_updates?: Link[];
 }
 const fixturePath = arg("fixture") ?? "test/fixtures/readme/situation-v1.json";
 const fixtureBytes = await readFile(fixturePath);
@@ -156,6 +169,7 @@ for (const c of selected) {
     e.expectation.origin_unit_id === link.origin_unit_id &&
     e.at_unit_id === link.answer_unit_id &&
     (!link.status || e.expectation.status === link.status) &&
+    (!link.kind || e.expectation.kind === link.kind) &&
     (!link.entity_name ||
       ledger?.entities.some(
         (entity) =>
@@ -198,7 +212,16 @@ for (const c of selected) {
           q.origin_unit_id === expected.origin_unit_id &&
           q.status === expected.status &&
           projectSituationExpectation(q).is_deficiency ===
-            expected.is_deficiency,
+            expected.is_deficiency &&
+          (!expected.evidence_unit_ids ||
+            JSON.stringify(q.evidence.map((p) => p.unit_id)) ===
+              JSON.stringify(expected.evidence_unit_ids)) &&
+          (!expected.withdrawn_unit_ids ||
+            JSON.stringify(q.withdrawn_evidence.map((p) => p.unit_id)) ===
+              JSON.stringify(expected.withdrawn_unit_ids)) &&
+          (!expected.correction_unit_ids ||
+            JSON.stringify(q.correction_evidence.map((p) => p.unit_id)) ===
+              JSON.stringify(expected.correction_unit_ids)),
       ),
   );
   const missingFocus = c.expected_focus_questions.filter(
@@ -208,6 +231,30 @@ for (const c of selected) {
           q.origin_unit_id === expected.origin_unit_id &&
           q.facet === expected.facet,
       ),
+  );
+  const missingEntities = (c.expected_entities ?? []).filter(
+    (expected) =>
+      !ledger?.entities.some(
+        (e) =>
+          e.canonical_name === expected.name &&
+          e.introduced_at_unit_id === expected.origin_unit_id &&
+          (expected.start === undefined || e.origin.start === expected.start) &&
+          (expected.end === undefined || e.origin.end === expected.end),
+      ),
+  );
+  const forbiddenEntities = (c.forbidden_entity_names ?? []).filter((name) =>
+    ledger?.entities.some((e) => e.canonical_name === name),
+  );
+  const forbiddenExpectations = (c.forbidden_expectations ?? []).filter(
+    (expected) =>
+      ledger?.expectations.some(
+        (q) =>
+          q.origin_unit_id === expected.origin_unit_id &&
+          q.kind === expected.kind,
+      ),
+  );
+  const forbiddenUpdates = (c.forbidden_updates ?? []).filter((link) =>
+    updates.some((e) => linkMatches(link, e)),
   );
   const pass =
     !error &&
@@ -220,6 +267,10 @@ for (const c of selected) {
       missingCorrections,
       missingFinal,
       missingFocus,
+      missingEntities,
+      forbiddenEntities,
+      forbiddenExpectations,
+      forbiddenUpdates,
     ].every((a) => !a.length);
   allPass &&= pass;
   const summary = {
@@ -240,10 +291,17 @@ for (const c of selected) {
     missing_corrections: missingCorrections,
     missing_final_states: missingFinal,
     missing_focus_questions: missingFocus,
+    missing_entities: missingEntities,
+    forbidden_entities: forbiddenEntities,
+    forbidden_expectations: forbiddenExpectations,
+    forbidden_updates: forbiddenUpdates,
     situation_event_count: situationEventCount,
     focus_event_count: focusEventCount,
     event_count: situationEventCount + focusEventCount,
     events_per_unit: (situationEventCount + focusEventCount) / units.length,
+    events_per_read_unit: ledger?.steps.length
+      ? (situationEventCount + focusEventCount) / ledger.steps.length
+      : 0,
     event_density_excludes:
       "window envelopes and reading/report lifecycle events",
   };
