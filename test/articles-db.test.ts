@@ -1,8 +1,11 @@
 import { PrismaClient } from "@prisma/client";
+import { createHash } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { ArticleRepository } from "../src/repositories/articles.js";
 import { ArticleService } from "../src/services/articles.js";
+import { renderMdxForEditor } from "../src/services/mdx-editor-renderer.js";
+import { convertMdxToArticleDocument } from "../src/services/mdx-to-document.js";
 
 const runDbTests = process.env.RUN_DB_TESTS === "true";
 const describeDb = runDbTests ? describe : describe.skip;
@@ -11,12 +14,22 @@ const service = new ArticleService(new ArticleRepository(prisma));
 const integrationSlug = "integration-article-schema-mvp";
 const publishFlowSlug = "integration-admin-write-publish-flow";
 const publishedEditSlug = "integration-published-edit-flow";
+const documentSlug = "integration-native-document-flow";
+const legacyConversionSlug = "integration-legacy-conversion-flow";
 
 describeDb("Article database integration", () => {
   beforeEach(async () => {
     await prisma.article.deleteMany({
       where: {
-        slug: { in: [integrationSlug, publishFlowSlug, publishedEditSlug] },
+        slug: {
+          in: [
+            integrationSlug,
+            publishFlowSlug,
+            publishedEditSlug,
+            documentSlug,
+            legacyConversionSlug,
+          ],
+        },
       },
     });
   });
@@ -24,7 +37,15 @@ describeDb("Article database integration", () => {
   afterAll(async () => {
     await prisma.article.deleteMany({
       where: {
-        slug: { in: [integrationSlug, publishFlowSlug, publishedEditSlug] },
+        slug: {
+          in: [
+            integrationSlug,
+            publishFlowSlug,
+            publishedEditSlug,
+            documentSlug,
+            legacyConversionSlug,
+          ],
+        },
       },
     });
     await prisma.$disconnect();
@@ -114,12 +135,15 @@ describeDb("Article database integration", () => {
   });
 
   it("saves published article edits as private revisions until publish", async () => {
+    const originalSource = "# Published Edit Flow\n\nOld public body";
+    const originalRender = renderMdxForEditor(originalSource);
     await service.createInitialDraft({
       slug: publishedEditSlug,
       title: "Published Edit Flow",
       description: "Initial public body",
-      sourceText: "# Published Edit Flow\n\nOld public body",
-      renderedHtml: "<h1>Published Edit Flow</h1><p>Old public body</p>",
+      sourceText: originalSource,
+      renderedHtml: originalRender.renderedHtml,
+      blocks: originalRender.blocks,
       changeSummary: "Initial draft before public edit",
       authorName: "OkayJing",
     });
@@ -172,5 +196,132 @@ describeDb("Article database integration", () => {
     const afterRestorePublish =
       await service.getPublicArticleBySlug(publishedEditSlug);
     expect(afterRestorePublish?.renderedHtml).toContain("Old public body");
+  });
+
+  it("keeps a JSON document and metadata revision-pinned across public edits", async () => {
+    const original = await service.createDocumentDraft({
+      slug: documentSlug,
+      title: "Native document",
+      description: "First version",
+      category: "Study",
+      tags: ["CMS", "JSON"],
+      cover: { src: "/images/first.png", alt: "First cover" },
+      displayDate: "2026-10-07",
+      document: {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              { type: "text", text: "First body", marks: [{ type: "bold" }] },
+            ],
+          },
+        ],
+      },
+    });
+    expect(original.revisions[0]?.document).toMatchObject({ type: "doc" });
+    expect(original.sourceText).toBe("");
+    await service.publishCurrentRevision(documentSlug);
+
+    const privateRevision = await service.saveDocumentRevision(documentSlug, {
+      title: "Updated document",
+      description: "Second version",
+      category: "Study",
+      tags: ["Updated"],
+      cover: { src: "/images/second.png", alt: "Second cover" },
+      displayDate: "2026-10-08",
+      expectedRevisionId: original.revisions[0]?.id,
+      document: {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "Second body" }],
+          },
+        ],
+      },
+    });
+    expect(privateRevision?.revisions[0]?.document).toMatchObject({
+      type: "doc",
+    });
+    const beforePublish = await service.getPublicArticleBySlug(documentSlug);
+    expect(beforePublish?.renderedHtml).toContain("First body");
+    expect(beforePublish?.title).toBe("Native document");
+    expect(beforePublish?.tags).toEqual(["CMS", "JSON"]);
+
+    await expect(
+      service.saveDocumentRevision(documentSlug, {
+        title: "Stale write",
+        expectedRevisionId: original.revisions[0]?.id,
+        document: {
+          type: "doc",
+          content: [
+            { type: "paragraph", content: [{ type: "text", text: "Lost" }] },
+          ],
+        },
+      }),
+    ).rejects.toThrow("Article revision changed before save");
+
+    await service.publishCurrentRevision(documentSlug);
+    const afterPublish = await service.getPublicArticleBySlug(documentSlug);
+    expect(afterPublish?.renderedHtml).toContain("Second body");
+    expect(afterPublish?.tags).toEqual(["Updated"]);
+    expect(afterPublish?.cover).toMatchObject({ src: "/images/second.png" });
+    const cleared = await service.saveDocumentRevision(documentSlug, {
+      title: "Without media",
+      expectedRevisionId: privateRevision?.revisions[0]?.id,
+      cover: null,
+      summaryVideo: null,
+      displayDate: null,
+      displayUpdatedAt: null,
+      document: {
+        type: "doc",
+        content: [
+          { type: "paragraph", content: [{ type: "text", text: "No media" }] },
+        ],
+      },
+    });
+    expect(cleared?.revisions[0]?.cover).toBeNull();
+    expect(cleared?.revisions[0]?.displayDate).toBeNull();
+    await service.publishCurrentRevision(documentSlug);
+    const clearedPublic = await service.getPublicArticleBySlug(documentSlug);
+    expect(clearedPublic?.cover).toBeNull();
+    expect(clearedPublic?.displayDate).toBeNull();
+    expect(afterPublish?.displayDate?.toISOString()).toContain("2026-10-08");
+  });
+
+  it("stages legacy MDX conversion without changing the pinned public body", async () => {
+    const source = "# Legacy\n\nOriginal body";
+    const preview = renderMdxForEditor(source);
+    const created = await service.createInitialDraft({
+      slug: legacyConversionSlug,
+      title: "Legacy",
+      sourceText: source,
+      renderedHtml: preview.renderedHtml,
+      blocks: preview.blocks,
+    });
+    await service.publishCurrentRevision(legacyConversionSlug);
+    const { document } = convertMdxToArticleDocument(source);
+    const converted = await service.convertMdxArticleToDocument(
+      legacyConversionSlug,
+      {
+        title: "Legacy converted",
+        document,
+        expectedRevisionId: created.revisions[0]?.id,
+      },
+      createHash("sha256").update(`${source}\n`).digest("hex"),
+    );
+    expect(converted?.revisions[0]?.sourceFormat).toBe("DOCUMENT");
+    expect(converted?.revisions[0]?.document).toMatchObject({ type: "doc" });
+    expect(converted?.revisions[1]?.sourceText).toBe(source);
+    const publicBefore =
+      await service.getPublicArticleBySlug(legacyConversionSlug);
+    expect(publicBefore?.currentRevision?.sourceFormat).toBe("MDX");
+    expect(publicBefore?.title).toBe("Legacy");
+    await service.publishCurrentRevision(legacyConversionSlug);
+    const publicAfter =
+      await service.getPublicArticleBySlug(legacyConversionSlug);
+    expect(publicAfter?.currentRevision?.sourceFormat).toBe("DOCUMENT");
+    expect(publicAfter?.sourceText).toBe("");
   });
 });

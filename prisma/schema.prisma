@@ -18,6 +18,7 @@ enum ArticleStatus {
 enum ArticleSourceFormat {
   MDX
   BLOCKS
+  DOCUMENT
 
   @@map("article_source_format")
 }
@@ -56,6 +57,11 @@ model Article {
   sourceFormat      ArticleSourceFormat @default(MDX) @map("source_format")
   sourceText        String              @map("source_text")
   renderedHtml      String?             @map("rendered_html")
+  tags              String[]            @default([])
+  cover             Json?
+  summaryVideo      Json?                @map("summary_video")
+  displayDate       DateTime?           @map("display_date")
+  displayUpdatedAt  DateTime?           @map("display_updated_at")
   currentRevisionId String?             @unique @map("current_revision_id") @db.Uuid
   publishedAt       DateTime?           @map("published_at")
   createdAt         DateTime            @default(now()) @map("created_at")
@@ -81,6 +87,12 @@ model ArticleRevision {
   sourceFormat   ArticleSourceFormat @map("source_format")
   sourceText     String              @map("source_text")
   renderedHtml   String?             @map("rendered_html")
+  document       Json?
+  tags           String[]            @default([])
+  cover          Json?
+  summaryVideo   Json?                @map("summary_video")
+  displayDate    DateTime?           @map("display_date")
+  displayUpdatedAt DateTime?         @map("display_updated_at")
   changeSummary  String?             @map("change_summary")
   authorName     String?             @map("author_name")
   createdAt      DateTime            @default(now()) @map("created_at")

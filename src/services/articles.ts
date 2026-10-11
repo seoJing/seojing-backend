@@ -1,8 +1,12 @@
+import { isDeepStrictEqual } from "node:util";
+import { createHash } from "node:crypto";
+
 import type {
   ArticleBlockType,
   ArticleSourceFormat,
   ArticleStatus,
 } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 import type {
   ArticleAssetDraft,
@@ -17,6 +21,31 @@ import {
   renderArticleBlocks,
   type BlockEditorBlockInput,
 } from "./block-renderer.js";
+import { renderMdxForEditor } from "./mdx-editor-renderer.js";
+import { renderArticleDocument } from "./article-document.js";
+
+export interface DocumentEditorInput {
+  slug?: string;
+  title: string;
+  description?: string;
+  category?: string;
+  tags?: string[];
+  cover?: { src: string; alt: string; caption?: string; kind?: string } | null;
+  summaryVideo?: {
+    src: string;
+    title?: string;
+    caption?: string;
+    poster?: string;
+    subtitles?: string;
+    provider?: string;
+  } | null;
+  displayDate?: string | null;
+  displayUpdatedAt?: string | null;
+  document: unknown;
+  expectedRevisionId?: string;
+  changeSummary?: string;
+  authorName?: string;
+}
 
 export interface CreateArticleInput {
   slug: string;
@@ -141,6 +170,10 @@ export class ArticleService {
     );
   }
 
+  async listPublishedSlugs(): Promise<string[]> {
+    return this.repository.listPublishedSlugs();
+  }
+
   async createEditorRevision(
     slug: string,
     input: ArticleEditorDraftInput,
@@ -153,6 +186,8 @@ export class ArticleService {
       throw new Error("Article sourceText is required.");
     }
 
+    const rendered = renderMdxForEditor(input.sourceText);
+
     return this.repository.createEditorRevision({
       ...input,
       slug: normalizedSlug,
@@ -160,7 +195,119 @@ export class ArticleService {
       description: input.description?.trim(),
       category: input.category ? normalizeCategory(input.category) : undefined,
       sourceFormat: "MDX",
-      blocks: input.blocks ?? deriveBlocksFromSource(input.sourceText),
+      renderedHtml: rendered.renderedHtml,
+      blocks: rendered.blocks,
+      assets: rendered.assets,
+    });
+  }
+
+  async createDocumentDraft(
+    input: DocumentEditorInput,
+  ): Promise<ArticleWithContent> {
+    const slug = normalizeSlug(input.slug ?? "");
+    if (!slug || !input.title.trim())
+      throw new Error("Article slug and title are required.");
+    if (await this.repository.findBySlugCaseInsensitive(slug))
+      throw new Error(`Article slug already exists: ${slug}`);
+    const rendered = renderArticleDocument(input.document);
+    return this.repository.createDraft({
+      slug,
+      title: input.title.trim(),
+      description: input.description?.trim(),
+      category: normalizeCategory(input.category),
+      tags: normalizeTags(input.tags),
+      cover: normalizeCover(input.cover),
+      summaryVideo: normalizeSummaryVideo(input.summaryVideo),
+      displayDate: normalizeDisplayDate(input.displayDate),
+      displayUpdatedAt: normalizeDisplayDate(input.displayUpdatedAt),
+      sourceFormat: "DOCUMENT",
+      sourceText: "",
+      document: rendered.document as unknown as Prisma.InputJsonValue,
+      renderedHtml: rendered.renderedHtml,
+      blocks: rendered.blocks,
+      assets: rendered.assets,
+      status: "DRAFT",
+      changeSummary: input.changeSummary ?? "Create document draft",
+      authorName: input.authorName,
+    });
+  }
+
+  async saveDocumentRevision(
+    slug: string,
+    input: DocumentEditorInput,
+  ): Promise<ArticleWithContent | null> {
+    const current = await this.getArticleBySlug(slug);
+    if (!current) return null;
+    if (current.revisions[0]?.sourceFormat !== "DOCUMENT")
+      throw new Error(
+        "Convert this legacy article before editing it as a document.",
+      );
+    if (!input.expectedRevisionId)
+      throw new Error("Expected revision ID is required.");
+    if (!input.title.trim()) throw new Error("Article title is required.");
+    const rendered = renderArticleDocument(input.document);
+    return this.repository.createEditorRevision({
+      slug: current.slug,
+      expectedRevisionId: input.expectedRevisionId,
+      title: input.title.trim(),
+      description: input.description?.trim(),
+      category: normalizeCategory(input.category),
+      tags: normalizeTags(input.tags),
+      cover: normalizeCover(input.cover),
+      summaryVideo: normalizeSummaryVideo(input.summaryVideo),
+      displayDate: normalizeDisplayDate(input.displayDate),
+      displayUpdatedAt: normalizeDisplayDate(input.displayUpdatedAt),
+      sourceFormat: "DOCUMENT",
+      sourceText: "",
+      document: rendered.document as unknown as Prisma.InputJsonValue,
+      renderedHtml: rendered.renderedHtml,
+      blocks: rendered.blocks,
+      assets: rendered.assets,
+      changeSummary: input.changeSummary ?? "Save document revision",
+      authorName: input.authorName,
+    });
+  }
+
+  async convertMdxArticleToDocument(
+    slug: string,
+    input: DocumentEditorInput,
+    expectedSourceSha256: string,
+  ): Promise<ArticleWithContent | null> {
+    const current = await this.getArticleBySlug(slug);
+    if (!current) return null;
+    const latest = current.revisions[0];
+    if (!latest || latest.sourceFormat !== "MDX")
+      throw new Error("Only a latest MDX revision can be converted.");
+    if (!input.expectedRevisionId || latest.id !== input.expectedRevisionId)
+      throw new Error("Article revision changed before conversion.");
+    const sourceHash = (value: string) =>
+      createHash("sha256").update(value).digest("hex");
+    if (
+      sourceHash(latest.sourceText) !== expectedSourceSha256 &&
+      sourceHash(`${latest.sourceText}\n`) !== expectedSourceSha256
+    )
+      throw new Error("MDX source changed before conversion.");
+    if (!input.title.trim()) throw new Error("Article title is required.");
+    const rendered = renderArticleDocument(input.document);
+    return this.repository.createEditorRevision({
+      slug: current.slug,
+      expectedRevisionId: latest.id,
+      title: input.title.trim(),
+      description: input.description?.trim(),
+      category: normalizeCategory(input.category),
+      tags: normalizeTags(input.tags),
+      cover: normalizeCover(input.cover),
+      summaryVideo: normalizeSummaryVideo(input.summaryVideo),
+      displayDate: normalizeDisplayDate(input.displayDate),
+      displayUpdatedAt: normalizeDisplayDate(input.displayUpdatedAt),
+      sourceFormat: "DOCUMENT",
+      sourceText: "",
+      document: rendered.document as unknown as Prisma.InputJsonValue,
+      renderedHtml: rendered.renderedHtml,
+      blocks: rendered.blocks,
+      assets: rendered.assets,
+      changeSummary: `Convert MDX to document: ${expectedSourceSha256}`,
+      authorName: input.authorName ?? "SEOJing migration",
     });
   }
 
@@ -260,7 +407,53 @@ export class ArticleService {
   async publishCurrentRevision(
     slug: string,
   ): Promise<ArticleWithContent | null> {
-    return this.repository.publishLatestRevision(normalizeSlug(slug));
+    const article = await this.getArticleBySlug(slug);
+    const latest = article?.revisions[0];
+    if (!article || !latest) return null;
+    if (latest.sourceFormat === "DOCUMENT") {
+      const rendered = renderArticleDocument(latest.document);
+      if (!rendered.document.content.length || !rendered.plainText.trim())
+        throw new ArticlePublicationBlocked("Article document is empty.", []);
+    }
+    if (latest.sourceFormat === "MDX") {
+      const rendered = renderMdxForEditor(latest.sourceText);
+      if (rendered.unsupportedComponents.length) {
+        throw new ArticlePublicationBlocked(
+          "MDX contains content the CMS renderer cannot preserve.",
+          rendered.unsupportedComponents,
+        );
+      }
+      if (latest.renderedHtml !== rendered.renderedHtml) {
+        throw new ArticlePublicationBlocked(
+          "Save a fresh revision before publishing this MDX article.",
+          [],
+        );
+      }
+      const savedBlocks = article.blocks
+        .filter((block) => block.revisionId === latest.id)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((block) => ({ type: block.type, content: block.content }));
+      const previewBlocks = rendered.blocks.map((block) => ({
+        type: block.type,
+        content: JSON.parse(JSON.stringify(block.content)) as unknown,
+      }));
+      if (!isDeepStrictEqual(savedBlocks, previewBlocks)) {
+        throw new ArticlePublicationBlocked(
+          "Save a fresh revision before publishing this MDX article's blocks.",
+          [],
+        );
+      }
+    }
+    const published = await this.repository.publishLatestRevision(
+      normalizeSlug(slug),
+      latest.id,
+    );
+    if (!published)
+      throw new ArticlePublicationBlocked(
+        "Article revision changed before publication. Reload and retry.",
+        [],
+      );
+    return published;
   }
 
   async restoreRevision(
@@ -309,6 +502,96 @@ export class ArticleService {
       authorName: input.authorName,
       blocks,
     });
+  }
+}
+
+function normalizeTags(tags: string[] | undefined): string[] {
+  if (!tags) return [];
+  if (
+    !Array.isArray(tags) ||
+    tags.length > 30 ||
+    tags.some((tag) => typeof tag !== "string")
+  )
+    throw new Error("Invalid article tags.");
+  return [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))];
+}
+
+function normalizeCover(
+  cover: DocumentEditorInput["cover"],
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined {
+  if (cover === null) return Prisma.DbNull;
+  if (!cover) return undefined;
+  if (
+    typeof cover.src !== "string" ||
+    !/^(https?:\/\/[^\s]+|\/(?!\/)[^\s]*)$/i.test(cover.src) ||
+    typeof cover.alt !== "string"
+  )
+    throw new Error("Invalid article cover.");
+  if (
+    (cover.caption !== undefined && typeof cover.caption !== "string") ||
+    (cover.kind !== undefined && typeof cover.kind !== "string")
+  )
+    throw new Error("Invalid article cover metadata.");
+  return {
+    src: cover.src,
+    alt: cover.alt,
+    ...(cover.caption ? { caption: cover.caption } : {}),
+    ...(cover.kind ? { kind: cover.kind } : {}),
+  };
+}
+
+function normalizeSummaryVideo(
+  video: DocumentEditorInput["summaryVideo"],
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput | undefined {
+  if (video === null) return Prisma.DbNull;
+  if (!video) return undefined;
+  if (
+    typeof video.src !== "string" ||
+    !/^(https?:\/\/[^\s]+|\/(?!\/)[^\s]*)$/i.test(video.src)
+  )
+    throw new Error("Invalid summary video source.");
+  for (const key of ["title", "caption", "provider"] as const) {
+    if (video[key] !== undefined && typeof video[key] !== "string")
+      throw new Error("Invalid summary video metadata.");
+  }
+  for (const key of ["poster", "subtitles"] as const) {
+    if (
+      video[key] !== undefined &&
+      (typeof video[key] !== "string" ||
+        !/^(https?:\/\/[^\s]+|\/(?!\/)[^\s]*)$/i.test(video[key]))
+    )
+      throw new Error("Invalid summary video URL.");
+  }
+  return { ...video };
+}
+
+function normalizeDisplayDate(
+  value: string | null | undefined,
+): Date | null | undefined {
+  if (value === null) return null;
+  if (!value) return undefined;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.valueOf()))
+    throw new Error("Invalid article display date.");
+  return parsed;
+}
+
+export function validateDocumentDraftInput(input: DocumentEditorInput): void {
+  renderArticleDocument(input.document);
+  normalizeTags(input.tags);
+  normalizeCover(input.cover);
+  normalizeSummaryVideo(input.summaryVideo);
+  normalizeDisplayDate(input.displayDate);
+  normalizeDisplayDate(input.displayUpdatedAt);
+}
+
+export class ArticlePublicationBlocked extends Error {
+  constructor(
+    message: string,
+    readonly issues: Array<{ name: string; line: number }>,
+  ) {
+    super(message);
+    this.name = "ArticlePublicationBlocked";
   }
 }
 

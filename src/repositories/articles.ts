@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import type {
   Article,
   ArticleAsset,
@@ -6,7 +7,6 @@ import type {
   ArticleRevision,
   ArticleSourceFormat,
   ArticleStatus,
-  Prisma,
 } from "@prisma/client";
 
 export interface ArticleBlockDraft {
@@ -37,6 +37,12 @@ export interface CreateArticleDraftInput {
   sourceFormat: ArticleSourceFormat;
   sourceText: string;
   renderedHtml?: string;
+  document?: Prisma.InputJsonValue;
+  tags?: string[];
+  cover?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+  summaryVideo?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+  displayDate?: Date | null;
+  displayUpdatedAt?: Date | null;
   status?: ArticleStatus;
   changeSummary?: string;
   authorName?: string;
@@ -46,12 +52,19 @@ export interface CreateArticleDraftInput {
 
 export interface CreateArticleRevisionInput {
   slug: string;
+  expectedRevisionId?: string;
   title?: string;
   description?: string;
   category?: string;
   sourceFormat: ArticleSourceFormat;
   sourceText: string;
   renderedHtml?: string;
+  document?: Prisma.InputJsonValue;
+  tags?: string[];
+  cover?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+  summaryVideo?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+  displayDate?: Date | null;
+  displayUpdatedAt?: Date | null;
   changeSummary?: string;
   authorName?: string;
   blocks?: ArticleBlockDraft[];
@@ -97,6 +110,11 @@ export class ArticleRepository {
         sourceFormat: true,
         sourceText: true,
         updatedAt: true,
+        revisions: {
+          orderBy: { revisionNumber: "desc" },
+          take: 1,
+          select: { sourceFormat: true, changeSummary: true },
+        },
       },
       orderBy: { slug: "asc" },
     });
@@ -145,6 +163,15 @@ export class ArticleRepository {
     });
   }
 
+  async listPublishedSlugs(): Promise<string[]> {
+    const articles = await this.db.article.findMany({
+      where: { status: "PUBLISHED" },
+      select: { slug: true },
+      orderBy: { slug: "asc" },
+    });
+    return articles.map((article) => article.slug);
+  }
+
   async createDraft(
     input: CreateArticleDraftInput,
   ): Promise<ArticleWithContent> {
@@ -159,6 +186,11 @@ export class ArticleRepository {
           sourceFormat: input.sourceFormat,
           sourceText: input.sourceText,
           renderedHtml: input.renderedHtml,
+          tags: input.tags ?? [],
+          cover: input.cover,
+          summaryVideo: input.summaryVideo,
+          displayDate: input.displayDate,
+          displayUpdatedAt: input.displayUpdatedAt,
         },
       });
 
@@ -190,6 +222,14 @@ export class ArticleRepository {
       if (!article) {
         return null;
       }
+      if (
+        input.expectedRevisionId &&
+        article.revisions[0]?.id !== input.expectedRevisionId
+      ) {
+        throw new Error(
+          "Article revision changed before save. Reload and retry.",
+        );
+      }
 
       const nextRevisionNumber =
         (article.revisions[0]?.revisionNumber ?? 0) + 1;
@@ -202,6 +242,26 @@ export class ArticleRepository {
           title: input.title ?? article.title,
           description: input.description ?? article.description ?? undefined,
           category: input.category ?? article.category,
+          tags: input.tags ?? article.revisions[0]?.tags ?? article.tags,
+          cover:
+            input.cover ??
+            article.revisions[0]?.cover ??
+            article.cover ??
+            Prisma.DbNull,
+          summaryVideo:
+            input.summaryVideo ??
+            article.revisions[0]?.summaryVideo ??
+            article.summaryVideo ??
+            Prisma.DbNull,
+          displayDate:
+            input.displayDate !== undefined
+              ? input.displayDate
+              : (article.revisions[0]?.displayDate ?? article.displayDate),
+          displayUpdatedAt:
+            input.displayUpdatedAt !== undefined
+              ? input.displayUpdatedAt
+              : (article.revisions[0]?.displayUpdatedAt ??
+                article.displayUpdatedAt),
         },
       );
       await this.createRevisionContent(tx, article.id, revision.id, input);
@@ -217,6 +277,18 @@ export class ArticleRepository {
             sourceFormat: input.sourceFormat,
             sourceText: input.sourceText,
             renderedHtml: input.renderedHtml,
+            tags: input.tags ?? article.tags,
+            cover: input.cover ?? article.cover ?? Prisma.DbNull,
+            summaryVideo:
+              input.summaryVideo ?? article.summaryVideo ?? Prisma.DbNull,
+            displayDate:
+              input.displayDate !== undefined
+                ? input.displayDate
+                : article.displayDate,
+            displayUpdatedAt:
+              input.displayUpdatedAt !== undefined
+                ? input.displayUpdatedAt
+                : article.displayUpdatedAt,
           },
         });
       }
@@ -227,6 +299,7 @@ export class ArticleRepository {
 
   async publishLatestRevision(
     slug: string,
+    expectedRevisionId?: string,
   ): Promise<ArticleWithContent | null> {
     return this.db.$transaction(async (tx) => {
       const article = await tx.article.findUnique({
@@ -235,6 +308,9 @@ export class ArticleRepository {
       });
       const revision = article?.revisions[0];
       if (!article || !revision) {
+        return null;
+      }
+      if (expectedRevisionId && revision.id !== expectedRevisionId) {
         return null;
       }
 
@@ -250,6 +326,11 @@ export class ArticleRepository {
           title: revision.title ?? article.title,
           description: revision.description ?? article.description,
           category: revision.category ?? article.category,
+          tags: revision.tags,
+          cover: revision.cover ?? Prisma.DbNull,
+          summaryVideo: revision.summaryVideo ?? Prisma.DbNull,
+          displayDate: revision.displayDate,
+          displayUpdatedAt: revision.displayUpdatedAt,
         },
       });
 
@@ -276,6 +357,12 @@ export class ArticleRepository {
       sourceFormat: revision.sourceFormat,
       sourceText: revision.sourceText,
       renderedHtml: revision.renderedHtml ?? undefined,
+      document: revision.document ?? undefined,
+      tags: revision.tags,
+      cover: revision.cover ?? Prisma.DbNull,
+      summaryVideo: revision.summaryVideo ?? Prisma.DbNull,
+      displayDate: revision.displayDate,
+      displayUpdatedAt: revision.displayUpdatedAt,
       changeSummary: `Restore revision ${revisionNumber}`,
       blocks: article.blocks
         .filter((block) => block.revisionId === revision.id)
@@ -332,6 +419,12 @@ export class ArticleRepository {
       | "category"
       | "sourceText"
       | "renderedHtml"
+      | "document"
+      | "tags"
+      | "cover"
+      | "summaryVideo"
+      | "displayDate"
+      | "displayUpdatedAt"
       | "changeSummary"
       | "authorName"
     >,
@@ -346,6 +439,12 @@ export class ArticleRepository {
         sourceFormat: input.sourceFormat,
         sourceText: input.sourceText,
         renderedHtml: input.renderedHtml,
+        document: input.document,
+        tags: input.tags ?? [],
+        cover: input.cover,
+        summaryVideo: input.summaryVideo,
+        displayDate: input.displayDate,
+        displayUpdatedAt: input.displayUpdatedAt,
         changeSummary: input.changeSummary,
         authorName: input.authorName,
       },
