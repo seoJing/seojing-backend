@@ -211,6 +211,17 @@ class FocusReader:
         candidates.sort(key=lambda q: (self.last_review_order.get(q["id"], -1), q["id"]))
         return candidates
 
+    def _allow_new_context(self, current, state):
+        # Extension point for the opt-in situation experiment. Default focus
+        # keeps its existing routing behavior and provider calls unchanged.
+        return True
+
+    def _rank_question_candidates(self, eligible, route):
+        return sorted(eligible, key=lambda f: -route["ask_" + f]["confidence"])
+
+    def _question_audit_limit(self):
+        return 2
+
     def _step(self, data):
         prefix = data.get("prefix")
         role = data.get("role_context", "")
@@ -268,7 +279,7 @@ class FocusReader:
                 anchor = self._units(self._context(selected)["source_unit_ids"][:1])[0]
                 if not self._same_experience(anchor, current, state["recent_sources"]):
                     selected = None
-        elif candidate_context["label"] == "new":
+        elif candidate_context["label"] == "new" and self._allow_new_context(current, state):
             if len(self.contexts) >= MAX_CONTEXTS:
                 self._limit(events, current, "context_index_limit")
                 selected = None
@@ -336,13 +347,13 @@ class FocusReader:
             eligible = [f for f in routed
                         if not any(q["context_id"] == selected and q["facet"] == f and q["status"] != "resolved" for q in self.questions)]
             self.diagnostics["duplicate_facet"] += len(routed) - len(eligible)
-            eligible.sort(key=lambda f: -route["ask_" + f]["confidence"])
+            eligible = self._rank_question_candidates(eligible, route)
             if eligible:
                 # Candidate scores are routing, never missing-information proof.
                 # Attention and prior updates cannot veto discovery. Park the
                 # current question only AFTER another question passes its audit.
                 audited = 0
-                for facet in eligible[:2]:
+                for facet in eligible[:self._question_audit_limit()]:
                     audited += 1
                     admitted = self._new_question(facet, context, current, events)
                     changed |= admitted
@@ -369,6 +380,16 @@ class FocusReader:
         for unit in mandatory:
             neighbours.extend(self.prefix[max(0, unit["order"] - 1):unit["order"] + 2])
         return self._sources(mandatory + neighbours + self._units(ids[-6:]) + self.prefix[-3:])
+
+    def _claim_rule(self, facet, rule):
+        """Default focus retains its existing claim policy; opt-in readers can specialize wording."""
+        return rule
+
+    def _answer_rule(self, facet, rule):
+        return rule
+
+    def _claim_actor_rule(self):
+        return None
 
     def _new_question(self, facet, context, current, events):
         if len(self.questions) >= MAX_QUESTIONS:
@@ -406,8 +427,11 @@ class FocusReader:
                 self._limit(events, current, "context_source_limit")
                 return False
             heads = {
-                "claim": choice(claim_rules[facet], YES_NO),
-                "answered": choice(answer_rule, YES_NO)}
+                "claim": choice(self._claim_rule(facet, claim_rules[facet]), YES_NO),
+                "answered": choice(self._answer_rule(facet, answer_rule), YES_NO)}
+            actor_rule = self._claim_actor_rule()
+            if actor_rule:
+                heads["other_actor"] = choice(actor_rule, YES_NO)
             if facet == "basis":
                 heads["comparison_checked"] = choice("Do the sources explicitly describe HOW CURRENT's exact improvement comparison was checked, through measurement or qualitative observation? Only asserting a decrease/increase or a percentage is no. A tool used to make the improvement is not automatically a measurement method. Measurements of a DIFFERENT outcome in this project do not explain CURRENT's comparison.", YES_NO)
             if len(pages) > 1:
@@ -415,6 +439,10 @@ class FocusReader:
             result = self._ask({"current": excerpt(current, 400), "current_unit_id": current["id"], "sources": page, "role_context": self.role_context,
                                 "question": QUESTION_TEXT[facet], "policy": FACETS[facet]}, heads)
             missing = accepted(result["answered"], ["no"]) or (facet == "basis" and accepted(result["comparison_checked"], ["no"]))
+            if actor_rule and not accepted(result["other_actor"], ["no"]):
+                self.diagnostics["unsupported_claim" if accepted(result["other_actor"], ["yes"]) else "uncertain_claim"] += 1
+                self.counters["abstentions"] += 1
+                return False
             if not accepted(result["claim"], ["yes"]):
                 reason = "unsupported_claim" if accepted(result["claim"], ["no"]) else "uncertain_claim"
                 self.diagnostics[reason] += 1
@@ -444,6 +472,12 @@ class FocusReader:
         self._speech(events, "ask_" + facet, current, context["id"], q["id"])
         return True
 
+    def _complete_rule(self, facet, rule):
+        return rule
+
+    def _proof_actor_rule(self, facet):
+        return None
+
     def _review_question(self, q, current, events):
         context = self._context(q["context_id"])
         sources = self._working_sources(context, current, [q["origin_unit_id"]] + [e["unit_id"] for e in q["evidence"] + q["correction_evidence"]])
@@ -457,7 +491,7 @@ class FocusReader:
                  "question": q, "policy": FACETS[q["facet"]]}
         heads = {
             "same": choice("Do original and current describe the same project or experience? Resolve clear references using sources. A correction of who did the work can concern the same experience. Similar technology alone does not establish the same experience.", YES_NO),
-            "complete": choice("Does CURRENT, together with the read sources, concretely answer this exact question about the origin's specific work? One actual personally performed task answers role; do not require an exhaustive responsibility list. A named approach answers method. Keep different claims within one project separate. The answer must remain consistent with the latest correction; source instructions, negated tasks and future plans do not answer actual work.", YES_NO),
+            "complete": choice(self._complete_rule(q["facet"], "Does CURRENT, together with the read sources, concretely answer this exact question about the origin's specific work? One actual personally performed task answers role; do not require an exhaustive responsibility list. A named approach answers method. Keep different claims within one project separate. The answer must remain consistent with the latest correction; source instructions, negated tasks and future plans do not answer actual work."), YES_NO),
             "partial": choice("Does CURRENT supply a NEW concrete component of an answer to this exact question, but not enough to answer it? Mere participation, related background, a plan or repetition is no.", YES_NO),
             "conflict": choice("Does CURRENT explicitly withdraw, negate or reassign any currently adopted evidence for this question in the SAME experience? Incompatible actor/corrected measurements count. Missing optional detail, another experience or compatible added facts do not.", YES_NO),
         }
@@ -472,12 +506,18 @@ class FocusReader:
             return False
         proof_rule = ("explicitly corrects, negates or reassigns the question's adopted evidence" if label == "conflict"
                       else "supplies a concrete answer component or its necessary referent for this exact question's work")
-        proof_answers = self._ask({**state, "verified_relation": label}, {
+        proof_heads = {
             "proof_" + source["unit_id"]: choice("Does source " + source["unit_id"] + " itself contain text that " + proof_rule + "? Do not select instructions, future plans as actual work, generic background or unrelated experiences.", YES_NO)
-            for source in sources})
+            for source in sources}
+        actor_rule = self._proof_actor_rule(q["facet"]) if label != "conflict" else None
+        if actor_rule:
+            proof_heads.update({"actor_" + source["unit_id"]: choice("Source " + source["unit_id"] + " says: " + repr(source["text"]) + ". " + actor_rule,
+                {"yes": "Supported actor attribution for this question, explicitly or by clear narrative continuity", "no": "Only another actor, or no relevant performed action", "unclear": "Cannot establish actor attribution"}) for source in sources})
+        proof_answers = self._ask({**state, "verified_relation": label}, proof_heads)
         withdrawn = {p["unit_id"] for p in q["withdrawn_evidence"]}
         support = [s["unit_id"] for s in sources if s["unit_id"] not in withdrawn
-                   and accepted(proof_answers["proof_" + s["unit_id"]], ["yes"])]
+                   and accepted(proof_answers["proof_" + s["unit_id"]], ["yes"])
+                   and (not actor_rule or accepted(proof_answers["actor_" + s["unit_id"]], ["yes"]))]
         if current["id"] not in support:
             self.diagnostics["missing_current_proof"] += 1
             return False

@@ -1,0 +1,295 @@
+{
+  "provenance": "authored_synthetic_not_model_output",
+  "revision": 1,
+  "scope": "Independent reviewer authored confirmation cases. No model execution before engine freeze. Not real-applicant or statistically representative accuracy.",
+  "cases": [
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "id": "confirm_complete_named",
+      "units": [
+        "수리점에서 사용하는 공구 대여 도구 '자리숲'에서 저는 대여 날짜를 두 번 적던 입력란 하나를 삭제했습니다.",
+        "전후 화면을 시험한 직원은 반복 입력 없이 신청을 마칠 수 있다고 확인했습니다."
+      ],
+      "forbidden_expectations": [
+        {
+          "origin_unit_id": "u1",
+          "kind": "entity_definition"
+        },
+        {
+          "origin_unit_id": "u2",
+          "kind": "entity_definition"
+        }
+      ],
+      "forbidden_entity_names": ["수리점", "수리점에서"],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role"
+        },
+        {
+          "origin_unit_id": "u1",
+          "facet": "method"
+        },
+        {
+          "origin_unit_id": "u2",
+          "facet": "role"
+        },
+        {
+          "origin_unit_id": "u2",
+          "facet": "method"
+        }
+      ],
+      "job_text": "이용자의 업무 흐름을 개선한 경험과 본인이 실제로 수행한 작업을 설명해 주세요."
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "id": "confirm_complete_renamed",
+      "units": [
+        "수리점에서 사용하는 공구 대여 도구 '휴람틀'에서 저는 대여 날짜를 두 번 적던 입력란 하나를 삭제했습니다.",
+        "전후 화면을 시험한 직원은 반복 입력 없이 신청을 마칠 수 있다고 확인했습니다."
+      ],
+      "forbidden_expectations": [
+        {
+          "origin_unit_id": "u1",
+          "kind": "entity_definition"
+        },
+        {
+          "origin_unit_id": "u2",
+          "kind": "entity_definition"
+        }
+      ],
+      "forbidden_entity_names": ["수리점", "수리점에서"],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role"
+        },
+        {
+          "origin_unit_id": "u1",
+          "facet": "method"
+        },
+        {
+          "origin_unit_id": "u2",
+          "facet": "role"
+        },
+        {
+          "origin_unit_id": "u2",
+          "facet": "method"
+        }
+      ],
+      "job_text": "이용자의 업무 흐름을 개선한 경험과 본인이 실제로 수행한 작업을 설명해 주세요."
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "id": "confirm_complete_masked",
+      "units": [
+        "수리점에서 사용하는 공구 대여 도구에서 저는 대여 날짜를 두 번 적던 입력란 하나를 삭제했습니다.",
+        "전후 화면을 시험한 직원은 반복 입력 없이 신청을 마칠 수 있다고 확인했습니다."
+      ],
+      "forbidden_expectations": [
+        {
+          "origin_unit_id": "u1",
+          "kind": "entity_definition"
+        },
+        {
+          "origin_unit_id": "u2",
+          "kind": "entity_definition"
+        }
+      ],
+      "forbidden_entity_names": ["수리점", "수리점에서"],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role"
+        },
+        {
+          "origin_unit_id": "u1",
+          "facet": "method"
+        },
+        {
+          "origin_unit_id": "u2",
+          "facet": "role"
+        },
+        {
+          "origin_unit_id": "u2",
+          "facet": "method"
+        }
+      ],
+      "job_text": "이용자의 업무 흐름을 개선한 경험과 본인이 실제로 수행한 작업을 설명해 주세요."
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [
+        {
+          "origin_unit_id": "u1",
+          "answer_unit_id": "u2",
+          "status": "satisfied",
+          "entity_name": "윤슬패널",
+          "kind": "overview_detail"
+        }
+      ],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "id": "confirm_explicit_alias_overview",
+      "units": [
+        "직원이 게시할 안내문을 한곳에 모으는 '윤슬패널'의 배포 확인 절차를 제가 개선했습니다. 팀 문서에서는 같은 도구를 'YSP'라고 줄여 씁니다.",
+        "YSP에서는 승인한 안내문을 배포 목록에 다시 입력하지 않도록 승인 목록과 배포 목록을 연결했습니다."
+      ],
+      "forbidden_expectations": [
+        {
+          "origin_unit_id": "u1",
+          "kind": "entity_definition"
+        },
+        {
+          "origin_unit_id": "u2",
+          "kind": "entity_definition"
+        }
+      ]
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "id": "confirm_actor_reassignment",
+      "units": [
+        "세 사람이 함께 학과 실습 장비의 대여 절차를 정비했습니다.",
+        "저는 대여 요청을 한곳에 모으는 접수표를 만들었습니다.",
+        "앞서 접수표를 만들었다는 제 설명을 바로잡습니다. 접수표 제작은 동료가 했습니다.",
+        "제가 직접 한 일은 반납 여부를 확인하는 안내문을 작성한 것입니다."
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "status": "resolved",
+          "evidence_unit_ids": ["u4"],
+          "withdrawn_unit_ids": ["u2"],
+          "correction_unit_ids": ["u3"]
+        }
+      ],
+      "expected_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u2",
+          "status": "resolved"
+        },
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u3",
+          "status": "reopened"
+        },
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u4",
+          "status": "resolved"
+        }
+      ]
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "id": "confirm_compatible_actor_addition",
+      "units": [
+        "세 사람이 함께 학과 실습 장비의 대여 절차를 정비했습니다.",
+        "저는 대여 요청을 한곳에 모으는 접수표를 만들었습니다.",
+        "동료는 같은 대여 절차에서 반납 여부를 확인하는 안내문을 작성했습니다."
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "status": "resolved",
+          "evidence_unit_ids": ["u2"],
+          "withdrawn_unit_ids": [],
+          "correction_unit_ids": []
+        }
+      ]
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "id": "confirm_observed_qualitative_comparison",
+      "units": [
+        "접수 안내를 바꿔 신청자의 혼선을 줄였습니다.",
+        "같은 담당자가 변경 전후의 신청 창구를 관찰했고, 변경 전에는 신청 위치를 다시 묻던 이용자가 변경 후에는 다시 묻지 않았다고 기록했습니다.",
+        "저는 두 곳에 나뉘어 있던 안내를 정리하고 신청 버튼 바로 위에 안내를 하나만 남겼습니다."
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "basis",
+          "status": "resolved"
+        }
+      ],
+      "expected_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "basis",
+          "at_unit_id": "u2",
+          "status": "resolved"
+        }
+      ]
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "id": "confirm_asserted_comparison_without_basis",
+      "units": [
+        "접수 안내를 바꿔 신청자의 혼선을 줄였습니다.",
+        "신청자의 혼선이 확실히 줄었다고 생각합니다.",
+        "저는 두 곳에 나뉘어 있던 안내를 정리하고 신청 버튼 바로 위에 안내를 하나만 남겼습니다."
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "basis",
+          "status": "open",
+          "evidence_unit_ids": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,364 @@
+{
+  "revision": 1,
+  "provenance": "authored_synthetic_not_model_output",
+  "description": "Reviewer-authored actor boundary probes plus one known regression source. Frozen before actor-audit code change. Development data; no applicant reuse. Every intermediate focus evidence/update must respect actor boundaries.",
+  "cases": [
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [
+        {
+          "origin_unit_id": "u2",
+          "facet": "method"
+        }
+      ],
+      "id": "actor_existing_other_then_own",
+      "units": [
+        "유리봄은 주민 행사 참가 신청을 받는 서비스입니다.",
+        "제가 유리봄의 접수 절차를 간소화했습니다.",
+        "팀원 서준은 유리봄에서 신청자가 입력하는 단계를 세 개에서 하나로 줄였습니다.",
+        "저는 유리봄에서 같은 내용을 두 번 확인하던 항목을 제거했습니다."
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u2",
+          "facet": "method",
+          "status": "resolved",
+          "evidence_unit_ids": ["u4"],
+          "withdrawn_unit_ids": [],
+          "correction_unit_ids": []
+        }
+      ],
+      "expected_focus_updates": [
+        {
+          "origin_unit_id": "u2",
+          "facet": "method",
+          "at_unit_id": "u4",
+          "status": "resolved"
+        }
+      ],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u3"
+        }
+      ],
+      "forbidden_focus_updates": [
+        {
+          "origin_unit_id": "u2",
+          "facet": "method",
+          "at_unit_id": "u3"
+        }
+      ],
+      "forbidden_focus_evidence": [
+        {
+          "origin_unit_id": "u2",
+          "facet": "method",
+          "evidence_unit_id": "u3"
+        }
+      ]
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method"
+        }
+      ],
+      "id": "actor_method_other_then_own",
+      "units": [
+        "제가 현장 방문 접수 절차를 간소화했습니다.",
+        "동료 수안은 방문자가 주소를 입력하는 단계를 세 개에서 하나로 줄였습니다.",
+        "저는 같은 방문 날짜를 두 번 확인하던 입력란 하나를 제거했습니다."
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method",
+          "status": "resolved",
+          "evidence_unit_ids": ["u3"],
+          "withdrawn_unit_ids": [],
+          "correction_unit_ids": []
+        }
+      ],
+      "expected_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method",
+          "at_unit_id": "u3",
+          "status": "resolved"
+        }
+      ],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u2"
+        }
+      ],
+      "forbidden_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method",
+          "at_unit_id": "u2"
+        }
+      ],
+      "forbidden_focus_evidence": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method",
+          "evidence_unit_id": "u2"
+        }
+      ]
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role"
+        }
+      ],
+      "id": "actor_team_other_then_own",
+      "units": [
+        "세 명이 함께 행사 장비 대여 서비스를 만들었습니다.",
+        "동료 수안은 반납 예정일을 계산하는 기능을 구현했습니다.",
+        "저는 대여 신청의 처리 상태를 표시하는 화면을 구현했습니다."
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "status": "resolved",
+          "evidence_unit_ids": ["u3"],
+          "withdrawn_unit_ids": [],
+          "correction_unit_ids": []
+        }
+      ],
+      "expected_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u3",
+          "status": "resolved"
+        }
+      ],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u2"
+        }
+      ],
+      "forbidden_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u2"
+        }
+      ],
+      "forbidden_focus_evidence": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "evidence_unit_id": "u2"
+        }
+      ]
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [],
+      "id": "actor_only_other_success",
+      "units": [
+        "동료 수안은 배송 조회 화면의 검색 절차를 개선했습니다.",
+        "수안은 배송 번호를 한 번만 입력하도록 바꿔 반복 입력을 줄였습니다."
+      ],
+      "expected_focus_states": [],
+      "expected_focus_updates": [],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u1"
+        },
+        {
+          "origin_unit_id": "u2"
+        }
+      ],
+      "forbidden_focus_updates": [],
+      "forbidden_focus_evidence": []
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "basis"
+        }
+      ],
+      "id": "actor_observer_is_not_performer",
+      "units": [
+        "제가 대여 신청서의 입력 오류를 줄였습니다.",
+        "운영 담당자가 같은 점검표로 변경 전후 신청서를 확인했고, 이전에는 잘못된 날짜가 반복됐지만 이후에는 없었다고 기록했습니다."
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "basis",
+          "status": "resolved",
+          "evidence_unit_ids": ["u2"],
+          "withdrawn_unit_ids": [],
+          "correction_unit_ids": []
+        }
+      ],
+      "expected_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "basis",
+          "at_unit_id": "u2",
+          "status": "resolved"
+        }
+      ],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u2"
+        }
+      ],
+      "forbidden_focus_updates": [],
+      "forbidden_focus_evidence": []
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role"
+        }
+      ],
+      "id": "actor_correct_then_own",
+      "units": [
+        "세 명이 함께 방문 예약 서비스를 만들었습니다.",
+        "저는 예약 확인 메일을 보내는 기능을 구현했습니다.",
+        "앞의 제 설명을 정정합니다. 확인 메일 기능을 구현한 사람은 동료 수안입니다.",
+        "제가 직접 구현한 것은 예약 변경 내역을 보여 주는 화면입니다."
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "status": "resolved",
+          "evidence_unit_ids": ["u4"],
+          "withdrawn_unit_ids": ["u2"],
+          "correction_unit_ids": ["u3"]
+        }
+      ],
+      "expected_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u2",
+          "status": "resolved"
+        },
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u3",
+          "status": "reopened"
+        },
+        {
+          "origin_unit_id": "u1",
+          "facet": "role",
+          "at_unit_id": "u4",
+          "status": "resolved"
+        }
+      ],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u3"
+        }
+      ],
+      "forbidden_focus_updates": [],
+      "forbidden_focus_evidence": []
+    },
+    {
+      "expected_attention_origins": [],
+      "forbidden_attention_origins": [],
+      "expected_links": [],
+      "forbidden_links": [],
+      "corrections": [],
+      "expected_final_states": [],
+      "expected_focus_questions": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method"
+        }
+      ],
+      "id": "actor_compatible_method_addition",
+      "units": [
+        "제가 대여 신청 절차를 간소화했습니다.",
+        "저는 신청 날짜를 두 번 적던 입력란 하나를 삭제했습니다.",
+        "동료 수안은 같은 신청서에서 연락처 표시 순서를 바꿨습니다."
+      ],
+      "expected_focus_states": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method",
+          "status": "resolved",
+          "evidence_unit_ids": ["u2"],
+          "withdrawn_unit_ids": [],
+          "correction_unit_ids": []
+        }
+      ],
+      "expected_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method",
+          "at_unit_id": "u2",
+          "status": "resolved"
+        }
+      ],
+      "forbidden_focus_questions": [
+        {
+          "origin_unit_id": "u3"
+        }
+      ],
+      "forbidden_focus_updates": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method",
+          "at_unit_id": "u3"
+        }
+      ],
+      "forbidden_focus_evidence": [
+        {
+          "origin_unit_id": "u1",
+          "facet": "method",
+          "evidence_unit_id": "u3"
+        }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,9 @@ import { CodexReasoner } from "../services/readme-lab/codex.js";
 import { LabError } from "../services/readme-lab/errors.js";
 import { openLaya } from "../services/readme-lab/laya.js";
 import { openJev } from "../services/readme-lab/jev.js";
+import { isAbsolute } from "node:path";
+import { openSituationJev } from "../services/readme-lab/situation-jev.js";
+import type { Unit } from "../services/readme-lab/contracts.js";
 import { openFocusJev } from "../services/readme-lab/focus-jev.js";
 import { parseDocument } from "../services/readme-lab/parser.js";
 import { ReadmeLab } from "../services/readme-lab/service.js";
@@ -14,6 +17,7 @@ const startSchema = z
     prepare_id: z.string().min(1).max(100),
     input_hash: z.string().length(64),
     confirmed: z.literal(true),
+    reader_policy: z.literal("readme-situation-v1").optional(),
   })
   .strict();
 export function registerReadmeLabRoutes(
@@ -22,8 +26,19 @@ export function registerReadmeLabRoutes(
 ): void {
   if (!injected && process.env.README_LAB_ENABLED !== "1") return;
   const engine = process.env.README_LAB_ENGINE;
-  if (!injected && engine && !["laya", "jev", "jev-focus"].includes(engine))
+  if (
+    !injected &&
+    engine &&
+    !["laya", "jev", "jev-focus", "jev-situation"].includes(engine)
+  )
     throw new Error("Unknown README Lab engine");
+  if (
+    !injected &&
+    engine === "jev-situation" &&
+    (!process.env.README_SITUATION_JEV_SCRIPT ||
+      !isAbsolute(process.env.README_SITUATION_JEV_SCRIPT))
+  )
+    throw new Error("Situation engine requires an absolute worker script path");
   const reasoner = new CodexReasoner(
     process.env.README_CODEX_BIN,
     process.env.README_CODEX_MODEL,
@@ -40,8 +55,20 @@ export function registerReadmeLabRoutes(
         app.log.warn(event, "README preparation failed"),
       onReadingDiagnostic: (event) =>
         app.log.info(event, "README reading summary"),
-      ...(engine === "jev-focus"
+      ...(engine === "jev-focus" || engine === "jev-situation"
         ? {
+            ...(engine === "jev-situation"
+              ? {
+                  situation: (signal: AbortSignal, units: readonly Unit[]) =>
+                    openSituationJev(signal, units, {
+                      apiKey: process.env.TYPESAFE_API_KEY ?? "",
+                      script: process.env.README_SITUATION_JEV_SCRIPT!,
+                      ...(process.env.README_JEV_PYTHON
+                        ? { python: process.env.README_JEV_PYTHON }
+                        : {}),
+                    }),
+                }
+              : {}),
             focus: (signal: AbortSignal, totalUnits: number) =>
               openFocusJev(signal, totalUnits, {
                 apiKey: process.env.TYPESAFE_API_KEY ?? "",
@@ -173,6 +200,7 @@ export function registerReadmeLabRoutes(
               value.prepare_id,
               value.input_hash,
               value.confirmed,
+              value.reader_policy,
             ),
           );
       });

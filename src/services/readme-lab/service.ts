@@ -7,11 +7,15 @@ import type {
   PrepareView,
   Question,
   ResumeDocument,
+  Unit,
 } from "./contracts.js";
 import type { Reasoner } from "./codex.js";
 import type { Classifier } from "./laya.js";
 import type { JevReader } from "./jev.js";
 import type { FocusDiagnostics, FocusReader } from "./focus-jev.js";
+import type { SituationDiagnostics, SituationReader } from "./situation-jev.js";
+import { situationReportState } from "./situation-report.js";
+import { publicSituationEvent } from "./situation-public.js";
 import { focusReportState } from "./focus-report.js";
 import { readSemanticPrefix } from "./semantic-reader.js";
 import { LabError, errorCode, preparationFailureReason } from "./errors.js";
@@ -59,6 +63,11 @@ export interface LabOptions {
   jev?: (signal: AbortSignal) => Promise<JevReader>;
   /** Explicit opt-in; the public route factory retains its existing engine. */
   focus?: (signal: AbortSignal, totalUnits: number) => Promise<FocusReader>;
+  /** Additional per-job opt-in; requires the focus fallback. */
+  situation?: (
+    signal: AbortSignal,
+    units: readonly Unit[],
+  ) => Promise<SituationReader>;
   dailyLimit?: number;
   now?: () => number;
   ttlMs?: number;
@@ -82,7 +91,11 @@ export interface LabOptions {
     reading_ms: number | null;
     error: string | null;
     metrics: JevReader["metrics"] | FocusReader["metrics"] | null;
-    decisions: JevReader["diagnostics"] | FocusDiagnostics | null;
+    decisions:
+      | JevReader["diagnostics"]
+      | FocusDiagnostics
+      | SituationDiagnostics
+      | null;
   }) => void;
 }
 
@@ -108,6 +121,8 @@ export class ReadmeLab {
         .length !== 1
     )
       throw new Error("Exactly one Lab reading engine must be configured");
+    if (options.situation && !options.focus)
+      throw new Error("Situation opt-in requires the existing focus fallback");
     if (
       !options.invitations.length ||
       options.invitations.some((code) => code.length < 16)
@@ -293,6 +308,7 @@ export class ReadmeLab {
     prepareId: string,
     inputHash: string,
     confirmed: boolean,
+    readerPolicy?: "readme-situation-v1",
   ): JobView {
     const preparation = this.owned(this.preparations.get(prepareId), session);
     if (!confirmed) throw new LabError("confirmation_required", 400);
@@ -304,7 +320,21 @@ export class ReadmeLab {
       !preparation.view.job
     )
       throw new LabError("prepare_not_ready", 409);
-    if (preparation.jobId) return this.getJob(session, preparation.jobId, 0);
+    if (
+      readerPolicy !== undefined &&
+      (readerPolicy !== "readme-situation-v1" || !this.options.situation)
+    )
+      throw new LabError("reader_policy_unsupported", 400);
+    const useSituation = readerPolicy === "readme-situation-v1";
+    if (preparation.jobId) {
+      const existing = this.getJob(session, preparation.jobId, 0);
+      if (
+        (existing.generation.policy_version === "readme-situation-v1") !==
+        useSituation
+      )
+        throw new LabError("reader_policy_changed", 409);
+      return existing;
+    }
     this.ensureRoom();
     const jobId = id();
     const document = preparation.view.document;
@@ -337,11 +367,13 @@ export class ReadmeLab {
         error: null,
         generation: {
           engine: remote ? "jev" : "laya",
-          policy_version: this.options.focus
-            ? "readme-focus-v1"
-            : job.reader_profile
-              ? "readme-prefix-v2"
-              : "readme-prefix-v1",
+          policy_version: useSituation
+            ? "readme-situation-v1"
+            : this.options.focus
+              ? "readme-focus-v1"
+              : job.reader_profile
+                ? "readme-prefix-v2"
+                : "readme-prefix-v1",
           model: remote
             ? {
                 model: "jev-1.13.0",
@@ -364,10 +396,15 @@ export class ReadmeLab {
       let classifier: Classifier | undefined;
       let jev: JevReader | undefined;
       let focus: FocusReader | undefined;
+      let situation: SituationReader | undefined;
       const started = Date.now();
       let readingMs: number | null = null;
       let metrics: JevReader["metrics"] | FocusReader["metrics"] | null = null;
-      let decisions: JevReader["diagnostics"] | FocusDiagnostics | null = null;
+      let decisions:
+        | JevReader["diagnostics"]
+        | FocusDiagnostics
+        | SituationDiagnostics
+        | null = null;
       const diagnostic = (phase: "reading_completed" | "finished") => {
         // An explicit allowlist, never model text, inputs, errors or credentials.
         try {
@@ -378,26 +415,35 @@ export class ReadmeLab {
             read_units: reading.view.progress.read_unit_count,
             total_units: document.units.length,
             question_count:
-              focus?.ledger.questions.length ?? reading.questions.length,
-            note_count: focus
-              ? focus.ledger.steps
-                  .flatMap((s) => s.events)
-                  .filter((e) => e.type === "observation").length
-              : reading.notes.length,
+              situation?.ledger.focus.questions.length ??
+              focus?.ledger.questions.length ??
+              reading.questions.length,
+            note_count:
+              (situation?.ledger.focus ?? focus?.ledger)
+                ? (situation?.ledger.focus ?? focus!.ledger).steps
+                    .flatMap((s) => s.events)
+                    .filter((e) => e.type === "observation").length
+                : reading.notes.length,
             evidence_count: reading.notes.filter(
               (n) => n.kind === "evidence" && !n.question_id,
             ).length,
-            retracted_count: focus
-              ? focus.ledger.steps
-                  .flatMap((s) => s.events)
-                  .filter((e) => e.type === "retracted").length
-              : (reading.memory?.note_retractions?.length ?? 0),
+            retracted_count:
+              (situation?.ledger.focus ?? focus?.ledger)
+                ? (situation?.ledger.focus ?? focus!.ledger).steps
+                    .flatMap((s) => s.events)
+                    .filter((e) => e.type === "retracted").length
+                : (reading.memory?.note_retractions?.length ?? 0),
             elapsed_ms: Date.now() - started,
             reading_ms: readingMs,
             error: reading.view.error ?? null,
-            metrics: structuredClone(focus?.metrics ?? jev?.metrics ?? metrics),
+            metrics: structuredClone(
+              situation?.metrics ?? focus?.metrics ?? jev?.metrics ?? metrics,
+            ),
             decisions: structuredClone(
-              focus?.diagnostics ?? jev?.diagnostics ?? decisions,
+              situation?.diagnostics ??
+                focus?.diagnostics ??
+                jev?.diagnostics ??
+                decisions,
             ),
           });
         } catch {
@@ -410,7 +456,13 @@ export class ReadmeLab {
       );
       try {
         reading.view.status = "reading";
-        if (this.options.focus) {
+        if (useSituation) {
+          situation = await this.options.situation!(
+            reading.controller.signal,
+            document.units,
+          );
+          reading.view.generation.model = situation.metadata;
+        } else if (this.options.focus) {
           focus = await this.options.focus(
             reading.controller.signal,
             document.units.length,
@@ -444,7 +496,22 @@ export class ReadmeLab {
             window_id: windowId,
             unit_ids: unitIds,
           });
-          if (focus) {
+          if (situation) {
+            const step = await situation.readStep(
+              document.units
+                .slice(0, i + 1)
+                .map((u) => ({ ...u, block_type: blockTypes.get(u.block_id) })),
+              roleContext,
+            );
+            if (reading.controller.signal.aborted)
+              throw new LabError("cancelled");
+            // Map the complete validated window before emitting anything from it.
+            const events: EventPayload[] = [
+              ...step.events.map(publicSituationEvent),
+              ...step.focus.events,
+            ];
+            for (const event of events) this.emit(reading, event);
+          } else if (focus) {
             const step = await focus.readStep(
               document.units
                 .slice(0, i + 1)
@@ -494,7 +561,19 @@ export class ReadmeLab {
           });
         }
         classifier?.close();
-        if (focus) {
+        if (situation) {
+          reading.view.progress.current_window = null;
+          const finish = await situation.finish();
+          if (reading.controller.signal.aborted)
+            throw new LabError("cancelled");
+          const state = situationReportState(document, job, situation.ledger);
+          const finalEvents = finish.final_events.map(publicSituationEvent);
+          reading.notes = state.notes;
+          reading.questions = state.questions;
+          reading.memory = state.memory;
+          for (const event of finalEvents) this.emit(reading, event);
+          situation.close();
+        } else if (focus) {
           await focus.finish();
           if (reading.controller.signal.aborted)
             throw new LabError("cancelled");
@@ -505,16 +584,21 @@ export class ReadmeLab {
           focus.close();
         }
         readingMs = Date.now() - started;
-        metrics = structuredClone(focus?.metrics ?? jev?.metrics ?? null);
+        metrics = structuredClone(
+          situation?.metrics ?? focus?.metrics ?? jev?.metrics ?? null,
+        );
         decisions = structuredClone(
-          focus?.diagnostics ?? jev?.diagnostics ?? null,
+          situation?.diagnostics ??
+            focus?.diagnostics ??
+            jev?.diagnostics ??
+            null,
         );
         if (jev?.contextReviews && reading.memory)
           reading.memory.context_reviews = structuredClone(jev.contextReviews);
         jev?.close();
         jev = undefined;
         classifier = undefined;
-        if (reading.memory && !focus)
+        if (reading.memory && !focus && !situation)
           finishReading(reading.memory, reading.questions, (event) =>
             this.emit(reading, event),
           );
@@ -551,6 +635,7 @@ export class ReadmeLab {
         classifier?.close();
         jev?.close();
         focus?.close();
+        situation?.close();
         clearTimeout(timer);
       }
     });
