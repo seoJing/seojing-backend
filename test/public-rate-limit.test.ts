@@ -24,17 +24,12 @@ describe("public request rate limit", () => {
     await app.close();
   });
 
-  it("does not rate limit protected admin and OAuth entry routes", async () => {
+  it("does not rate limit protected admin routes", async () => {
     const app = await buildApp();
 
     for (let index = 0; index < 121; index += 1) {
       const admin = await app.inject({ method: "GET", url: "/admin/articles" });
       expect(admin.statusCode).not.toBe(429);
-      const oauth = await app.inject({
-        method: "GET",
-        url: "/community/auth/github",
-      });
-      expect(oauth.statusCode).not.toBe(429);
     }
 
     await app.close();

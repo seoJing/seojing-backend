@@ -31,10 +31,6 @@ const envSchema = z.object({
   PYTHON_WORKER_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   PYTHON_WORKER_RETRY_ATTEMPTS: z.coerce.number().int().positive().default(1),
   PYTHON_WORKER_ENABLED: envBoolean.default(false),
-  GITHUB_OAUTH_CLIENT_ID: z.string().min(1).optional(),
-  GITHUB_OAUTH_CLIENT_SECRET: z.string().min(1).optional(),
-  GITHUB_OAUTH_CALLBACK_URL: z.string().url().optional(),
-  GITHUB_OAUTH_SESSION_SECRET: z.string().min(16).optional(),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

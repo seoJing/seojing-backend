@@ -18,6 +18,7 @@ async function collect(path: string) {
   }
 }
 await collect(root);
+files.sort();
 const errors: Array<{ slug: string; error: string }> = [];
 let converted = 0;
 let codeMeta = 0;
@@ -66,3 +67,4 @@ console.log(
     2,
   ),
 );
+process.exitCode = errors.length > 0 || files.length === 0 ? 1 : 0;
