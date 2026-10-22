@@ -3,8 +3,14 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ArticleRepository,
   type ArticleWithContent,
+  type ArticleAssetDraft,
 } from "../src/repositories/articles.js";
-import { ArticleService, normalizeSlug } from "../src/services/articles.js";
+import {
+  ArticleService,
+  normalizeSlug,
+  previewArticleDraft,
+} from "../src/services/articles.js";
+import { toPublicArticleDetail } from "../src/routes/articles.js";
 
 const createdAt = new Date("2026-06-28T00:00:00.000Z");
 
@@ -58,6 +64,121 @@ function articleFixture(
 }
 
 describe("ArticleService", () => {
+  it.each([
+    { name: "added", images: ["saved", "added"] },
+    { name: "removed", images: [] },
+  ])(
+    "matches preview/public assets after save when document images are $name",
+    async ({ images }) => {
+      const base = articleFixture();
+      const savedRevision = {
+        ...base.currentRevision!,
+        sourceFormat: "DOCUMENT" as const,
+        sourceText: "",
+        document: {
+          type: "doc",
+          content: [
+            { type: "image", attrs: { src: "/saved.png", alt: "saved image" } },
+          ],
+        },
+      };
+      const assetRecords = (
+        assets: ArticleAssetDraft[],
+        revisionId: string,
+      ): ArticleWithContent["assets"] =>
+        assets.map((asset, index) => ({
+          id: `persisted-asset-${revisionId}-${index}`,
+          articleId: base.id,
+          revisionId,
+          blockId: null,
+          kind: asset.kind,
+          url: asset.url,
+          altText: asset.altText ?? null,
+          storageKey: null,
+          mimeType: null,
+          sizeBytes: null,
+          width: null,
+          height: null,
+          metadata: null,
+          createdAt,
+        }));
+      const article = {
+        ...base,
+        sourceFormat: "DOCUMENT" as const,
+        currentRevision: savedRevision,
+        revisions: [savedRevision],
+        assets: assetRecords(
+          [{ kind: "INLINE_IMAGE", url: "/saved.png", altText: "saved image" }],
+          savedRevision.id,
+        ),
+      };
+      const before = structuredClone(article);
+      const document = {
+        type: "doc",
+        content: images.map((name) => ({
+          type: "image",
+          attrs: { src: `/${name}.png`, alt: `${name} image` },
+        })),
+      };
+      const input = {
+        title: article.title,
+        document,
+        expectedRevisionId: savedRevision.id,
+      };
+      const createEditorRevision = vi
+        .fn<ArticleRepository["createEditorRevision"]>()
+        .mockResolvedValue(article);
+      const service = new ArticleService({
+        findBySlug: vi.fn().mockResolvedValue(article),
+        createEditorRevision,
+      } as unknown as ArticleRepository);
+
+      const preview = previewArticleDraft(article, input);
+      expect(createEditorRevision).not.toHaveBeenCalled();
+      expect(preview.assets).toHaveLength(images.length);
+      expect(
+        preview.assets.every(
+          (asset) => asset.revisionId === preview.currentRevisionId,
+        ),
+      ).toBe(true);
+      expect(article).toEqual(before);
+
+      // Compare against the canonical asset data handed to persistence by the real save service,
+      // projected with a distinct published revision ID. No database writes occur in this test.
+      await service.saveDocumentRevision(article.slug, input);
+      const savedInput = createEditorRevision.mock.calls[0]![0];
+      const publishedRevisionId = "33333333-3333-3333-3333-333333333333";
+      const published = {
+        ...article,
+        status: "PUBLISHED" as const,
+        currentRevisionId: publishedRevisionId,
+        renderedHtml: savedInput.renderedHtml ?? null,
+        currentRevision: {
+          ...savedRevision,
+          id: publishedRevisionId,
+          document,
+          renderedHtml: savedInput.renderedHtml ?? null,
+        },
+        assets: [
+          ...article.assets,
+          ...assetRecords(savedInput.assets ?? [], publishedRevisionId),
+        ],
+      };
+      const expected = images.map((name) => ({
+        kind: "INLINE_IMAGE",
+        url: `/${name}.png`,
+        altText: `${name} image`,
+        mimeType: null,
+        width: null,
+        height: null,
+      }));
+      const publicAssets = toPublicArticleDetail(published).assets;
+      expect(publicAssets).toEqual(expected);
+      expect(toPublicArticleDetail(preview).assets).toEqual(publicAssets);
+      expect(article).toEqual(before);
+    },
+  );
+
   it("publishes a valid JSON document when its derived HTML came from an older renderer", async () => {
     const revision = {
       ...articleFixture().currentRevision!,
