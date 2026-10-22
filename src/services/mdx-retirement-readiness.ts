@@ -6,7 +6,10 @@ import { z } from "zod";
 import { convertMdxToArticleDocument } from "./mdx-to-document.js";
 
 export const RETAINED_MDX_POSTS = 201;
-export const RETAINED_MDX_REVISIONS = 205;
+export const RETAINED_PUBLISHED_MDX_REVISIONS = 204;
+export const RETAINED_RESIDUAL_MDX_REVISIONS = 1;
+export const RETAINED_MDX_REVISIONS =
+  RETAINED_PUBLISHED_MDX_REVISIONS + RETAINED_RESIDUAL_MDX_REVISIONS;
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 // Validate nonblank strings without changing source bytes or public payloads.
 const text = z
@@ -60,10 +63,10 @@ const evidenceSchema = z.object({
     .array(
       historicalMdxRevision.extend({
         slug: text,
-        articleStatus: z.enum(["DRAFT", "ARCHIVED"]),
+        articleStatus: z.literal("DRAFT"),
       }),
     )
-    .min(1),
+    .length(RETAINED_RESIDUAL_MDX_REVISIONS),
   database: z.array(
     z.object({
       id: text,
@@ -283,6 +286,10 @@ export function auditMdxRetirement(
   const historicalRevisions = evidence.database.flatMap(
     (row) => row.legacyRevisions,
   );
+  if (historicalRevisions.length !== RETAINED_PUBLISHED_MDX_REVISIONS)
+    blockers.push(
+      "database: exactly 204 historical MDX revisions must belong to the 201 published corpus Articles.",
+    );
   const allMdxRevisions = [
     ...historicalRevisions,
     ...evidence.residualMdxRevisions,

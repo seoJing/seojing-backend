@@ -217,6 +217,32 @@ describe("post-retirement archive evidence gate", () => {
     );
   });
 
+  it("rejects a fabricated 203 published plus two residual split even when the total is 205", () => {
+    const { expected, evidence } = fixture();
+    const moved = evidence.database[0]!.legacyRevisions.pop()!;
+    evidence.database[0]!.historicalMdxRevisionCount--;
+    evidence.residualMdxRevisions.push({
+      ...moved,
+      id: "legacy-draft-1",
+      articleId: "article-draft-2",
+      slug: "another-inert-draft",
+      articleStatus: "DRAFT",
+    });
+
+    expect(
+      evidence.database.reduce(
+        (count, row) => count + row.legacyRevisions.length,
+        0,
+      ),
+    ).toBe(203);
+    expect(evidence.residualMdxRevisions).toHaveLength(2);
+    const report = auditMdxRetirement(expected, evidence, () => image);
+    expect(report.ready).toBe(false);
+    expect(report.blockers.join("\n")).toMatch(
+      /residualMdxRevisions|exactly 204 historical MDX revisions/,
+    );
+  });
+
   it("rejects a fabricated global revision count", () => {
     const { expected, evidence } = fixture();
     const fabricated: unknown = {
