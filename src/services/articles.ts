@@ -406,6 +406,7 @@ export class ArticleService {
 
   async publishCurrentRevision(
     slug: string,
+    expectedUpdatedAt?: Date,
   ): Promise<ArticleWithContent | null> {
     const article = await this.getArticleBySlug(slug);
     const latest = article?.revisions[0];
@@ -447,6 +448,7 @@ export class ArticleService {
     const published = await this.repository.publishLatestRevision(
       normalizeSlug(slug),
       latest.id,
+      ...(expectedUpdatedAt ? [expectedUpdatedAt] : []),
     );
     if (!published)
       throw new ArticlePublicationBlocked(
@@ -466,8 +468,15 @@ export class ArticleService {
     return this.repository.restoreRevision(normalizeSlug(slug), revisionNumber);
   }
 
-  async unpublishArticle(slug: string): Promise<ArticleWithContent | null> {
-    return this.repository.setArticleStatus(normalizeSlug(slug), "DRAFT");
+  async unpublishArticle(
+    slug: string,
+    expectedUpdatedAt?: Date,
+  ): Promise<ArticleWithContent | null> {
+    return this.repository.setArticleStatus(
+      normalizeSlug(slug),
+      "DRAFT",
+      ...(expectedUpdatedAt ? [expectedUpdatedAt] : []),
+    );
   }
 
   async archiveArticle(slug: string): Promise<ArticleWithContent | null> {
@@ -503,6 +512,118 @@ export class ArticleService {
       blocks,
     });
   }
+}
+
+/** Select a revision exactly as publication does, without persisting visibility. */
+export function projectArticleRevision(
+  article: ArticleWithContent,
+  revision = article.revisions[0] ?? article.currentRevision,
+): ArticleWithContent {
+  if (!revision) return article;
+  return {
+    ...article,
+    currentRevisionId: revision.id,
+    currentRevision: revision,
+    sourceFormat: revision.sourceFormat,
+    sourceText: revision.sourceText,
+    renderedHtml: revision.renderedHtml,
+    title: revision.title ?? article.title,
+    description: revision.description ?? article.description,
+    category: revision.category ?? article.category,
+    tags: revision.tags,
+    cover: revision.cover,
+    summaryVideo: revision.summaryVideo,
+    displayDate: revision.displayDate,
+    displayUpdatedAt: revision.displayUpdatedAt,
+  };
+}
+
+/** Read-only draft projection. Uses the same validators/renderers as saving. */
+export function previewArticleDraft(
+  article: ArticleWithContent,
+  input: DocumentEditorInput | BlockEditorDraftInput,
+): ArticleWithContent {
+  const revision = article.revisions[0] ?? article.currentRevision;
+  if (!revision || !["DOCUMENT", "BLOCKS"].includes(revision.sourceFormat))
+    throw new Error("Preview requires a document or block revision.");
+  if (!input.title?.trim()) throw new Error("Article title is required.");
+  const projected = projectArticleRevision(article, revision);
+  let blocks: ArticleBlockDraft[];
+  let assets = projected.assets;
+  let next = {
+    ...revision,
+    title: input.title.trim(),
+    description: input.description?.trim() ?? article.description,
+    category: input.category
+      ? normalizeCategory(input.category)
+      : article.category,
+  };
+  if (revision.sourceFormat === "DOCUMENT") {
+    const draft = input as DocumentEditorInput;
+    const rendered = renderArticleDocument(draft.document);
+    const cover = normalizeCover(draft.cover);
+    const summaryVideo = normalizeSummaryVideo(draft.summaryVideo);
+    next = {
+      ...next,
+      document: rendered.document as unknown as Prisma.JsonValue,
+      renderedHtml: rendered.renderedHtml,
+      tags: normalizeTags(draft.tags),
+      cover:
+        cover === Prisma.DbNull
+          ? null
+          : ((cover as Prisma.JsonValue | undefined) ?? revision.cover),
+      summaryVideo:
+        summaryVideo === Prisma.DbNull
+          ? null
+          : ((summaryVideo as Prisma.JsonValue | undefined) ??
+            revision.summaryVideo),
+      displayDate:
+        normalizeDisplayDate(draft.displayDate) ??
+        (draft.displayDate === null ? null : revision.displayDate),
+      displayUpdatedAt:
+        normalizeDisplayDate(draft.displayUpdatedAt) ??
+        (draft.displayUpdatedAt === null ? null : revision.displayUpdatedAt),
+    };
+    blocks = rendered.blocks;
+    assets = rendered.assets.map((asset, index) => ({
+      ...asset,
+      id: `preview-asset-${index}`,
+      articleId: article.id,
+      revisionId: revision.id,
+      blockId: null,
+      storageKey: asset.storageKey ?? null,
+      altText: asset.altText ?? null,
+      mimeType: asset.mimeType ?? null,
+      sizeBytes: asset.sizeBytes ?? null,
+      width: asset.width ?? null,
+      height: asset.height ?? null,
+      metadata: (asset.metadata as Prisma.JsonValue | undefined) ?? null,
+      createdAt: article.createdAt,
+    }));
+  } else {
+    blocks = normalizeBlockEditorInputs(
+      (input as BlockEditorDraftInput).blocks,
+    );
+    next = { ...next, renderedHtml: renderArticleBlocks(blocks) };
+  }
+  return projectArticleRevision(
+    {
+      ...projected,
+      assets,
+      blocks: blocks.map((block, index) => ({
+        ...block,
+        id: `preview-${index}`,
+        articleId: article.id,
+        revisionId: revision.id,
+        content: block.content as Prisma.JsonValue,
+        metadata: (block.metadata as Prisma.JsonValue | undefined) ?? null,
+        plainText: block.plainText ?? null,
+        createdAt: article.createdAt,
+        updatedAt: article.updatedAt,
+      })),
+    },
+    next,
+  );
 }
 
 function normalizeTags(tags: string[] | undefined): string[] {

@@ -300,6 +300,7 @@ export class ArticleRepository {
   async publishLatestRevision(
     slug: string,
     expectedRevisionId?: string,
+    expectedUpdatedAt?: Date,
   ): Promise<ArticleWithContent | null> {
     return this.db.$transaction(async (tx) => {
       const article = await tx.article.findUnique({
@@ -315,7 +316,10 @@ export class ArticleRepository {
       }
 
       await tx.article.update({
-        where: { id: article.id },
+        where: {
+          id: article.id,
+          ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}),
+        },
         data: {
           status: "PUBLISHED",
           currentRevisionId: revision.id,
@@ -392,11 +396,15 @@ export class ArticleRepository {
   async setArticleStatus(
     slug: string,
     status: Exclude<ArticleStatus, "PUBLISHED">,
+    expectedUpdatedAt?: Date,
   ): Promise<ArticleWithContent | null> {
     const article = await this.db.article.findUnique({ where: { slug } });
     if (!article) return null;
     return this.db.article.update({
-      where: { id: article.id },
+      where: {
+        id: article.id,
+        ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}),
+      },
       data: { status, publishedAt: null },
       include: articleContentInclude,
     });

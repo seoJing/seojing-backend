@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ArticleDocumentValidationError } from "../src/services/article-document.js";
 
 import { buildApp } from "../src/app.js";
+import type { toPublicArticleDetail } from "../src/routes/articles.js";
 import type { ArticleWithContent } from "../src/repositories/articles.js";
 import {
   ArticlePublicationBlocked,
@@ -102,6 +103,216 @@ function appWithArticleService(service: Partial<ArticleService>) {
 }
 
 describe("admin writing API", () => {
+  it("projects hostile editor block HTML through the exact public route sanitizer", async () => {
+    const base = articleFixture({
+      sourceFormat: "BLOCKS",
+      status: "PUBLISHED",
+      publishedAt: baseDate,
+    });
+    const hostile =
+      '<strong onclick="alert(1)">Visible</strong><img src="/safe.png" onerror="alert(2)"><script>alert(3)</script><a href="javascript:alert(4)">link</a>';
+    const article: ArticleWithContent = {
+      ...base,
+      renderedHtml: hostile,
+      currentRevision: { ...base.currentRevision!, renderedHtml: hostile },
+      revisions: [{ ...base.revisions[0]!, renderedHtml: hostile }],
+      blocks: [
+        {
+          id: "hostile",
+          articleId: base.id,
+          revisionId: base.currentRevisionId!,
+          type: "PARAGRAPH",
+          sortOrder: 0,
+          content: { text: "Visible", html: hostile },
+          plainText: "Visible",
+          metadata: null,
+          createdAt: baseDate,
+          updatedAt: baseDate,
+        },
+      ],
+    };
+    const app = await appWithArticleService({
+      getArticleBySlug: vi.fn().mockResolvedValue(article),
+      getPublicArticleBySlug: vi.fn().mockResolvedValue(article),
+    });
+    const publicResponse = await app.inject({
+      method: "GET",
+      url: "/articles/admin-draft",
+    });
+    const editorResponse = await app.inject({
+      method: "GET",
+      url: "/admin/articles/admin-draft/editor",
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(publicResponse.statusCode).toBe(200);
+    expect(editorResponse.statusCode).toBe(200);
+    const editor = editorResponse.json<{
+      article: {
+        blocks: unknown[];
+        preview: ReturnType<typeof toPublicArticleDetail>;
+      };
+    }>().article;
+    expect(editor.blocks[0]).toMatchObject({ content: { html: hostile } }); // editing data stays lossless
+    expect(editor.preview).toEqual(publicResponse.json());
+    expect(
+      (editor.preview.body.blocks[0]?.content as { html: string }).html,
+    ).toContain("<strong>Visible</strong>");
+    expect(JSON.stringify(editor.preview.body)).not.toMatch(
+      /onerror|onclick|<script|javascript:/i,
+    );
+    await app.close();
+  });
+
+  it("previews the latest saved revision instead of leaking the old published revision into the editor", async () => {
+    const base = articleFixture({
+      sourceFormat: "BLOCKS",
+      status: "PUBLISHED",
+    });
+    const latest = {
+      ...base.revisions[0]!,
+      id: "latest",
+      title: "Latest draft",
+      renderedHtml: '<p onclick="bad()">Latest body</p>',
+    };
+    const app = await appWithArticleService({
+      getArticleBySlug: vi
+        .fn()
+        .mockResolvedValue({ ...base, revisions: [latest, ...base.revisions] }),
+    });
+    const response = await app.inject({
+      method: "GET",
+      url: "/admin/articles/admin-draft/editor",
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(
+      response.json<{ article: { preview: unknown } }>().article.preview,
+    ).toMatchObject({
+      title: "Latest draft",
+      body: { html: "<p>Latest body</p>" },
+    });
+    await app.close();
+  });
+
+  it("authenticates and bounds read-only unsaved previews with no service writes", async () => {
+    const article = articleFixture({
+      sourceFormat: "BLOCKS",
+      slug: "study/nested",
+    });
+    const read = vi.fn().mockResolvedValue(article);
+    // Any attempted service mutation would fail: only the read operation exists.
+    const app = await appWithArticleService({ getArticleBySlug: read });
+    const payload = {
+      slug: article.slug,
+      title: "Unsaved",
+      blocks: [
+        {
+          type: "PARAGRAPH",
+          content: {
+            text: "Safe text",
+            html: '<img src=x onerror="alert(1)">',
+          },
+        },
+      ],
+    };
+    expect(
+      (
+        await app.inject({
+          method: "POST",
+          url: "/admin/articles/preview",
+          payload,
+        })
+      ).statusCode,
+    ).toBe(401);
+    expect(read).not.toHaveBeenCalled();
+    const response = await app.inject({
+      method: "POST",
+      url: "/admin/articles/preview",
+      payload,
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["cache-control"]).toBe("private, no-store");
+    expect(response.json<{ preview: unknown }>().preview).toMatchObject({
+      title: "Unsaved",
+      body: {
+        html: "<p>Safe text</p>",
+        blocks: [{ content: { text: "Safe text" } }],
+      },
+    });
+    expect(JSON.stringify(response.json())).not.toMatch(/onerror|<img/);
+    expect(article.title).toBe("Admin Draft");
+    const oversized = await app.inject({
+      method: "POST",
+      url: "/admin/articles/preview",
+      payload: { ...payload, title: "x".repeat(512 * 1024) },
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(oversized.statusCode).toBe(413);
+    const invalid = await app.inject({
+      method: "POST",
+      url: "/admin/articles/preview",
+      payload: { ...payload, blocks: [{ type: "UNKNOWN", content: {} }] },
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(invalid.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it("validates unsaved documents with the canonical document renderer", async () => {
+    const article = articleFixture({ sourceFormat: "DOCUMENT" });
+    const app = await appWithArticleService({
+      getArticleBySlug: vi.fn().mockResolvedValue(article),
+    });
+    const payload = {
+      slug: article.slug,
+      title: "Unsaved document",
+      document: {
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "Visible text" }],
+          },
+        ],
+      },
+    };
+    const options = {
+      method: "POST" as const,
+      url: "/admin/articles/preview",
+      headers: { authorization: "Bearer test-admin-token" },
+    };
+    const response = await app.inject({ ...options, payload });
+    expect(response.statusCode).toBe(200);
+    expect(response.json<{ preview: unknown }>().preview).toMatchObject({
+      body: { html: "<p>Visible text</p>", document: payload.document },
+    });
+    const invalid = await app.inject({
+      ...options,
+      payload: {
+        ...payload,
+        document: {
+          type: "doc",
+          content: [
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Unsafe",
+                  marks: [
+                    { type: "link", attrs: { href: "javascript:alert(1)" } },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    expect(invalid.statusCode).toBe(400);
+    await app.close();
+  });
+
   it("serves a protected published snapshot for a nested slug", async () => {
     const article = articleFixture({
       slug: "study/typescript/day1",
@@ -814,6 +1025,90 @@ describe("admin writing API", () => {
     expect(document.paths).toHaveProperty("/admin/articles/{slug}/revisions");
     expect(document.paths).toHaveProperty("/admin/articles/{slug}/publish");
 
+    await app.close();
+  });
+});
+
+describe("bulk visibility contract", () => {
+  it("requires authentication and bounded explicit unique IDs", async () => {
+    const getArticleBySlug = vi.fn();
+    const service = { getArticleBySlug } as unknown as ArticleService;
+    const app = await buildApp({
+      articleService: service,
+      adminToken: "local-test-only",
+    });
+    expect(
+      (
+        await app.inject({
+          method: "POST",
+          url: "/admin/articles/bulk-visibility",
+          payload: { action: "publish", slugs: ["a"], scope: {} },
+        })
+      ).statusCode,
+    ).toBe(401);
+    for (const slugs of [
+      [],
+      ["a", "a"],
+      Array.from({ length: 21 }, (_, i) => `p${i}`),
+    ]) {
+      expect(
+        (
+          await app.inject({
+            method: "POST",
+            url: "/admin/articles/bulk-visibility",
+            headers: { authorization: "Bearer local-test-only" },
+            payload: { action: "publish", slugs, scope: {} },
+          })
+        ).statusCode,
+      ).toBe(400);
+    }
+    expect(getArticleBySlug).not.toHaveBeenCalled();
+    await app.close();
+  });
+  it("checks filters and returns explicit partial failures without hiding completed items", async () => {
+    const article = articleFixture({
+      slug: "study/ok",
+      category: "Study",
+      status: "PUBLISHED",
+    });
+    const unpublishArticle = vi.fn((slug: string) => {
+      if (slug === "study/fail")
+        return Promise.reject(new Error("transaction rolled back"));
+      return Promise.resolve({ ...article, status: "DRAFT" });
+    });
+    const service = {
+      getArticleBySlug: vi.fn((slug: string) =>
+        Promise.resolve({
+          ...article,
+          slug,
+          category: slug === "other" ? "Other" : "Study",
+        }),
+      ),
+      unpublishArticle,
+    } as unknown as ArticleService;
+    const app = await buildApp({
+      articleService: service,
+      adminToken: "local-test-only",
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: "/admin/articles/bulk-visibility",
+      headers: { authorization: "Bearer local-test-only" },
+      payload: {
+        action: "unpublish",
+        slugs: ["study/ok", "other", "study/fail"],
+        scope: { category: "Study", status: "PUBLISHED" },
+      },
+    });
+    expect(response.json()).toEqual({
+      ok: false,
+      results: [
+        { slug: "study/ok", ok: true, status: "DRAFT" },
+        { slug: "other", ok: false, error: "article_outside_scope" },
+        { slug: "study/fail", ok: false, error: "article_write_failed" },
+      ],
+    });
+    expect(unpublishArticle).toHaveBeenCalledTimes(2);
     await app.close();
   });
 });

@@ -10,6 +10,8 @@ import type {
 import type { ArticleWithContent } from "../repositories/articles.js";
 import {
   ArticlePublicationBlocked,
+  previewArticleDraft,
+  projectArticleRevision,
   type ArticleEditorDraftInput,
   type ArticleService,
   type BlockEditorDraftInput,
@@ -260,6 +262,167 @@ export function registerAdminWritingRoutes(
       return reply.status(401).send({ error: "Unauthorized admin request" });
     }
   });
+
+  app.post<{ Body: (DocumentDraftBody | BlockDraftBody) & { slug: string } }>(
+    "/admin/articles/preview",
+    {
+      bodyLimit: 512 * 1024,
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary:
+          "Project an unsaved draft through the public sanitizer without writing",
+        body: {
+          type: "object",
+          required: ["slug", "title"],
+          properties: {
+            ...documentDraftBodySchema.properties,
+            ...blockDraftBodySchema.properties,
+            slug: { type: "string", minLength: 1, maxLength: 240 },
+            title: { type: "string", minLength: 1 },
+            blocks: {
+              ...blockDraftBodySchema.properties.blocks,
+              maxItems: 1000,
+            },
+          },
+          additionalProperties: false,
+        },
+      }),
+    },
+    async (request, reply) => {
+      reply.header("Cache-Control", "private, no-store");
+      const article = await options.articleService.getArticleBySlug(
+        request.body.slug,
+      );
+      if (!article)
+        return reply.status(404).send({ error: "Article not found" });
+      try {
+        const projected = previewArticleDraft(
+          article,
+          request.body as DocumentEditorInput | BlockEditorDraftInput,
+        );
+        return { preview: toPublicArticleDetail(projected) };
+      } catch (error) {
+        return reply.status(400).send({
+          error:
+            error instanceof Error ? error.message : "Invalid preview draft",
+        });
+      }
+    },
+  );
+
+  // Explicit IDs only: never interpret an absent/empty list as all articles.
+  // Each item's repository write is transactional; batches return partial results.
+  app.post<{
+    Body: {
+      action: "publish" | "unpublish";
+      slugs: string[];
+      scope: {
+        category?: string;
+        status?: string;
+        query?: string;
+        format?: string;
+      };
+    };
+  }>(
+    "/admin/articles/bulk-visibility",
+    {
+      schema: openApiSchema({
+        tags: adminWritingTag,
+        summary:
+          "Change visibility for up to 20 explicit article slugs with per-item results",
+        body: {
+          type: "object",
+          required: ["action", "slugs", "scope"],
+          additionalProperties: false,
+          properties: {
+            action: { type: "string", enum: ["publish", "unpublish"] },
+            slugs: {
+              type: "array",
+              minItems: 1,
+              maxItems: 20,
+              uniqueItems: true,
+              items: {
+                type: "string",
+                minLength: 1,
+                maxLength: 240,
+                pattern: "^[^?#\\s]+$",
+              },
+            },
+            scope: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                category: { type: "string", maxLength: 120 },
+                status: {
+                  type: "string",
+                  enum: ["DRAFT", "PUBLISHED", "ARCHIVED"],
+                },
+                query: { type: "string", maxLength: 200 },
+                format: { type: "string", enum: ["DOCUMENT", "BLOCKS", "MDX"] },
+              },
+            },
+          },
+        },
+      }),
+    },
+    async (request) => {
+      const results = [];
+      for (const slug of request.body.slugs) {
+        try {
+          const article = await options.articleService.getArticleBySlug(slug);
+          const scope = request.body.scope;
+          if (!article || article.slug !== slug) {
+            results.push({ slug, ok: false, error: "article_not_found" });
+            continue;
+          }
+          if (
+            (scope.category && article.category !== scope.category) ||
+            (scope.status && article.status !== scope.status) ||
+            (scope.format && article.sourceFormat !== scope.format) ||
+            (scope.query &&
+              !`${article.title} ${article.slug} ${article.category}`
+                .toLowerCase()
+                .includes(scope.query.trim().toLowerCase()))
+          ) {
+            results.push({ slug, ok: false, error: "article_outside_scope" });
+            continue;
+          }
+          const updated =
+            request.body.action === "publish"
+              ? await options.articleService.publishCurrentRevision(
+                  slug,
+                  article.updatedAt,
+                )
+              : await options.articleService.unpublishArticle(
+                  slug,
+                  article.updatedAt,
+                );
+          results.push(
+            updated
+              ? {
+                  slug,
+                  ok: true,
+                  status: updated.status,
+                  ...(request.body.action === "publish"
+                    ? { article: toPublicArticleDetail(updated) }
+                    : {}),
+                }
+              : { slug, ok: false, error: "article_changed" },
+          );
+        } catch (error) {
+          results.push({
+            slug,
+            ok: false,
+            error:
+              error instanceof ArticlePublicationBlocked
+                ? error.message
+                : "article_write_failed",
+          });
+        }
+      }
+      return { ok: results.every((result) => result.ok), results };
+    },
+  );
 
   app.get(
     "/admin/writing/snippets",
@@ -1100,21 +1263,8 @@ function toMigrationSnapshot(article: ArticleWithContent) {
   )
     return null;
   const projected: ArticleWithContent = {
-    ...article,
+    ...projectArticleRevision(article, revision),
     status: "PUBLISHED",
-    currentRevisionId: revision.id,
-    currentRevision: revision,
-    sourceFormat: "DOCUMENT",
-    sourceText: "",
-    renderedHtml: revision.renderedHtml,
-    title: revision.title ?? article.title,
-    description: revision.description ?? article.description,
-    category: revision.category ?? article.category,
-    tags: revision.tags,
-    cover: revision.cover,
-    summaryVideo: revision.summaryVideo,
-    displayDate: revision.displayDate,
-    displayUpdatedAt: revision.displayUpdatedAt,
     publishedAt:
       article.publishedAt ?? revision.displayDate ?? article.createdAt,
   };
@@ -1260,6 +1410,8 @@ function toEditorPayload(article: ArticleWithContent) {
           : article.displayUpdatedAt
         )?.toISOString() ?? null,
       renderedHtml: revision ? revision.renderedHtml : article.renderedHtml,
+      // Raw fields above are for editing only; render this public projection.
+      preview: toPublicArticleDetail(projectArticleRevision(article, revision)),
       previewRenderedHtml:
         mdxPreview?.renderedHtml ??
         (revision ? revision.renderedHtml : article.renderedHtml),
