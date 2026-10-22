@@ -6,6 +6,10 @@ import { z } from "zod";
 import { convertMdxToArticleDocument } from "./mdx-to-document.js";
 
 export const RETAINED_MDX_POSTS = 201;
+export const RETAINED_PUBLISHED_MDX_REVISIONS = 204;
+export const RETAINED_RESIDUAL_MDX_REVISIONS = 1;
+export const RETAINED_MDX_REVISIONS =
+  RETAINED_PUBLISHED_MDX_REVISIONS + RETAINED_RESIDUAL_MDX_REVISIONS;
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 // Validate nonblank strings without changing source bytes or public payloads.
 const text = z
@@ -41,11 +45,28 @@ const publicArticle = z
       .passthrough(),
   })
   .passthrough();
+const historicalMdxRevision = z.object({
+  id: text,
+  articleId: text,
+  revisionNumber: z.number().int().positive(),
+  sourceFormat: z.literal("MDX"),
+  sourceText: text,
+  sourceSha256: hash,
+});
 const evidenceSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(2),
   capturedAt: z.iso.datetime(),
   webCommit: z.string().regex(/^[a-f0-9]{40}$/),
   backendCommit: z.string().regex(/^[a-f0-9]{40}$/),
+  historicalMdxRevisionTotal: z.literal(RETAINED_MDX_REVISIONS),
+  residualMdxRevisions: z
+    .array(
+      historicalMdxRevision.extend({
+        slug: text,
+        articleStatus: z.literal("DRAFT"),
+      }),
+    )
+    .length(RETAINED_RESIDUAL_MDX_REVISIONS),
   database: z.array(
     z.object({
       id: text,
@@ -54,12 +75,9 @@ const evidenceSchema = z.object({
       status: z.literal("PUBLISHED"),
       sourceFormat: z.literal("DOCUMENT"),
       sourceText: z.string(),
-      legacyRevision: z.object({
-        id: text,
-        articleId: text,
-        sourceFormat: z.literal("MDX"),
-        sourceText: text,
-      }),
+      historicalMdxRevisionCount: z.number().int().positive(),
+      archivedSourceRevisionId: text,
+      legacyRevisions: z.array(historicalMdxRevision).min(1),
       currentRevisionId: text,
       latestRevisionId: text,
       currentRevision: z.object({
@@ -87,19 +105,38 @@ const evidenceSchema = z.object({
       payload_json: z.string(),
     }),
   ),
-  visualAcceptances: z.array(
-    z.object({
-      slug: text,
-      accepted: z.literal(true),
-      reviewer: text,
-      reviewedAt: z.iso.datetime(),
-      sourceSha256: hash,
-      documentSha256: hash,
-      publicPayloadSha256: hash,
-      desktop: artifact,
-      mobile: artifact,
-    }),
-  ),
+  visualPolicy: z.object({
+    exhaustive201: z.literal("WAIVED_NOT_COMPLETED"),
+    ownerAcceptedAt: z.literal("2026-10-22"),
+    representativeChecks: z
+      .array(
+        z.object({
+          slug: text,
+          accepted: z.literal(true),
+          reviewer: text,
+          reviewedAt: z.iso.datetime(),
+          features: z
+            .array(
+              z.enum([
+                "text",
+                "code",
+                "tables",
+                "images-media",
+                "quizzes",
+                "dates",
+                "responsive-layout",
+              ]),
+            )
+            .min(1),
+          sourceSha256: hash,
+          documentSha256: hash,
+          publicPayloadSha256: hash,
+          desktop: artifact,
+          mobile: artifact,
+        }),
+      )
+      .min(1),
+  }),
 });
 
 export type RetirementEvidence = z.infer<typeof evidenceSchema>;
@@ -107,7 +144,7 @@ export type ExpectedDocument = {
   sourcePath: string;
   slug: string;
   sourceSha256: string;
-  documentSha256: string;
+  convertedDocumentSha256: string;
 };
 
 export function sha256(value: string | Uint8Array): string {
@@ -181,7 +218,10 @@ export function auditRetainedCorpus(
       if (sha256(source) !== entry.sourceSha256)
         throw new Error(`${entry.slug}: source hash mismatch`);
       const { document: converted } = convertMdxToArticleDocument(source);
-      return { ...entry, documentSha256: sha256(stableJson(converted)) };
+      return {
+        ...entry,
+        convertedDocumentSha256: sha256(stableJson(converted)),
+      };
     })
     .sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
 }
@@ -194,15 +234,18 @@ export function auditMdxRetirement(
 ): { ready: boolean; expected: number; accepted: number; blockers: string[] } {
   const blockers: string[] = [];
   const parsed = evidenceSchema.safeParse(input);
+  const expectedBySlug = new Map(expected.map((entry) => [entry.slug, entry]));
   if (
     expected.length !== RETAINED_MDX_POSTS ||
-    new Set(expected.map((entry) => entry.slug)).size !== RETAINED_MDX_POSTS
+    expectedBySlug.size !== RETAINED_MDX_POSTS
   )
-    blockers.push("Expected corpus must contain exactly 201 unique slugs.");
+    blockers.push(
+      "Expected archive corpus must contain exactly 201 unique slugs.",
+    );
   if (!parsed.success) {
     blockers.push(
       ...parsed.error.issues.map(
-        (issue) => `evidence.${issue.path.join(".")}: ${issue.message}`,
+        (issue) => "evidence." + issue.path.join(".") + ": " + issue.message,
       ),
     );
     return {
@@ -214,13 +257,14 @@ export function auditMdxRetirement(
   }
   const evidence = parsed.data;
   const slugs = expected.map((entry) => entry.slug).sort();
-  for (const key of ["database", "api", "d1", "visualAcceptances"] as const) {
+  for (const key of ["database", "api", "d1"] as const) {
     if (
       stableJson(evidence[key].map((row) => row.slug).sort()) !==
       stableJson(slugs)
     )
       blockers.push(
-        `${key}: exact 201-slug set required (no missing, extra, duplicate or case-changed slugs).`,
+        key +
+          ": exact 201-slug set required (no missing, extra, duplicate or case-changed slugs).",
       );
   }
   if (
@@ -228,30 +272,73 @@ export function auditMdxRetirement(
     evidence.database.length
   )
     blockers.push("database: duplicate Article identity.");
-  const revisionIds = evidence.database.flatMap((row) => [
-    row.legacyRevision.id,
-    row.currentRevision.id,
-  ]);
+  const publishedArticleIds = new Set(evidence.database.map((row) => row.id));
+  if (
+    evidence.residualMdxRevisions.some(
+      (revision) =>
+        expectedBySlug.has(revision.slug) ||
+        publishedArticleIds.has(revision.articleId),
+    )
+  )
+    blockers.push(
+      "database: residual MDX revisions must identify non-corpus Articles.",
+    );
+  const historicalRevisions = evidence.database.flatMap(
+    (row) => row.legacyRevisions,
+  );
+  if (historicalRevisions.length !== RETAINED_PUBLISHED_MDX_REVISIONS)
+    blockers.push(
+      "database: exactly 204 historical MDX revisions must belong to the 201 published corpus Articles.",
+    );
+  const allMdxRevisions = [
+    ...historicalRevisions,
+    ...evidence.residualMdxRevisions,
+  ];
+  const revisionIds = [
+    ...evidence.database.flatMap((row) => [
+      ...row.legacyRevisions.map((revision) => revision.id),
+      row.currentRevision.id,
+    ]),
+    ...evidence.residualMdxRevisions.map((revision) => revision.id),
+  ];
   if (new Set(revisionIds).size !== revisionIds.length)
     blockers.push(
-      "database: legacy/current revision identities must be distinct.",
+      "database: historical/current revision identities must be globally unique.",
     );
+  if (
+    evidence.historicalMdxRevisionTotal !== allMdxRevisions.length ||
+    evidence.database.some(
+      (row) => row.historicalMdxRevisionCount !== row.legacyRevisions.length,
+    )
+  )
+    blockers.push(
+      "database: declared historical MDX revision counts must match the complete arrays.",
+    );
+  const mdxRevisionNumbersByArticle = new Map<string, Set<number>>();
+  for (const revision of allMdxRevisions) {
+    const numbers =
+      mdxRevisionNumbersByArticle.get(revision.articleId) ?? new Set<number>();
+    if (numbers.has(revision.revisionNumber))
+      blockers.push(
+        "database: historical MDX revision numbers must be unique per article.",
+      );
+    numbers.add(revision.revisionNumber);
+    mdxRevisionNumbersByArticle.set(revision.articleId, numbers);
+    if (sha256(revision.sourceText) !== revision.sourceSha256)
+      blockers.push("database: historical MDX revision source hash mismatch.");
+  }
   const db = new Map(evidence.database.map((row) => [row.slug, row]));
   const api = new Map(evidence.api.map((row) => [row.slug, row]));
   const d1 = new Map(evidence.d1.map((row) => [row.slug, row]));
-  const visuals = new Map(
-    evidence.visualAcceptances.map((row) => [row.slug, row]),
-  );
   let accepted = 0;
   for (const entry of expected) {
-    const row = db.get(entry.slug),
-      response = api.get(entry.slug),
-      snapshot = d1.get(entry.slug),
-      visual = visuals.get(entry.slug);
-    if (!row || !response || !snapshot || !visual) continue;
+    const row = db.get(entry.slug);
+    const response = api.get(entry.slug);
+    const snapshot = d1.get(entry.slug);
+    if (!row || !response || !snapshot) continue;
     const start = blockers.length;
     const check = (condition: boolean, reason: string) => {
-      if (!condition) blockers.push(`${entry.slug}: ${reason}`);
+      if (!condition) blockers.push(entry.slug + ": " + reason);
     };
     check(
       row.currentRevisionId === row.currentRevision.id &&
@@ -260,37 +347,38 @@ export function auditMdxRetirement(
     );
     check(
       row.currentRevision.articleId === row.id &&
-        row.legacyRevision.articleId === row.id,
-      "legacy/current revision Article identity mismatch",
+        row.legacyRevisions.every((revision) => revision.articleId === row.id),
+      "historical/current revision Article identity mismatch",
+    );
+    const archivedSourceRevision = row.legacyRevisions.find(
+      (revision) => revision.id === row.archivedSourceRevisionId,
+    );
+    check(
+      archivedSourceRevision !== undefined &&
+        archivedSourceRevision.sourceSha256 === entry.sourceSha256,
+      "archived manifest source revision missing or hash mismatch",
     );
     check(
       row.sourceFormat === row.currentRevision.sourceFormat &&
         row.sourceText === row.currentRevision.sourceText,
       "Article/currentRevision source mismatch",
     );
-    // DOCUMENT writes and publication retain sourceText as an exact empty string.
     check(
       row.sourceText === "" && row.currentRevision.sourceText === "",
       "current DOCUMENT sourceText must be empty on Article and currentRevision",
     );
-    check(
-      sha256(row.legacyRevision.sourceText) === entry.sourceSha256,
-      "retained DB MDX source hash mismatch",
+    const currentDocumentSha256 = sha256(
+      stableJson(row.currentRevision.document),
     );
     check(
-      sha256(stableJson(row.currentRevision.document)) === entry.documentSha256,
-      "database DOCUMENT hash mismatch",
+      sha256(stableJson(response.body.document)) === currentDocumentSha256,
+      "database/API DOCUMENT parity mismatch",
     );
-    check(
-      sha256(stableJson(response.body.document)) === entry.documentSha256,
-      "API DOCUMENT hash mismatch",
-    );
-    for (const key of Object.keys(metadata) as Array<keyof typeof metadata>) {
+    for (const key of Object.keys(metadata) as Array<keyof typeof metadata>)
       check(
         stableJson(row[key]) === stableJson(response[key]),
-        `database/API ${key} mismatch`,
+        "database/API " + key + " mismatch",
       );
-    }
     check(response.body.html.trim().length > 0, "API rendered HTML missing");
     const payloadHash = publicPayloadHash(response);
     try {
@@ -311,7 +399,7 @@ export function auditMdxRetirement(
       }))
         check(
           snapshot[column as keyof typeof snapshot] === value,
-          `D1 ${column} index column mismatch`,
+          "D1 " + column + " index column mismatch",
         );
       check(
         stableJson(JSON.parse(snapshot.tags_json)) ===
@@ -327,25 +415,59 @@ export function auditMdxRetirement(
     } catch {
       check(false, "invalid D1 payload/column JSON");
     }
-    check(
-      visual.sourceSha256 === entry.sourceSha256 &&
-        visual.documentSha256 === entry.documentSha256 &&
-        visual.publicPayloadSha256 === payloadHash,
-      "visual acceptance is stale for source/document/public payload",
-    );
-    for (const viewport of ["desktop", "mobile"] as const) {
-      try {
-        check(
-          sha256(readArtifact(visual[viewport].path)) ===
-            visual[viewport].sha256,
-          `${viewport} evidence hash mismatch`,
-        );
-      } catch {
-        check(false, `${viewport} evidence file missing or unreadable`);
-      }
-    }
     if (blockers.length === start) accepted++;
   }
+  const requiredFeatures = new Set([
+    "text",
+    "code",
+    "tables",
+    "images-media",
+    "quizzes",
+    "dates",
+    "responsive-layout",
+  ]);
+  const covered = new Set<string>();
+  for (const visual of evidence.visualPolicy.representativeChecks) {
+    const entry = expectedBySlug.get(visual.slug);
+    const response = api.get(visual.slug);
+    if (!entry || !response) {
+      blockers.push(
+        "representative visual: unknown or unreadable slug " + visual.slug,
+      );
+      continue;
+    }
+    for (const feature of visual.features) covered.add(feature);
+    if (
+      visual.sourceSha256 !== entry.sourceSha256 ||
+      visual.documentSha256 !==
+        sha256(stableJson(db.get(visual.slug)!.currentRevision.document)) ||
+      visual.publicPayloadSha256 !== publicPayloadHash(response)
+    )
+      blockers.push(visual.slug + ": representative visual evidence is stale");
+    for (const viewport of ["desktop", "mobile"] as const) {
+      try {
+        if (
+          sha256(readArtifact(visual[viewport].path)) !==
+          visual[viewport].sha256
+        )
+          blockers.push(
+            visual.slug + ": " + viewport + " evidence hash mismatch",
+          );
+      } catch {
+        blockers.push(
+          visual.slug +
+            ": " +
+            viewport +
+            " evidence file missing or unreadable",
+        );
+      }
+    }
+  }
+  for (const feature of requiredFeatures)
+    if (!covered.has(feature))
+      blockers.push(
+        "representative visuals: missing feature coverage " + feature,
+      );
   return {
     ready: blockers.length === 0 && accepted === RETAINED_MDX_POSTS,
     expected: expected.length,

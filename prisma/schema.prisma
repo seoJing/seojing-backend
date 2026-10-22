@@ -54,7 +54,7 @@ model Article {
   description       String?
   category          String              @default("SEOJing")
   status            ArticleStatus       @default(DRAFT)
-  sourceFormat      ArticleSourceFormat @default(MDX) @map("source_format")
+  sourceFormat      ArticleSourceFormat @default(DOCUMENT) @map("source_format")
   sourceText        String              @map("source_text")
   renderedHtml      String?             @map("rendered_html")
   tags              String[]            @default([])

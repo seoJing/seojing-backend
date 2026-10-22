@@ -38,6 +38,16 @@ ALTER TABLE "article_comments" ALTER COLUMN "id" DROP DEFAULT;
 
 -- AlterTable
 ALTER TABLE "users" ALTER COLUMN "id" DROP DEFAULT;`;
+const sourceFormatForwardDiff = `-- AlterTable
+ALTER TABLE "articles" ALTER COLUMN "source_format" SET DEFAULT 'DOCUMENT';`;
+const introducedSourceFormatForwardDiff = sourceFormatForwardDiff.replace(
+  '"articles"',
+  '"public"."articles"',
+);
+const retainedBaselineDrift = existingSchemaDrift.replace(
+  '\n\n-- AlterTable\nALTER TABLE "users"',
+  `\n\n${sourceFormatForwardDiff}\n\n-- AlterTable\nALTER TABLE "users"`,
+);
 const describePostgres =
   process.env.RUN_CAREER_MIGRATION_TESTS === "true" ? describe : describe.skip;
 
@@ -136,7 +146,14 @@ describePostgres("Career retirement in disposable PostgreSQL", () => {
       ...connection(db),
       ...retainedTables.map((name) => `--table=public.${name}`),
       "--table=retirement_sentinel.*",
-    ]).replace(/^\\(?:un)?restrict .*$/gm, ""),
+    ])
+      .replace(/^\\(?:un)?restrict .*$/gm, "")
+      // The final migration intentionally changes only this default. Normalize
+      // that one token so the full dump still detects every unrelated change.
+      .replace(
+        /DEFAULT '(?:MDX|DOCUMENT)'::public\.article_source_format/,
+        "DEFAULT '<PINNED_SOURCE_FORMAT>'::public.article_source_format",
+      ),
     enums: query(
       db,
       `SELECT n.nspname, t.typname, e.enumsortorder, e.enumlabel FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace JOIN pg_enum e ON e.enumtypid = t.oid WHERE n.nspname IN ('public', 'retirement_sentinel') AND t.typname NOT LIKE 'career_%' ORDER BY 1, 2, 3`,
@@ -150,6 +167,11 @@ describePostgres("Career retirement in disposable PostgreSQL", () => {
       query(db, `SELECT count(*) FROM "${name}"`),
     ]),
   });
+  const sourceFormatDefault = (db: string) =>
+    query(
+      db,
+      `SELECT column_default FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'articles' AND column_name = 'source_format'`,
+    );
   const assertRetired = (db: string) => {
     expect(careerInventory(db)).toEqual({ tables: "", enums: "" });
     // Includes indexes, sequences, table row types, enum array types, constraints,
@@ -185,8 +207,7 @@ describePostgres("Career retirement in disposable PostgreSQL", () => {
     const diff = schemaDiff(db);
     expect(diff.status, diff.output).toBe(2);
     expect(diff.output.trim()).toBe(existingSchemaDrift);
-    expect(diff).toEqual(schemaDiff("retained_baseline"));
-    const introducedDiff = success(process.execPath, [
+    const introducedDiff = command(process.execPath, [
       resolve("node_modules/prisma/build/index.js"),
       "migrate",
       "diff",
@@ -197,7 +218,10 @@ describePostgres("Career retirement in disposable PostgreSQL", () => {
       "--exit-code",
       "--script",
     ]);
-    expect(introducedDiff).toContain("This is an empty migration");
+    expect(introducedDiff.status, introducedDiff.output).toBe(2);
+    expect(introducedDiff.output.trim()).toBe(
+      introducedSourceFormatForwardDiff,
+    );
     expect(
       query(
         db,
@@ -298,9 +322,9 @@ describePostgres("Career retirement in disposable PostgreSQL", () => {
     prisma("retained_baseline", "retained", ["migrate", "deploy"]);
     const baselineDiff = schemaDiff("retained_baseline");
     expect(baselineDiff.status, baselineDiff.output).toBe(2);
-    expect(baselineDiff.output.trim()).toBe(existingSchemaDrift);
+    expect(baselineDiff.output.trim()).toBe(retainedBaselineDrift);
     console.info(
-      `Pre-existing non-Career schema diff (exit 2, unchanged by retirement):\n${baselineDiff.output}`,
+      `Retained baseline diff (exit 2; includes pinned DOCUMENT default forward change):\n${baselineDiff.output}`,
     );
   }, 60_000);
 
@@ -363,9 +387,11 @@ describePostgres("Career retirement in disposable PostgreSQL", () => {
     ]);
     const upgradeBefore = retainedSnapshot("upgrade");
     expect(upgradeBefore).toEqual(retainedSnapshot("fixture_source"));
+    expect(sourceFormatDefault("upgrade")).toContain("'MDX'");
     prisma("upgrade", "all", ["migrate", "deploy"]);
     assertRetired("upgrade");
     assertDeployedSchema("upgrade");
+    expect(sourceFormatDefault("upgrade")).toContain("'DOCUMENT'");
     expect(retainedSnapshot("upgrade")).toEqual(upgradeBefore);
 
     // A second restore isolates failure injection at each transaction boundary.

@@ -6,13 +6,9 @@ import { buildApp } from "../src/app.js";
 import type { toPublicArticleDetail } from "../src/routes/articles.js";
 import type { ArticleWithContent } from "../src/repositories/articles.js";
 import {
-  ArticlePublicationBlocked,
+  ArticleHistoricalMdxRestoreBlocked,
   type ArticleService,
 } from "../src/services/articles.js";
-
-interface SnippetPayload {
-  snippets: Array<{ id: string; label: string }>;
-}
 
 interface EditorPayload {
   article: {
@@ -338,118 +334,6 @@ describe("admin writing API", () => {
     await app.close();
   });
 
-  it("exports a converted draft only through the protected migration snapshot path", async () => {
-    const original = articleFixture({ slug: "study/typescript/day1" });
-    const revision = {
-      ...original.revisions[0]!,
-      sourceFormat: "DOCUMENT" as const,
-      document: {
-        type: "doc",
-        content: [
-          { type: "paragraph", content: [{ type: "text", text: "Converted" }] },
-        ],
-      },
-      renderedHtml: "<p>Converted</p>",
-      displayDate: baseDate,
-      changeSummary: `Convert MDX to document: ${"a".repeat(64)}`,
-    };
-    const article = {
-      ...original,
-      revisions: [revision],
-      currentRevision: original.currentRevision,
-    } as ArticleWithContent;
-    const app = await appWithArticleService({
-      getArticleBySlug: vi.fn().mockResolvedValue(article),
-    });
-    const path = "/admin/articles/study%2Ftypescript%2Fday1/migration-snapshot";
-    expect((await app.inject({ method: "GET", url: path })).statusCode).toBe(
-      401,
-    );
-    const response = await app.inject({
-      method: "GET",
-      url: path,
-      headers: { authorization: "Bearer test-admin-token" },
-    });
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toMatchObject({
-      slug: "study/typescript/day1",
-      status: "PUBLISHED",
-      migrationSourceSha256: "a".repeat(64),
-      body: { document: { type: "doc" } },
-    });
-    await app.close();
-  });
-
-  it("re-renders the saved MDX source for preview without overwriting an old stored revision", async () => {
-    const article = articleFixture({
-      sourceText:
-        "<Subtitle level={2}>문제 상황</Subtitle>\n\n<Paragraph>Fs 글 본문</Paragraph>",
-      renderedHtml:
-        "<aside>Paragraph component omitted by backend MDX ingest MVP</aside>",
-    });
-    const app = await appWithArticleService({
-      getArticleBySlug: vi.fn().mockResolvedValue(article),
-    });
-    const response = await app.inject({
-      method: "GET",
-      url: "/admin/articles/admin-draft/editor",
-      headers: { authorization: "Bearer test-admin-token" },
-    });
-    expect(response.statusCode).toBe(200);
-    const payload = response.json<EditorPayload>();
-    expect(payload.article.renderedHtml).toContain("component omitted");
-    expect(payload.article.previewRenderedHtml).toContain("<h2");
-    expect(payload.article.previewRenderedHtml).toContain("<p>Fs 글 본문</p>");
-    expect(payload.article.previewRenderedHtml).not.toContain(
-      "component omitted",
-    );
-    await app.close();
-  });
-
-  it("keeps the review queue private and returns source hashes without bodies", async () => {
-    const listArticlesForReview = vi.fn().mockResolvedValue([
-      {
-        slug: "SEOJing/devLog/day1",
-        title: "Day 1",
-        category: "SEOJing",
-        status: "DRAFT",
-        sourceFormat: "MDX",
-        sourceText: "# Day 1",
-        revisions: [
-          {
-            sourceFormat: "DOCUMENT",
-            changeSummary: `Convert MDX to document: ${"a".repeat(64)}`,
-          },
-        ],
-        updatedAt: baseDate,
-      },
-    ]);
-    const app = await appWithArticleService({ listArticlesForReview });
-    const unauthorized = await app.inject({
-      method: "GET",
-      url: "/admin/article-review-queue",
-    });
-    expect(unauthorized.statusCode).toBe(401);
-    const response = await app.inject({
-      method: "GET",
-      url: "/admin/article-review-queue",
-      headers: { authorization: "Bearer test-admin-token" },
-    });
-    expect(response.statusCode).toBe(200);
-    const payload = JSON.parse(response.body) as {
-      articles: Array<Record<string, unknown>>;
-    };
-    expect(payload.articles[0]).toMatchObject({
-      slug: "SEOJing/devLog/day1",
-      status: "DRAFT",
-      latestRevisionFormat: "DOCUMENT",
-      migrationSourceSha256: "a".repeat(64),
-    });
-    expect(payload.articles[0]).toHaveProperty("sourceSha256");
-    expect(payload.articles[0]).not.toHaveProperty("sourceText");
-    await app.close();
-  });
-
   it("returns an actionable 400 for invalid JSON document drafts and nested-slug revisions", async () => {
     const invalid = new ArticleDocumentValidationError("Invalid quiz item.");
     const app = await appWithArticleService({
@@ -500,127 +384,10 @@ describe("admin writing API", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: "/admin/writing/snippets",
+      url: "/admin/articles/published-slugs",
     });
 
     expect(response.statusCode).toBe(401);
-    await app.close();
-  });
-
-  it("returns MDX component insertion snippets for the editor toolbar", async () => {
-    const app = await appWithArticleService({});
-
-    const response = await app.inject({
-      method: "GET",
-      url: "/admin/writing/snippets",
-      headers: { authorization: "Bearer test-admin-token" },
-    });
-
-    expect(response.statusCode).toBe(200);
-    const snippetPayload = JSON.parse(response.body) as SnippetPayload;
-    expect(snippetPayload.snippets.map((snippet) => snippet.id)).toEqual(
-      expect.arrayContaining(["quiz", "callout", "code", "diagram"]),
-    );
-    expect(snippetPayload.snippets.map((snippet) => snippet.label)).toEqual(
-      expect.arrayContaining(["/quiz", "/callout", "/code", "/diagram"]),
-    );
-
-    await app.close();
-  });
-
-  it("creates drafts, saves source-text revisions, and publishes the latest revision", async () => {
-    const created = articleFixture({ currentRevisionId: "rev-1" });
-    const revised = articleFixture({ currentRevisionId: "rev-1" });
-    const published = articleFixture({ status: "PUBLISHED" });
-    const createInitialDraft = vi.fn().mockResolvedValue(created);
-    const createEditorRevision = vi.fn().mockResolvedValue(revised);
-    const publishCurrentRevision = vi.fn().mockResolvedValue(published);
-    const app = await appWithArticleService({
-      createInitialDraft,
-      createEditorRevision,
-      publishCurrentRevision,
-    });
-
-    const createResponse = await app.inject({
-      method: "POST",
-      url: "/admin/articles",
-      headers: { authorization: "Bearer test-admin-token" },
-      payload: {
-        slug: "Admin Draft",
-        title: "Admin Draft",
-        sourceText: "# Admin Draft",
-      },
-    });
-    expect(createResponse.statusCode).toBe(201);
-    expect(createInitialDraft).toHaveBeenCalledWith(
-      expect.objectContaining({
-        slug: "Admin Draft",
-        title: "Admin Draft",
-        sourceFormat: "MDX",
-        sourceText: "# Admin Draft",
-        renderedHtml: '<h1 id="admin-draft">Admin Draft</h1>',
-        blocks: [
-          expect.objectContaining({
-            type: "HEADING",
-            content: {
-              level: 1,
-              text: "Admin Draft",
-              id: "admin-draft",
-              html: "Admin Draft",
-            },
-          }),
-        ],
-      }),
-    );
-
-    const revisionResponse = await app.inject({
-      method: "PUT",
-      url: "/admin/articles/admin-draft/revisions",
-      headers: { authorization: "Bearer test-admin-token" },
-      payload: {
-        title: "Admin Draft v2",
-        sourceText: "# Admin Draft v2\n\n<Callout />",
-      },
-    });
-    expect(revisionResponse.statusCode).toBe(201);
-    expect(createEditorRevision).toHaveBeenCalledWith(
-      "admin-draft",
-      expect.objectContaining({
-        sourceText: "# Admin Draft v2\n\n<Callout />",
-        renderedHtml: expect.stringContaining(
-          'data-callout-tone="note"',
-        ) as string,
-        blocks: [
-          expect.objectContaining({ type: "HEADING" }),
-          expect.objectContaining({
-            type: "CALLOUT",
-            content: expect.objectContaining({
-              tone: "note",
-            }) as unknown,
-          }),
-        ],
-      }),
-    );
-    const revisionPayload = JSON.parse(revisionResponse.body) as EditorPayload;
-    expect(revisionPayload.article.slug).toBe("admin-draft");
-    expect(revisionPayload.article.sourceText).toContain("<ArticleQuiz />");
-    expect(revisionPayload.editor.autosaveTarget).toBe(
-      "/admin/articles/admin-draft/revisions",
-    );
-    expect(revisionPayload.editor.publishTarget).toBe(
-      "/admin/articles/admin-draft/publish",
-    );
-
-    const publishResponse = await app.inject({
-      method: "POST",
-      url: "/admin/articles/admin-draft/publish",
-      headers: { authorization: "Bearer test-admin-token" },
-    });
-    expect(publishResponse.statusCode).toBe(200);
-    expect(publishCurrentRevision).toHaveBeenCalledWith("admin-draft");
-    const publishPayload = JSON.parse(publishResponse.body) as EditorPayload;
-    expect(publishPayload.article.status).toBe("PUBLISHED");
-
     await app.close();
   });
 
@@ -675,6 +442,24 @@ describe("admin writing API", () => {
     await app.close();
   });
 
+  it("returns a clear conflict for historical MDX restore", async () => {
+    const restoreRevision = vi
+      .fn()
+      .mockRejectedValue(new ArticleHistoricalMdxRestoreBlocked());
+    const app = await appWithArticleService({ restoreRevision });
+    const response = await app.inject({
+      method: "POST",
+      url: "/admin/articles/admin-draft/revisions/1/restore",
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      error:
+        "Historical MDX revisions are read-only and cannot be restored after retirement.",
+    });
+    await app.close();
+  });
+
   it("supports unpublish, archive, and permanent delete actions", async () => {
     const unpublishArticle = vi
       .fn()
@@ -713,84 +498,6 @@ describe("admin writing API", () => {
     });
     expect(deleted.statusCode).toBe(204);
     expect(deleteArticle).toHaveBeenCalledWith("admin-draft");
-    await app.close();
-  });
-
-  it("routes slash-containing slugs through admin editing and public read endpoints", async () => {
-    const nestedSlug = "guides/fastify-routing";
-    const nestedArticle = articleFixture({
-      slug: nestedSlug,
-      status: "PUBLISHED",
-    });
-    const getArticleBySlug = vi.fn().mockResolvedValue(nestedArticle);
-    const getPublicArticleBySlug = vi.fn().mockResolvedValue(nestedArticle);
-    const replaceArticleBlocks = vi.fn().mockResolvedValue(nestedArticle);
-    const createEditorRevision = vi.fn().mockResolvedValue(nestedArticle);
-    const publishCurrentRevision = vi.fn().mockResolvedValue(nestedArticle);
-    const app = await appWithArticleService({
-      getArticleBySlug,
-      getPublicArticleBySlug,
-      replaceArticleBlocks,
-      createEditorRevision,
-      publishCurrentRevision,
-    });
-    const headers = { authorization: "Bearer test-admin-token" };
-
-    const publicResponse = await app.inject({
-      method: "GET",
-      url: `/articles/${nestedSlug}`,
-    });
-    expect(publicResponse.statusCode).toBe(200);
-    expect(getPublicArticleBySlug).toHaveBeenCalledWith(nestedSlug);
-
-    const readBlocksResponse = await app.inject({
-      method: "GET",
-      url: `/admin/articles/${nestedSlug}/blocks`,
-      headers,
-    });
-    expect(readBlocksResponse.statusCode).toBe(200);
-    expect(getArticleBySlug).toHaveBeenCalledWith(nestedSlug);
-
-    const replaceBlocksResponse = await app.inject({
-      method: "PUT",
-      url: `/admin/articles/${nestedSlug}/blocks`,
-      headers,
-      payload: {
-        blocks: [
-          { type: "PARAGRAPH", content: { text: "Nested route draft" } },
-        ],
-      },
-    });
-    expect(replaceBlocksResponse.statusCode).toBe(201);
-    expect(replaceArticleBlocks).toHaveBeenCalledWith(
-      nestedSlug,
-      expect.objectContaining({
-        blocks: [
-          { type: "PARAGRAPH", content: { text: "Nested route draft" } },
-        ],
-      }),
-    );
-
-    const revisionResponse = await app.inject({
-      method: "PUT",
-      url: `/admin/articles/${nestedSlug}/revisions`,
-      headers,
-      payload: { sourceText: "# Nested route draft" },
-    });
-    expect(revisionResponse.statusCode).toBe(201);
-    expect(createEditorRevision).toHaveBeenCalledWith(
-      nestedSlug,
-      expect.objectContaining({ sourceText: "# Nested route draft" }),
-    );
-
-    const publishResponse = await app.inject({
-      method: "POST",
-      url: `/admin/articles/${nestedSlug}/publish`,
-      headers,
-    });
-    expect(publishResponse.statusCode).toBe(200);
-    expect(publishCurrentRevision).toHaveBeenCalledWith(nestedSlug);
-
     await app.close();
   });
 
@@ -957,57 +664,6 @@ describe("admin writing API", () => {
     await app.close();
   });
 
-  it("returns a conflict when editing a published article without an unpublished draft model", async () => {
-    const createEditorRevision = vi
-      .fn()
-      .mockRejectedValue(
-        new Error(
-          "Published article edits require a separate unpublished draft model.",
-        ),
-      );
-    const app = await appWithArticleService({ createEditorRevision });
-
-    const response = await app.inject({
-      method: "PUT",
-      url: "/admin/articles/published-post/revisions",
-      headers: { authorization: "Bearer test-admin-token" },
-      payload: {
-        sourceText: "# Published edit",
-      },
-    });
-
-    expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({
-      error:
-        "Published article edits require a separate unpublished draft model.",
-    });
-
-    await app.close();
-  });
-
-  it("returns publication issues for unsupported MDX", async () => {
-    const publishCurrentRevision = vi
-      .fn()
-      .mockRejectedValue(
-        new ArticlePublicationBlocked(
-          "MDX contains content the CMS renderer cannot preserve.",
-          [{ name: "UnknownWidget", line: 12 }],
-        ),
-      );
-    const app = await appWithArticleService({ publishCurrentRevision });
-    const response = await app.inject({
-      method: "POST",
-      url: "/admin/articles/post/publish",
-      headers: { authorization: "Bearer test-admin-token" },
-    });
-    expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({
-      error: "MDX contains content the CMS renderer cannot preserve.",
-      issues: [{ name: "UnknownWidget", line: 12 }],
-    });
-    await app.close();
-  });
-
   it("documents admin article draft, revision, and publish endpoints in OpenAPI", async () => {
     const app = await appWithArticleService({});
     const response = await app.inject({
@@ -1021,8 +677,7 @@ describe("admin writing API", () => {
       paths?: Record<string, unknown>;
     } = response.json();
     expect(document.tags?.map((tag) => tag.name)).toContain("admin-writing");
-    expect(document.paths).toHaveProperty("/admin/articles");
-    expect(document.paths).toHaveProperty("/admin/articles/{slug}/revisions");
+    expect(document.paths).toHaveProperty("/admin/articles/documents");
     expect(document.paths).toHaveProperty("/admin/articles/{slug}/publish");
 
     await app.close();
