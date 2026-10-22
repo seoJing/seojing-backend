@@ -64,21 +64,41 @@ function fixture() {
     },
   }));
   const legacyRevisionsFor = (slug: string) =>
-    Array.from({ length: slug === "post-0" ? 5 : 1 }, (_, index) => {
-      const revisionSource = index === 0 ? source : source + "edit-" + index;
-      return {
-        id: "legacy-" + slug + "-" + index,
-        articleId: "article-" + slug,
-        revisionNumber: index + 1,
-        sourceFormat: "MDX" as const,
-        sourceText: revisionSource,
-        sourceSha256: sha256(revisionSource),
-      };
-    });
+    Array.from(
+      { length: slug === "post-0" ? 3 : slug === "post-1" ? 2 : 1 },
+      (_, index) => {
+        const revisionSource =
+          slug === "post-0" && index < 2
+            ? source
+            : index === 0
+              ? source
+              : source + "edit-" + index;
+        return {
+          id: "legacy-" + slug + "-" + index,
+          articleId: "article-" + slug,
+          revisionNumber: index + 1,
+          sourceFormat: "MDX" as const,
+          sourceText: revisionSource,
+          sourceSha256: sha256(revisionSource),
+        };
+      },
+    );
   const evidence: RetirementEvidence = {
     version: 2,
     capturedAt: date,
     historicalMdxRevisionTotal: 205,
+    residualMdxRevisions: [
+      {
+        id: "legacy-draft-0",
+        articleId: "article-draft",
+        slug: "hello-seojing-backend",
+        articleStatus: "DRAFT",
+        revisionNumber: 1,
+        sourceFormat: "MDX",
+        sourceText: "# Inert draft history\n",
+        sourceSha256: sha256("# Inert draft history\n"),
+      },
+    ],
     webCommit: "a".repeat(40),
     backendCommit: "b".repeat(40),
     database: expected.map(({ slug }) => ({
@@ -97,7 +117,8 @@ function fixture() {
       status: "PUBLISHED",
       sourceFormat: "DOCUMENT",
       sourceText: "",
-      historicalMdxRevisionCount: slug === "post-0" ? 5 : 1,
+      historicalMdxRevisionCount:
+        slug === "post-0" ? 3 : slug === "post-1" ? 2 : 1,
       archivedSourceRevisionId: "legacy-" + slug + "-0",
       legacyRevisions: legacyRevisionsFor(slug),
       currentRevisionId: "revision-" + slug,
@@ -164,6 +185,49 @@ describe("post-retirement archive evidence gate", () => {
       accepted: 201,
       blockers: [],
     });
+  });
+
+  it("accepts 204 published plus one residual revision and duplicate archive bytes with explicit identity", () => {
+    const { expected, evidence } = fixture();
+    expect(
+      evidence.database.reduce(
+        (count, row) => count + row.legacyRevisions.length,
+        0,
+      ),
+    ).toBe(204);
+    expect(evidence.residualMdxRevisions).toHaveLength(1);
+    expect(evidence.database[0]!.legacyRevisions[0]!.sourceSha256).toBe(
+      evidence.database[0]!.legacyRevisions[1]!.sourceSha256,
+    );
+    expect(evidence.database[0]!.archivedSourceRevisionId).toBe(
+      evidence.database[0]!.legacyRevisions[0]!.id,
+    );
+    expect(auditMdxRetirement(expected, evidence, () => image).ready).toBe(
+      true,
+    );
+  });
+
+  it("fails closed when the non-corpus residual revision is omitted", () => {
+    const { expected, evidence } = fixture();
+    evidence.residualMdxRevisions = [];
+    const report = auditMdxRetirement(expected, evidence, () => image);
+    expect(report.ready).toBe(false);
+    expect(report.blockers.join("\n")).toContain(
+      "evidence.residualMdxRevisions: Too small",
+    );
+  });
+
+  it("rejects a fabricated global revision count", () => {
+    const { expected, evidence } = fixture();
+    const fabricated: unknown = {
+      ...evidence,
+      historicalMdxRevisionTotal: 204,
+    };
+    const report = auditMdxRetirement(expected, fabricated, () => image);
+    expect(report.ready).toBe(false);
+    expect(report.blockers.join("\n")).toContain(
+      "evidence.historicalMdxRevisionTotal",
+    );
   });
 
   it("fails closed without evidence or the complete archived corpus", () => {

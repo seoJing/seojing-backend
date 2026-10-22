@@ -42,12 +42,28 @@ const publicArticle = z
       .passthrough(),
   })
   .passthrough();
+const historicalMdxRevision = z.object({
+  id: text,
+  articleId: text,
+  revisionNumber: z.number().int().positive(),
+  sourceFormat: z.literal("MDX"),
+  sourceText: text,
+  sourceSha256: hash,
+});
 const evidenceSchema = z.object({
   version: z.literal(2),
   capturedAt: z.iso.datetime(),
   webCommit: z.string().regex(/^[a-f0-9]{40}$/),
   backendCommit: z.string().regex(/^[a-f0-9]{40}$/),
   historicalMdxRevisionTotal: z.literal(RETAINED_MDX_REVISIONS),
+  residualMdxRevisions: z
+    .array(
+      historicalMdxRevision.extend({
+        slug: text,
+        articleStatus: z.enum(["DRAFT", "ARCHIVED"]),
+      }),
+    )
+    .min(1),
   database: z.array(
     z.object({
       id: text,
@@ -58,18 +74,7 @@ const evidenceSchema = z.object({
       sourceText: z.string(),
       historicalMdxRevisionCount: z.number().int().positive(),
       archivedSourceRevisionId: text,
-      legacyRevisions: z
-        .array(
-          z.object({
-            id: text,
-            articleId: text,
-            revisionNumber: z.number().int().positive(),
-            sourceFormat: z.literal("MDX"),
-            sourceText: text,
-            sourceSha256: hash,
-          }),
-        )
-        .min(1),
+      legacyRevisions: z.array(historicalMdxRevision).min(1),
       currentRevisionId: text,
       latestRevisionId: text,
       currentRevision: z.object({
@@ -264,19 +269,37 @@ export function auditMdxRetirement(
     evidence.database.length
   )
     blockers.push("database: duplicate Article identity.");
+  const publishedArticleIds = new Set(evidence.database.map((row) => row.id));
+  if (
+    evidence.residualMdxRevisions.some(
+      (revision) =>
+        expectedBySlug.has(revision.slug) ||
+        publishedArticleIds.has(revision.articleId),
+    )
+  )
+    blockers.push(
+      "database: residual MDX revisions must identify non-corpus Articles.",
+    );
   const historicalRevisions = evidence.database.flatMap(
     (row) => row.legacyRevisions,
   );
-  const revisionIds = evidence.database.flatMap((row) => [
-    ...row.legacyRevisions.map((revision) => revision.id),
-    row.currentRevision.id,
-  ]);
+  const allMdxRevisions = [
+    ...historicalRevisions,
+    ...evidence.residualMdxRevisions,
+  ];
+  const revisionIds = [
+    ...evidence.database.flatMap((row) => [
+      ...row.legacyRevisions.map((revision) => revision.id),
+      row.currentRevision.id,
+    ]),
+    ...evidence.residualMdxRevisions.map((revision) => revision.id),
+  ];
   if (new Set(revisionIds).size !== revisionIds.length)
     blockers.push(
       "database: historical/current revision identities must be globally unique.",
     );
   if (
-    evidence.historicalMdxRevisionTotal !== historicalRevisions.length ||
+    evidence.historicalMdxRevisionTotal !== allMdxRevisions.length ||
     evidence.database.some(
       (row) => row.historicalMdxRevisionCount !== row.legacyRevisions.length,
     )
@@ -284,6 +307,19 @@ export function auditMdxRetirement(
     blockers.push(
       "database: declared historical MDX revision counts must match the complete arrays.",
     );
+  const mdxRevisionNumbersByArticle = new Map<string, Set<number>>();
+  for (const revision of allMdxRevisions) {
+    const numbers =
+      mdxRevisionNumbersByArticle.get(revision.articleId) ?? new Set<number>();
+    if (numbers.has(revision.revisionNumber))
+      blockers.push(
+        "database: historical MDX revision numbers must be unique per article.",
+      );
+    numbers.add(revision.revisionNumber);
+    mdxRevisionNumbersByArticle.set(revision.articleId, numbers);
+    if (sha256(revision.sourceText) !== revision.sourceSha256)
+      blockers.push("database: historical MDX revision source hash mismatch.");
+  }
   const db = new Map(evidence.database.map((row) => [row.slug, row]));
   const api = new Map(evidence.api.map((row) => [row.slug, row]));
   const d1 = new Map(evidence.d1.map((row) => [row.slug, row]));
@@ -306,17 +342,6 @@ export function auditMdxRetirement(
       row.currentRevision.articleId === row.id &&
         row.legacyRevisions.every((revision) => revision.articleId === row.id),
       "historical/current revision Article identity mismatch",
-    );
-    check(
-      new Set(row.legacyRevisions.map((revision) => revision.revisionNumber))
-        .size === row.legacyRevisions.length,
-      "historical MDX revision numbers must be unique per article",
-    );
-    check(
-      row.legacyRevisions.every(
-        (revision) => sha256(revision.sourceText) === revision.sourceSha256,
-      ),
-      "historical MDX revision source hash mismatch",
     );
     const archivedSourceRevision = row.legacyRevisions.find(
       (revision) => revision.id === row.archivedSourceRevisionId,
