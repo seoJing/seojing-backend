@@ -28,6 +28,7 @@
     "study:migration-audit": "tsx scripts/audit-study-migration.ts",
     "mdx:retirement-audit": "tsx scripts/audit-mdx-retirement.ts",
     "test:retirement": "vitest run test/retirement-boundary.test.ts test/mdx-retirement-readiness.test.ts",
+    "test:retirement:postgres": "RUN_CAREER_MIGRATION_TESTS=true vitest run test/career-retirement-migrations.test.ts",
     "db:local:start": "bash scripts/local-postgres.sh start",
     "db:local:stop": "bash scripts/local-postgres.sh stop",
     "db:local:status": "bash scripts/local-postgres.sh status",

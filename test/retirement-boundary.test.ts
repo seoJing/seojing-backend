@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -120,50 +121,130 @@ describe("post-management retirement boundary", () => {
   });
 });
 
-describe("forward-only Career Prisma migration (static, no database)", () => {
-  it("drops exactly the historical Career objects, children first, and no retained object", () => {
-    const root = resolve("prisma/migrations");
-    const migration = "20261021000000_retire_career_radar";
+describe("Career applied history and forward compatibility (static, no database)", () => {
+  const root = resolve("prisma/migrations");
+  const original = "20260920020000_career_radar_mvp";
+  const prerequisite = "20261020000000_retire_career_radar_legacy_tables";
+  const retirement = "20261021000000_retire_career_radar";
+  const cleanup = "20261022000000_retire_career_radar_legacy_enums";
+  const read = (name: string) =>
+    readFileSync(resolve(root, name, "migration.sql"), "utf8");
+  const drops = (sql: string, kind: string) =>
+    [
+      ...sql.matchAll(new RegExp(`DROP ${kind} IF EXISTS "([a-z_]+)"`, "g")),
+    ].map((match) => match[1]!);
+
+  it("pins the restored production-applied bytes and the immutable retirement bytes", () => {
+    for (const [name, checksum] of [
+      [
+        original,
+        "41cf6c57de4fb7c4cf45a1889bc924b5bf842d9d755ce8f9aad4ec84f64c2f19",
+      ],
+      [
+        retirement,
+        "c9f8198ddd2973206de9306471aaeaf7bfa83e527f98f9ec8d62aac9dbae36aa",
+      ],
+    ] as const) {
+      expect(
+        createHash("sha256")
+          .update(readFileSync(resolve(root, name, "migration.sql")))
+          .digest("hex"),
+        name,
+      ).toBe(checksum);
+    }
+  });
+
+  it("permits only the exact ordered Career drops in three explicit transactions", () => {
+    expect(prerequisite > "20261007150000_article_document_source").toBe(true);
+    expect(prerequisite < retirement && retirement < cleanup).toBe(true);
+    const expected = [
+      [prerequisite, ["career_source_links", "career_recruitment_history"], []],
+      [
+        retirement,
+        [
+          "career_recruitment_sources",
+          "career_forecast_sources",
+          "career_status_sources",
+          "career_forecast_reasons",
+          "career_preparation_notes",
+          "career_eligibility_items",
+          "career_process_steps",
+          "career_forecasts",
+          "career_recruitments",
+          "career_opportunities",
+          "career_sources",
+          "career_companies",
+        ],
+        [
+          "career_forecast_confidence",
+          "career_employment_type",
+          "career_recruitment_status",
+          "career_visibility",
+        ],
+      ],
+      [cleanup, [], ["career_actual_status", "career_source_relationship"]],
+    ] as const;
+    for (const [name, tables, types] of expected) {
+      const statements = read(name)
+        .replace(/--[^\n]*/g, "")
+        .split(";")
+        .map((value) => value.trim())
+        .filter(Boolean);
+      expect(statements, name).toEqual([
+        "BEGIN",
+        ...tables.map((table) => `DROP TABLE IF EXISTS "${table}"`),
+        ...types.map((type) => `DROP TYPE IF EXISTS "${type}"`),
+        "COMMIT",
+      ]);
+    }
+  });
+
+  it("covers restored history, FK order and every surviving Prisma table and enum", () => {
     const history = readdirSync(root)
       .filter(
         (name) =>
-          name < migration && existsSync(resolve(root, name, "migration.sql")),
+          name < prerequisite &&
+          existsSync(resolve(root, name, "migration.sql")),
       )
       .sort()
-      .map((name) => readFileSync(resolve(root, name, "migration.sql"), "utf8"))
+      .map(read)
       .join("\n");
-    const sql = readFileSync(
-      resolve(root, migration, "migration.sql"),
-      "utf8",
-    ).replace(/--[^\n]*/g, "");
-    const statements = sql
-      .split(";")
-      .map((value) => value.trim())
-      .filter(Boolean);
-    expect(statements[0]).toBe("BEGIN");
-    expect(statements.at(-1)).toBe("COMMIT");
-    expect(
-      statements
-        .slice(1, -1)
-        .every((value) =>
-          /^DROP (TABLE|TYPE) IF EXISTS "career_[a-z_]+"$/.test(value),
-        ),
-    ).toBe(true);
+    const sql = [prerequisite, retirement, cleanup].map(read).join("\n");
     const created = (kind: string) =>
       [
         ...history.matchAll(
           new RegExp(`CREATE ${kind} "(career_[a-z_]+)"`, "g"),
         ),
       ].map((match) => match[1]!);
-    const dropped = (kind: string) =>
-      [
-        ...sql.matchAll(new RegExp(`DROP ${kind} IF EXISTS "([a-z_]+)"`, "g")),
-      ].map((match) => match[1]!);
-    expect(created("TABLE")).toHaveLength(12);
-    expect(created("TYPE")).toHaveLength(4);
-    expect(dropped("TABLE").sort()).toEqual(created("TABLE").sort());
-    expect(dropped("TYPE").sort()).toEqual(created("TYPE").sort());
-    const order = dropped("TABLE");
+    expect(created("TABLE")).toHaveLength(6);
+    expect(created("TYPE")).toHaveLength(5);
+    // The immutable retirement also tolerates the later rewritten schema.
+    // Keep its extra DROP set explicit; do not silently accept arbitrary names.
+    expect(
+      drops(sql, "TABLE")
+        .filter((name) => !created("TABLE").includes(name))
+        .sort(),
+    ).toEqual([
+      "career_eligibility_items",
+      "career_forecast_reasons",
+      "career_forecast_sources",
+      "career_preparation_notes",
+      "career_process_steps",
+      "career_recruitment_sources",
+      "career_recruitments",
+      "career_status_sources",
+    ]);
+    expect(
+      drops(sql, "TYPE").filter((name) => !created("TYPE").includes(name)),
+    ).toEqual(["career_recruitment_status"]);
+    for (const kind of ["TABLE", "TYPE"]) {
+      expect(
+        drops(sql, kind)
+          .filter((name) => created(kind).includes(name))
+          .sort(),
+      ).toEqual(created(kind).sort());
+    }
+    const order = drops(sql, "TABLE");
     for (const [, child, parent] of history.matchAll(
       /ALTER TABLE "([a-z_]+)" ADD CONSTRAINT [^;]+ REFERENCES "([a-z_]+)"/g,
     )) {
@@ -177,24 +258,25 @@ describe("forward-only Career Prisma migration (static, no database)", () => {
     expect(sql.indexOf("DROP TYPE")).toBeGreaterThan(
       sql.lastIndexOf("DROP TABLE"),
     );
-    const remainingTables = [...history.matchAll(/CREATE TABLE "([a-z_]+)"/g)]
-      .map((match) => match[1]!)
-      .filter((name) => !order.includes(name));
     const schema = readFileSync(resolve("prisma/schema.prisma"), "utf8");
-    const schemaTables = [
-      ...schema.matchAll(
-        /model \w+ \{[\s\S]*?@@map\("([a-z_]+)"\)[\s\S]*?\n\}/g,
-      ),
-    ].map((match) => match[1]!);
-    expect(remainingTables.sort()).toEqual(schemaTables.sort());
-    const remainingTypes = [...history.matchAll(/CREATE TYPE "([a-z_]+)"/g)]
-      .map((match) => match[1]!)
-      .filter((name) => !dropped("TYPE").includes(name));
-    const schemaTypes = [
-      ...schema.matchAll(
-        /enum \w+ \{[\s\S]*?@@map\("([a-z_]+)"\)[\s\S]*?\n\}/g,
-      ),
-    ].map((match) => match[1]!);
-    expect(remainingTypes.sort()).toEqual(schemaTypes.sort());
+    for (const [kind, schemaKind] of [
+      ["TABLE", "model"],
+      ["TYPE", "enum"],
+    ]) {
+      const remaining = [
+        ...history.matchAll(new RegExp(`CREATE ${kind} "([a-z_]+)"`, "g")),
+      ]
+        .map((match) => match[1]!)
+        .filter((name) => !drops(sql, kind!).includes(name));
+      const mapped = [
+        ...schema.matchAll(
+          new RegExp(
+            `${schemaKind} \\w+ \\{[\\s\\S]*?@@map\\("([a-z_]+)"\\)[\\s\\S]*?\\n\\}`,
+            "g",
+          ),
+        ),
+      ].map((match) => match[1]!);
+      expect(remaining.sort(), kind).toEqual(mapped.sort());
+    }
   });
 });
