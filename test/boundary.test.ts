@@ -53,8 +53,8 @@ describe("public SEOJing API boundary", () => {
       "/health",
       "/health/ready",
       "/articles",
-      "/articles/{slug}/qa",
-      "/tts/summary",
+      "/articles/{slug}",
+      "/admin/articles",
     ]) {
       expect(publicPaths, path).toContain(path);
     }

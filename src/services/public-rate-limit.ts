@@ -56,8 +56,7 @@ export function registerPublicRateLimit(
     request.url === "/docs" ||
     request.url.startsWith("/docs/") ||
     request.url === "/openapi.json" ||
-    request.url.startsWith("/admin/") ||
-    request.url.startsWith("/community/auth/")
+    request.url.startsWith("/admin/")
   ) {
     return true;
   }

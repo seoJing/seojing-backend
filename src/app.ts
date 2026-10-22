@@ -6,21 +6,13 @@ import swaggerUi from "@fastify/swagger-ui";
 import Fastify, { type FastifyInstance } from "fastify";
 
 import { ArticleRepository } from "./repositories/articles.js";
-import { CommunityRepository } from "./repositories/community.js";
 import { registerAdminWritingRoutes } from "./routes/admin-writing.js";
-import { registerArticleQaRoutes } from "./routes/article-qa.js";
 import { registerArticleRoutes } from "./routes/articles.js";
-import { registerCommunityRoutes } from "./routes/community.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerReadmeRoutes } from "./routes/readme.js";
-import { registerTtsRoutes } from "./routes/tts.js";
-import { ArticleQaService } from "./services/article-qa.js";
 import { ArticleService } from "./services/articles.js";
-import { CommunityService } from "./services/community.js";
-import { GitHubOAuthService } from "./services/github-oauth.js";
 import { type PythonWorkerClient } from "./services/python-worker.js";
 import { registerPublicRateLimit } from "./services/public-rate-limit.js";
-import { TtsService } from "./services/tts.js";
 
 export type PythonWorkerGateway = Pick<PythonWorkerClient, "health"> &
   Partial<Pick<PythonWorkerClient, "invoke">>;
@@ -30,17 +22,8 @@ export interface BuildAppOptions {
   corsOrigins?: string[];
   adminToken?: string;
   articleService?: ArticleService;
-  communityService?: CommunityService;
   prisma?: PrismaClient;
-  githubOAuth?: {
-    clientId: string;
-    clientSecret: string;
-    callbackUrl?: string;
-  };
-  githubOAuthService?: GitHubOAuthService;
-  communitySessionSecret?: string;
   pythonWorkerClient?: PythonWorkerGateway;
-  ttsAudioRoot?: string;
 }
 
 export async function buildApp(
@@ -67,7 +50,7 @@ export async function buildApp(
     openapi: {
       info: {
         title: "SEOJing Backend API",
-        description: "Content/community backend contract for SEOJing.",
+        description: "Content backend contract for SEOJing.",
         version: "0.1.0",
       },
       servers: [{ url: "http://localhost:4000", description: "local" }],
@@ -85,20 +68,6 @@ export async function buildApp(
         {
           name: "readme",
           description: "Synthetic README reading preview",
-        },
-        {
-          name: "community",
-          description: "GitHub-authenticated comments and questions",
-        },
-        {
-          name: "tts",
-          description:
-            "Node public TTS API backed by an internal Python worker",
-        },
-        {
-          name: "qa",
-          description:
-            "Source-backed article Q&A delegated to the internal Python worker",
         },
       ],
       components: {
@@ -118,39 +87,15 @@ export async function buildApp(
 
   registerHealthRoutes(app, { pythonWorkerClient: options.pythonWorkerClient });
   registerReadmeRoutes(app);
-  registerTtsRoutes(app, {
-    ttsService: new TtsService(options.pythonWorkerClient, {
-      audioRoot: options.ttsAudioRoot,
-    }),
-  });
-
-  const needsPrisma = !options.articleService || !options.communityService;
+  const needsPrisma = !options.articleService;
   const ownsPrisma = needsPrisma && !options.prisma;
   const prisma = needsPrisma
     ? (options.prisma ?? new PrismaClient())
     : undefined;
   const articleService = options.articleService ?? createArticleService(prisma);
-  const communityService =
-    options.communityService ?? createCommunityService(prisma, options);
-  const githubOAuthService =
-    options.githubOAuthService ??
-    createGitHubOAuthService(options, communityService);
   registerArticleRoutes(app, { articleService });
-  registerArticleQaRoutes(app, {
-    articleQaService: new ArticleQaService(
-      articleService,
-      options.pythonWorkerClient?.invoke
-        ? options.pythonWorkerClient
-        : undefined,
-    ),
-  });
   registerAdminWritingRoutes(app, {
     articleService,
-    adminToken: options.adminToken,
-  });
-  registerCommunityRoutes(app, {
-    communityService,
-    githubOAuthService,
     adminToken: options.adminToken,
   });
 
@@ -189,29 +134,4 @@ function createArticleService(
     );
   }
   return new ArticleService(new ArticleRepository(prisma));
-}
-
-function createCommunityService(
-  prisma: PrismaClient | undefined,
-  options: BuildAppOptions,
-): CommunityService {
-  if (!prisma) {
-    throw new Error(
-      "Prisma client is required when communityService is not provided.",
-    );
-  }
-  return new CommunityService(
-    new CommunityRepository(prisma),
-    options.communitySessionSecret ?? "local-dev-community-session-secret",
-  );
-}
-
-function createGitHubOAuthService(
-  options: BuildAppOptions,
-  communityService: CommunityService,
-): GitHubOAuthService | undefined {
-  if (!options.githubOAuth) {
-    return undefined;
-  }
-  return new GitHubOAuthService(options.githubOAuth, communityService);
 }
