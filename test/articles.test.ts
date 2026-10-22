@@ -29,7 +29,7 @@ function articleFixture(
     displayDate: null,
     displayUpdatedAt: null,
     status: "DRAFT",
-    sourceFormat: "MDX",
+    sourceFormat: "BLOCKS",
     sourceText: "# Article Schema MVP",
     renderedHtml: "<h1>Article Schema MVP</h1>",
     currentRevisionId: "22222222-2222-2222-2222-222222222222",
@@ -215,7 +215,7 @@ describe("ArticleService", () => {
       revision.id,
     );
   });
-  it("normalizes slug, defaults to MDX draft, and derives initial blocks", async () => {
+  it("normalizes slug, defaults to a native block draft, and derives initial blocks", async () => {
     const findBySlugCaseInsensitive = vi.fn().mockResolvedValue(null);
     const createDraft = vi.fn().mockResolvedValue(articleFixture());
     const repository = {
@@ -238,7 +238,7 @@ describe("ArticleService", () => {
       expect.objectContaining({
         slug: "Article-Schema-MVP",
         title: "Article Schema MVP",
-        sourceFormat: "MDX",
+        sourceFormat: "BLOCKS",
         status: "DRAFT",
         blocks: [
           expect.objectContaining({ type: "HEADING", sortOrder: 0 }),

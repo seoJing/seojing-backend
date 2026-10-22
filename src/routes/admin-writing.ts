@@ -1,5 +1,3 @@
-import { createHash } from "node:crypto";
-
 import type {
   FastifyInstance,
   FastifyReply,
@@ -12,17 +10,15 @@ import {
   ArticlePublicationBlocked,
   previewArticleDraft,
   projectArticleRevision,
-  type ArticleEditorDraftInput,
   type ArticleService,
   type BlockEditorDraftInput,
   type BlockEditorMutationInput,
   type BlockEditorUpdateInput,
-  type CreateArticleInput,
   type DocumentEditorInput,
 } from "../services/articles.js";
 import type { BlockEditorBlockInput } from "../services/block-renderer.js";
 import { ArticleDocumentValidationError } from "../services/article-document.js";
-import { renderMdxForEditor } from "../services/mdx-editor-renderer.js";
+
 import { toPublicArticleDetail } from "./articles.js";
 
 interface RegisterAdminWritingRoutesOptions {
@@ -44,17 +40,6 @@ interface ArticleRevisionParams extends ArticleSlugParams {
 
 interface WildcardArticleParams {
   "*": string;
-}
-
-interface UpsertDraftBody {
-  slug?: string;
-  title?: string;
-  description?: string;
-  category?: string;
-  sourceText?: string;
-  renderedHtml?: string;
-  changeSummary?: string;
-  authorName?: string;
 }
 
 interface BlockDraftBody {
@@ -128,35 +113,6 @@ const documentDraftBodySchema = {
   additionalProperties: false,
 };
 
-const componentSnippets = [
-  {
-    id: "quiz",
-    label: "/quiz",
-    description: "ArticleQuiz 블록을 빠르게 삽입하는 MDX 템플릿",
-    insertText:
-      '<ArticleQuiz title="확인 문제">\n  <ArticleQuizItem question="질문을 입력하세요" answer="정답 또는 해설을 입력하세요" />\n</ArticleQuiz>',
-  },
-  {
-    id: "callout",
-    label: "/callout",
-    description: "핵심 메모나 주의점을 묶는 콜아웃 템플릿",
-    insertText:
-      '<Callout tone="note" title="메모">\n  여기에 설명을 입력하세요.\n</Callout>',
-  },
-  {
-    id: "code",
-    label: "/code",
-    description: "언어가 지정된 코드 펜스 템플릿",
-    insertText: "```ts\n// 예시 코드를 입력하세요\n```",
-  },
-  {
-    id: "diagram",
-    label: "/diagram",
-    description: "텍스트 기반 다이어그램을 넣는 Mermaid 템플릿",
-    insertText: "```mermaid\nflowchart TD\n  A[시작] --> B[결정]\n```",
-  },
-] as const;
-
 const adminWritingTag = ["admin-writing"];
 const articleSlugParamSchema = {
   type: "object",
@@ -167,19 +123,6 @@ const articleBlockParamSchema = {
   type: "object",
   required: ["slug", "blockId"],
   properties: { slug: { type: "string" }, blockId: { type: "string" } },
-};
-const upsertDraftBodySchema = {
-  type: "object",
-  properties: {
-    slug: { type: "string" },
-    title: { type: "string" },
-    description: { type: "string" },
-    category: { type: "string", minLength: 1, maxLength: 120 },
-    sourceText: { type: "string" },
-    renderedHtml: { type: "string" },
-    changeSummary: { type: "string" },
-    authorName: { type: "string" },
-  },
 };
 const articleBlockBodySchema = {
   type: "object",
@@ -425,23 +368,11 @@ export function registerAdminWritingRoutes(
   );
 
   app.get(
-    "/admin/writing/snippets",
-    {
-      schema: openApiSchema({
-        tags: adminWritingTag,
-        summary: "List admin editor snippets",
-      }),
-    },
-    () => ({ snippets: componentSnippets }),
-  );
-
-  app.get(
     "/admin/article-review-queue",
     {
       schema: openApiSchema({
         tags: adminWritingTag,
-        summary:
-          "List private CMS article review candidates without source bodies",
+        summary: "List private CMS articles without source bodies",
       }),
     },
     async () => {
@@ -453,14 +384,7 @@ export function registerAdminWritingRoutes(
           category: article.category,
           status: article.status,
           sourceFormat: article.sourceFormat,
-          sourceSha256: createHash("sha256")
-            .update(article.sourceText)
-            .digest("hex"),
           latestRevisionFormat: article.revisions[0]?.sourceFormat ?? null,
-          migrationSourceSha256:
-            /^Convert MDX to document: ([a-f0-9]{64})$/.exec(
-              article.revisions[0]?.changeSummary ?? "",
-            )?.[1] ?? null,
           updatedAt: article.updatedAt.toISOString(),
         })),
       };
@@ -495,52 +419,6 @@ export function registerAdminWritingRoutes(
       return article
         ? toPublicArticleDetail(article)
         : reply.status(404).send({ error: "Published article not found" });
-    },
-  );
-
-  app.get<{ Params: ArticleSlugParams }>(
-    "/admin/articles/:slug/migration-snapshot",
-    {
-      schema: openApiSchema({
-        tags: adminWritingTag,
-        summary:
-          "Preview an imported public article's converted document for edge cutover",
-        params: articleSlugParamSchema,
-      }),
-    },
-    async (request, reply) => {
-      const article = await options.articleService.getArticleBySlug(
-        request.params.slug,
-      );
-      const snapshot = article && toMigrationSnapshot(article);
-      return (
-        snapshot ??
-        reply
-          .status(404)
-          .send({ error: "Converted migration document not found" })
-      );
-    },
-  );
-
-  app.post<{ Body: UpsertDraftBody }>(
-    "/admin/articles",
-    {
-      schema: openApiSchema({
-        tags: adminWritingTag,
-        summary: "Create an unpublished article draft",
-        body: {
-          ...upsertDraftBodySchema,
-          required: ["slug", "title", "sourceText"],
-        },
-      }),
-    },
-    async (request, reply) => {
-      const body = request.body ?? {};
-      const article = await options.articleService.createInitialDraft(
-        toCreateArticleInput(body),
-      );
-
-      return reply.status(201).send(toEditorPayload(article));
     },
   );
 
@@ -763,37 +641,6 @@ export function registerAdminWritingRoutes(
     },
   );
 
-  app.put<{ Params: ArticleSlugParams; Body: UpsertDraftBody }>(
-    "/admin/articles/:slug/revisions",
-    {
-      schema: openApiSchema({
-        tags: adminWritingTag,
-        summary: "Save an MDX source-text article revision",
-        params: articleSlugParamSchema,
-        body: { ...upsertDraftBodySchema, required: ["sourceText"] },
-      }),
-    },
-    async (request, reply) => {
-      const article = await rejectPublishedArticleEdits(async () =>
-        options.articleService.createEditorRevision(
-          request.params.slug,
-          toEditorDraftInput(request.body ?? {}),
-        ),
-      );
-      if (article === "published-edit-rejected") {
-        return reply.status(409).send({
-          error:
-            "Published article edits require a separate unpublished draft model.",
-        });
-      }
-      if (!article) {
-        return reply.status(404).send({ error: "Article not found" });
-      }
-
-      return reply.status(201).send(toEditorPayload(article));
-    },
-  );
-
   app.put<{ Params: ArticleSlugParams; Body: DocumentDraftBody }>(
     "/admin/articles/:slug/document",
     {
@@ -952,7 +799,6 @@ export function registerAdminWritingRoutes(
         "editor",
         "document",
         "public-snapshot",
-        "migration-snapshot",
       ]);
       if (!slug) {
         return reply.status(404).send({ error: "Article not found" });
@@ -965,15 +811,6 @@ export function registerAdminWritingRoutes(
           : reply.status(404).send({ error: "Published article not found" });
       }
       const article = await options.articleService.getArticleBySlug(slug);
-      if (request.params["*"].endsWith("/migration-snapshot")) {
-        const snapshot = article && toMigrationSnapshot(article);
-        return (
-          snapshot ??
-          reply
-            .status(404)
-            .send({ error: "Converted migration document not found" })
-        );
-      }
       if (!article) {
         return reply.status(404).send({ error: "Article not found" });
       }
@@ -984,14 +821,13 @@ export function registerAdminWritingRoutes(
 
   app.put<{
     Params: WildcardArticleParams;
-    Body: BlockDraftBody | UpsertDraftBody | DocumentDraftBody;
+    Body: BlockDraftBody | DocumentDraftBody;
   }>(
     "/admin/articles/*",
     { schema: { hide: true } },
     async (request, reply) => {
       const action = wildcardArticleAction(request.params["*"], [
         "blocks",
-        "revisions",
         "document",
       ]);
       if (!action) {
@@ -1000,7 +836,6 @@ export function registerAdminWritingRoutes(
       const body = request.body as Record<string, unknown>;
       if (
         (action.name === "blocks" && !Array.isArray(body.blocks)) ||
-        (action.name === "revisions" && typeof body.sourceText !== "string") ||
         (action.name === "document" &&
           (typeof body.title !== "string" ||
             !body.document ||
@@ -1021,15 +856,10 @@ export function registerAdminWritingRoutes(
                 request.body as DocumentDraftBody,
               )
             : await rejectPublishedArticleEdits(async () =>
-                action.name === "blocks"
-                  ? options.articleService.replaceArticleBlocks(
-                      action.slug,
-                      toBlockDraftInput(request.body as BlockDraftBody),
-                    )
-                  : options.articleService.createEditorRevision(
-                      action.slug,
-                      toEditorDraftInput(request.body as UpsertDraftBody),
-                    ),
+                options.articleService.replaceArticleBlocks(
+                  action.slug,
+                  toBlockDraftInput(request.body as BlockDraftBody),
+                ),
               );
       } catch (error) {
         if (error instanceof ArticleDocumentValidationError)
@@ -1250,30 +1080,6 @@ function isPublishedArticleEditError(error: unknown): boolean {
   );
 }
 
-function toMigrationSnapshot(article: ArticleWithContent) {
-  const revision = article.revisions[0];
-  const sourceSha256 = /^Convert MDX to document: ([a-f0-9]{64})$/.exec(
-    revision?.changeSummary ?? "",
-  )?.[1];
-  if (
-    !revision ||
-    revision.sourceFormat !== "DOCUMENT" ||
-    !revision.document ||
-    !sourceSha256
-  )
-    return null;
-  const projected: ArticleWithContent = {
-    ...projectArticleRevision(article, revision),
-    status: "PUBLISHED",
-    publishedAt:
-      article.publishedAt ?? revision.displayDate ?? article.createdAt,
-  };
-  return {
-    ...toPublicArticleDetail(projected),
-    migrationSourceSha256: sourceSha256,
-  };
-}
-
 function openApiSchema(schema: OpenApiFastifySchema): FastifySchema {
   return { ...schema };
 }
@@ -1283,43 +1089,6 @@ function isAuthorized(request: FastifyRequest, adminToken: string | undefined) {
     return false;
   }
   return request.headers.authorization === `Bearer ${adminToken}`;
-}
-
-function toCreateArticleInput(body: UpsertDraftBody): CreateArticleInput {
-  const sourceText = requiredString(body.sourceText, "sourceText");
-  const slug = requiredString(body.slug, "slug");
-  const title = requiredString(body.title, "title");
-  const ingest = renderMdxForEditor(sourceText, { fallbackSlug: slug });
-  return {
-    slug,
-    title,
-    description: optionalString(body.description) ?? ingest.description,
-    category: optionalString(body.category),
-    sourceFormat: "MDX",
-    sourceText,
-    renderedHtml: ingest.renderedHtml,
-    changeSummary: optionalString(body.changeSummary) ?? "Admin editor draft",
-    authorName: optionalString(body.authorName),
-    blocks: ingest.blocks,
-    assets: ingest.assets,
-  };
-}
-
-function toEditorDraftInput(body: UpsertDraftBody): ArticleEditorDraftInput {
-  const sourceText = requiredString(body.sourceText, "sourceText");
-  const ingest = renderMdxForEditor(sourceText);
-  return {
-    title: optionalString(body.title) ?? ingest.title,
-    description: optionalString(body.description) ?? ingest.description,
-    category: optionalString(body.category),
-    sourceText,
-    renderedHtml: ingest.renderedHtml,
-    changeSummary:
-      optionalString(body.changeSummary) ?? "Admin editor revision",
-    authorName: optionalString(body.authorName),
-    blocks: ingest.blocks,
-    assets: ingest.assets,
-  };
 }
 
 function toBlockDraftInput(body: BlockDraftBody): BlockEditorDraftInput {
@@ -1372,8 +1141,6 @@ function toEditorPayload(article: ArticleWithContent) {
   const revision = article.revisions[0] ?? article.currentRevision;
   const sourceFormat = revision?.sourceFormat ?? article.sourceFormat;
   const sourceText = revision?.sourceText ?? article.sourceText;
-  const mdxPreview =
-    sourceFormat === "MDX" ? renderMdxForEditor(sourceText) : null;
   const blocks = article.blocks
     .filter((block) => block.revisionId === revision?.id)
     .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -1412,9 +1179,9 @@ function toEditorPayload(article: ArticleWithContent) {
       renderedHtml: revision ? revision.renderedHtml : article.renderedHtml,
       // Raw fields above are for editing only; render this public projection.
       preview: toPublicArticleDetail(projectArticleRevision(article, revision)),
-      previewRenderedHtml:
-        mdxPreview?.renderedHtml ??
-        (revision ? revision.renderedHtml : article.renderedHtml),
+      previewRenderedHtml: revision
+        ? revision.renderedHtml
+        : article.renderedHtml,
       blocks,
       currentRevisionId: article.currentRevisionId,
       currentRevisionNumber: article.currentRevision?.revisionNumber ?? null,
@@ -1423,7 +1190,7 @@ function toEditorPayload(article: ArticleWithContent) {
       hasUnpublishedChanges: Boolean(
         revision && revision.id !== article.currentRevisionId,
       ),
-      previewIssues: mdxPreview?.unsupportedComponents ?? [],
+      previewIssues: [],
       revisions: article.revisions.map((item) => ({
         revisionNumber: item.revisionNumber,
         sourceFormat: item.sourceFormat,
@@ -1442,15 +1209,14 @@ function toEditorPayload(article: ArticleWithContent) {
           ? "document"
           : revision?.sourceFormat === "BLOCKS"
             ? "blocks"
-            : "mdx",
+            : "historical",
       autosaveTarget:
         revision?.sourceFormat === "DOCUMENT"
-          ? `/admin/articles/${article.slug}/document`
+          ? "/admin/articles/" + article.slug + "/document"
           : revision?.sourceFormat === "BLOCKS"
-            ? `/admin/articles/${article.slug}/blocks`
-            : `/admin/articles/${article.slug}/revisions`,
+            ? "/admin/articles/" + article.slug + "/blocks"
+            : null,
       publishTarget: `/admin/articles/${article.slug}/publish`,
-      insertButtons: componentSnippets,
       blockTypes: [
         "PARAGRAPH",
         "HEADING",
@@ -1476,13 +1242,6 @@ async function publishOrReply(
     reply.status(409).send({ error: error.message, issues: error.issues });
     return "blocked";
   }
-}
-
-function requiredString(value: string | undefined, field: string): string {
-  if (!value?.trim()) {
-    throw new Error(`Admin article ${field} is required.`);
-  }
-  return value.trim();
 }
 
 function optionalString(value: string | undefined): string | undefined {

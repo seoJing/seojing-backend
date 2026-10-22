@@ -1,6 +1,3 @@
-import { isDeepStrictEqual } from "node:util";
-import { createHash } from "node:crypto";
-
 import type {
   ArticleBlockType,
   ArticleSourceFormat,
@@ -21,7 +18,7 @@ import {
   renderArticleBlocks,
   type BlockEditorBlockInput,
 } from "./block-renderer.js";
-import { renderMdxForEditor } from "./mdx-editor-renderer.js";
+
 import { renderArticleDocument } from "./article-document.js";
 
 export interface DocumentEditorInput {
@@ -56,18 +53,6 @@ export interface CreateArticleInput {
   sourceText: string;
   renderedHtml?: string;
   status?: ArticleStatus;
-  changeSummary?: string;
-  authorName?: string;
-  blocks?: ArticleBlockDraft[];
-  assets?: ArticleAssetDraft[];
-}
-
-export interface ArticleEditorDraftInput {
-  title?: string;
-  description?: string;
-  category?: string;
-  sourceText: string;
-  renderedHtml?: string;
   changeSummary?: string;
   authorName?: string;
   blocks?: ArticleBlockDraft[];
@@ -130,7 +115,7 @@ export class ArticleService {
       title: input.title.trim(),
       description: input.description?.trim(),
       category: normalizeCategory(input.category),
-      sourceFormat: input.sourceFormat ?? "MDX",
+      sourceFormat: input.sourceFormat ?? "BLOCKS",
       status: input.status ?? "DRAFT",
       blocks: input.blocks ?? deriveBlocksFromSource(input.sourceText),
     });
@@ -172,33 +157,6 @@ export class ArticleService {
 
   async listPublishedSlugs(): Promise<string[]> {
     return this.repository.listPublishedSlugs();
-  }
-
-  async createEditorRevision(
-    slug: string,
-    input: ArticleEditorDraftInput,
-  ): Promise<ArticleWithContent | null> {
-    const normalizedSlug = normalizeSlug(slug);
-    if (!normalizedSlug) {
-      throw new Error("Article slug is required.");
-    }
-    if (!input.sourceText.trim()) {
-      throw new Error("Article sourceText is required.");
-    }
-
-    const rendered = renderMdxForEditor(input.sourceText);
-
-    return this.repository.createEditorRevision({
-      ...input,
-      slug: normalizedSlug,
-      title: input.title?.trim(),
-      description: input.description?.trim(),
-      category: input.category ? normalizeCategory(input.category) : undefined,
-      sourceFormat: "MDX",
-      renderedHtml: rendered.renderedHtml,
-      blocks: rendered.blocks,
-      assets: rendered.assets,
-    });
   }
 
   async createDocumentDraft(
@@ -265,49 +223,6 @@ export class ArticleService {
       assets: rendered.assets,
       changeSummary: input.changeSummary ?? "Save document revision",
       authorName: input.authorName,
-    });
-  }
-
-  async convertMdxArticleToDocument(
-    slug: string,
-    input: DocumentEditorInput,
-    expectedSourceSha256: string,
-  ): Promise<ArticleWithContent | null> {
-    const current = await this.getArticleBySlug(slug);
-    if (!current) return null;
-    const latest = current.revisions[0];
-    if (!latest || latest.sourceFormat !== "MDX")
-      throw new Error("Only a latest MDX revision can be converted.");
-    if (!input.expectedRevisionId || latest.id !== input.expectedRevisionId)
-      throw new Error("Article revision changed before conversion.");
-    const sourceHash = (value: string) =>
-      createHash("sha256").update(value).digest("hex");
-    if (
-      sourceHash(latest.sourceText) !== expectedSourceSha256 &&
-      sourceHash(`${latest.sourceText}\n`) !== expectedSourceSha256
-    )
-      throw new Error("MDX source changed before conversion.");
-    if (!input.title.trim()) throw new Error("Article title is required.");
-    const rendered = renderArticleDocument(input.document);
-    return this.repository.createEditorRevision({
-      slug: current.slug,
-      expectedRevisionId: latest.id,
-      title: input.title.trim(),
-      description: input.description?.trim(),
-      category: normalizeCategory(input.category),
-      tags: normalizeTags(input.tags),
-      cover: normalizeCover(input.cover),
-      summaryVideo: normalizeSummaryVideo(input.summaryVideo),
-      displayDate: normalizeDisplayDate(input.displayDate),
-      displayUpdatedAt: normalizeDisplayDate(input.displayUpdatedAt),
-      sourceFormat: "DOCUMENT",
-      sourceText: "",
-      document: rendered.document as unknown as Prisma.InputJsonValue,
-      renderedHtml: rendered.renderedHtml,
-      blocks: rendered.blocks,
-      assets: rendered.assets,
-      changeSummary: `Convert MDX to document: ${expectedSourceSha256}`,
-      authorName: input.authorName ?? "SEOJing migration",
     });
   }
 
@@ -416,35 +331,11 @@ export class ArticleService {
       if (!rendered.document.content.length || !rendered.plainText.trim())
         throw new ArticlePublicationBlocked("Article document is empty.", []);
     }
-    if (latest.sourceFormat === "MDX") {
-      const rendered = renderMdxForEditor(latest.sourceText);
-      if (rendered.unsupportedComponents.length) {
-        throw new ArticlePublicationBlocked(
-          "MDX contains content the CMS renderer cannot preserve.",
-          rendered.unsupportedComponents,
-        );
-      }
-      if (latest.renderedHtml !== rendered.renderedHtml) {
-        throw new ArticlePublicationBlocked(
-          "Save a fresh revision before publishing this MDX article.",
-          [],
-        );
-      }
-      const savedBlocks = article.blocks
-        .filter((block) => block.revisionId === latest.id)
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((block) => ({ type: block.type, content: block.content }));
-      const previewBlocks = rendered.blocks.map((block) => ({
-        type: block.type,
-        content: JSON.parse(JSON.stringify(block.content)) as unknown,
-      }));
-      if (!isDeepStrictEqual(savedBlocks, previewBlocks)) {
-        throw new ArticlePublicationBlocked(
-          "Save a fresh revision before publishing this MDX article's blocks.",
-          [],
-        );
-      }
-    }
+    if (latest.sourceFormat === "MDX")
+      throw new ArticlePublicationBlocked(
+        "Historical MDX revisions are read-only and cannot be published after retirement.",
+        [],
+      );
     const published = await this.repository.publishLatestRevision(
       normalizeSlug(slug),
       latest.id,

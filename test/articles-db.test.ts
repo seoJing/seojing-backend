@@ -1,11 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { createHash } from "node:crypto";
+
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { ArticleRepository } from "../src/repositories/articles.js";
 import { ArticleService } from "../src/services/articles.js";
-import { renderMdxForEditor } from "../src/services/mdx-editor-renderer.js";
-import { convertMdxToArticleDocument } from "../src/services/mdx-to-document.js";
 
 const runDbTests = process.env.RUN_DB_TESTS === "true";
 const describeDb = runDbTests ? describe : describe.skip;
@@ -93,109 +91,6 @@ describeDb("Article database integration", () => {
     expect(seedArticle?.assets.some((asset) => asset.kind === "COVER")).toBe(
       true,
     );
-  });
-
-  it("keeps drafts hidden from public reads until the latest revision is published", async () => {
-    const draft = await service.createInitialDraft({
-      slug: publishFlowSlug,
-      title: "Admin Write Publish Flow",
-      description: "Draft should not be public before publish",
-      sourceText: "# Admin Write Publish Flow\n\nDraft body",
-      renderedHtml: "<h1>Admin Write Publish Flow</h1><p>Draft body</p>",
-      changeSummary: "Initial admin draft",
-      authorName: "OkayJing",
-    });
-
-    expect(draft.status).toBe("DRAFT");
-    await expect(
-      service.getPublicArticleBySlug(publishFlowSlug),
-    ).resolves.toBeNull();
-
-    const revised = await service.createEditorRevision(publishFlowSlug, {
-      sourceText: "# Admin Write Publish Flow v2\n\nPublished body",
-      renderedHtml: "<h1>Admin Write Publish Flow v2</h1><p>Published body</p>",
-      changeSummary: "Save publish candidate",
-      authorName: "OkayJing",
-    });
-
-    expect(revised?.currentRevision?.revisionNumber).toBe(2);
-    expect(revised?.currentRevision?.sourceText).toContain("v2");
-    await expect(
-      service.getPublicArticleBySlug(publishFlowSlug),
-    ).resolves.toBeNull();
-
-    const published = await service.publishCurrentRevision(publishFlowSlug);
-    const publicReadback =
-      await service.getPublicArticleBySlug(publishFlowSlug);
-
-    expect(published?.status).toBe("PUBLISHED");
-    expect(publicReadback?.status).toBe("PUBLISHED");
-    expect(publicReadback?.currentRevision?.revisionNumber).toBe(2);
-    expect(publicReadback?.renderedHtml).toContain("Published body");
-  });
-
-  it("saves published article edits as private revisions until publish", async () => {
-    const originalSource = "# Published Edit Flow\n\nOld public body";
-    const originalRender = renderMdxForEditor(originalSource);
-    await service.createInitialDraft({
-      slug: publishedEditSlug,
-      title: "Published Edit Flow",
-      description: "Initial public body",
-      sourceText: originalSource,
-      renderedHtml: originalRender.renderedHtml,
-      blocks: originalRender.blocks,
-      changeSummary: "Initial draft before public edit",
-      authorName: "OkayJing",
-    });
-    await service.publishCurrentRevision(publishedEditSlug);
-
-    const privateEdit = await service.createEditorRevision(publishedEditSlug, {
-      title: "Updated Published Edit Flow",
-      description: "Updated description after publish",
-      sourceText: "# Published Edit Flow\n\nNew public body after publish",
-      renderedHtml:
-        "<h1>Published Edit Flow</h1><p>New public body after publish</p>",
-      changeSummary: "Stage edit for already-published article",
-      authorName: "OkayJing",
-    });
-
-    const beforePublish =
-      await service.getPublicArticleBySlug(publishedEditSlug);
-    expect(privateEdit?.status).toBe("PUBLISHED");
-    expect(privateEdit?.currentRevision?.revisionNumber).toBe(1);
-    expect(privateEdit?.revisions[0]?.revisionNumber).toBe(2);
-    expect(beforePublish?.currentRevision?.revisionNumber).toBe(1);
-    expect(beforePublish?.renderedHtml).toContain("Old public body");
-    expect(beforePublish?.title).toBe("Published Edit Flow");
-    expect(privateEdit?.revisions[0]?.title).toBe(
-      "Updated Published Edit Flow",
-    );
-
-    const published = await service.publishCurrentRevision(publishedEditSlug);
-    const publicReadback =
-      await service.getPublicArticleBySlug(publishedEditSlug);
-
-    expect(published?.currentRevision?.revisionNumber).toBe(2);
-    expect(publicReadback?.renderedHtml).toContain(
-      "New public body after publish",
-    );
-    expect(publicReadback?.title).toBe("Updated Published Edit Flow");
-    expect(publicReadback?.description).toBe(
-      "Updated description after publish",
-    );
-
-    const restored = await service.restoreRevision(publishedEditSlug, 1);
-    const beforeRestorePublish =
-      await service.getPublicArticleBySlug(publishedEditSlug);
-    expect(restored?.revisions[0]?.revisionNumber).toBe(3);
-    expect(restored?.revisions[0]?.sourceText).toContain("Old public body");
-    expect(beforeRestorePublish?.renderedHtml).toContain(
-      "New public body after publish",
-    );
-    await service.publishCurrentRevision(publishedEditSlug);
-    const afterRestorePublish =
-      await service.getPublicArticleBySlug(publishedEditSlug);
-    expect(afterRestorePublish?.renderedHtml).toContain("Old public body");
   });
 
   it("keeps a JSON document and metadata revision-pinned across public edits", async () => {
@@ -288,40 +183,5 @@ describeDb("Article database integration", () => {
     expect(clearedPublic?.cover).toBeNull();
     expect(clearedPublic?.displayDate).toBeNull();
     expect(afterPublish?.displayDate?.toISOString()).toContain("2026-10-08");
-  });
-
-  it("stages legacy MDX conversion without changing the pinned public body", async () => {
-    const source = "# Legacy\n\nOriginal body";
-    const preview = renderMdxForEditor(source);
-    const created = await service.createInitialDraft({
-      slug: legacyConversionSlug,
-      title: "Legacy",
-      sourceText: source,
-      renderedHtml: preview.renderedHtml,
-      blocks: preview.blocks,
-    });
-    await service.publishCurrentRevision(legacyConversionSlug);
-    const { document } = convertMdxToArticleDocument(source);
-    const converted = await service.convertMdxArticleToDocument(
-      legacyConversionSlug,
-      {
-        title: "Legacy converted",
-        document,
-        expectedRevisionId: created.revisions[0]?.id,
-      },
-      createHash("sha256").update(`${source}\n`).digest("hex"),
-    );
-    expect(converted?.revisions[0]?.sourceFormat).toBe("DOCUMENT");
-    expect(converted?.revisions[0]?.document).toMatchObject({ type: "doc" });
-    expect(converted?.revisions[1]?.sourceText).toBe(source);
-    const publicBefore =
-      await service.getPublicArticleBySlug(legacyConversionSlug);
-    expect(publicBefore?.currentRevision?.sourceFormat).toBe("MDX");
-    expect(publicBefore?.title).toBe("Legacy");
-    await service.publishCurrentRevision(legacyConversionSlug);
-    const publicAfter =
-      await service.getPublicArticleBySlug(legacyConversionSlug);
-    expect(publicAfter?.currentRevision?.sourceFormat).toBe("DOCUMENT");
-    expect(publicAfter?.sourceText).toBe("");
   });
 });

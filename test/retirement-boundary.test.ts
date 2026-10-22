@@ -62,9 +62,8 @@ describe("post-management retirement boundary", () => {
       for (const route of [
         "/articles",
         "/articles/{slug}",
-        "/admin/articles",
+        "/admin/articles/documents",
         "/admin/articles/{slug}/public-snapshot",
-        "/admin/articles/{slug}/migration-snapshot",
       ]) {
         expect(paths, route).toHaveProperty(route);
       }
@@ -73,7 +72,7 @@ describe("post-management retirement boundary", () => {
     }
   });
 
-  it("keeps retired modules absent, with MDX/native-document conversion contracts intact", () => {
+  it("keeps retired modules absent, with archive audit and native document contracts intact", () => {
     for (const path of [
       "src/routes/careers.ts",
       "src/services/careers.ts",
@@ -86,15 +85,17 @@ describe("post-management retirement boundary", () => {
       "src/services/community.ts",
       "src/repositories/community.ts",
       "src/services/github-oauth.ts",
+      "scripts/ingest-mdx.ts",
+      "scripts/import-mdx-drafts.ts",
+      "scripts/convert-mdx-articles-to-documents.ts",
+      "src/services/mdx-ingest.ts",
+      "src/services/mdx-editor-renderer.ts",
     ])
       expect(existsSync(resolve(path)), path).toBe(false);
     for (const path of [
-      "scripts/convert-mdx-articles-to-documents.ts",
-      "scripts/import-mdx-drafts.ts",
-      "scripts/ingest-mdx.ts",
-      "src/services/mdx-ingest.ts",
+      "scripts/audit-mdx-retirement.ts",
+      "src/services/mdx-retirement-readiness.ts",
       "src/services/mdx-to-document.ts",
-      "src/services/mdx-editor-renderer.ts",
       "src/services/article-document.ts",
       "src/routes/admin-writing.ts",
       "src/repositories/articles.ts",

@@ -87,19 +87,38 @@ const evidenceSchema = z.object({
       payload_json: z.string(),
     }),
   ),
-  visualAcceptances: z.array(
-    z.object({
-      slug: text,
-      accepted: z.literal(true),
-      reviewer: text,
-      reviewedAt: z.iso.datetime(),
-      sourceSha256: hash,
-      documentSha256: hash,
-      publicPayloadSha256: hash,
-      desktop: artifact,
-      mobile: artifact,
-    }),
-  ),
+  visualPolicy: z.object({
+    exhaustive201: z.literal("WAIVED_NOT_COMPLETED"),
+    ownerAcceptedAt: z.literal("2026-10-22"),
+    representativeChecks: z
+      .array(
+        z.object({
+          slug: text,
+          accepted: z.literal(true),
+          reviewer: text,
+          reviewedAt: z.iso.datetime(),
+          features: z
+            .array(
+              z.enum([
+                "text",
+                "code",
+                "tables",
+                "images-media",
+                "quizzes",
+                "dates",
+                "responsive-layout",
+              ]),
+            )
+            .min(1),
+          sourceSha256: hash,
+          documentSha256: hash,
+          publicPayloadSha256: hash,
+          desktop: artifact,
+          mobile: artifact,
+        }),
+      )
+      .min(1),
+  }),
 });
 
 export type RetirementEvidence = z.infer<typeof evidenceSchema>;
@@ -194,15 +213,18 @@ export function auditMdxRetirement(
 ): { ready: boolean; expected: number; accepted: number; blockers: string[] } {
   const blockers: string[] = [];
   const parsed = evidenceSchema.safeParse(input);
+  const expectedBySlug = new Map(expected.map((entry) => [entry.slug, entry]));
   if (
     expected.length !== RETAINED_MDX_POSTS ||
-    new Set(expected.map((entry) => entry.slug)).size !== RETAINED_MDX_POSTS
+    expectedBySlug.size !== RETAINED_MDX_POSTS
   )
-    blockers.push("Expected corpus must contain exactly 201 unique slugs.");
+    blockers.push(
+      "Expected archive corpus must contain exactly 201 unique slugs.",
+    );
   if (!parsed.success) {
     blockers.push(
       ...parsed.error.issues.map(
-        (issue) => `evidence.${issue.path.join(".")}: ${issue.message}`,
+        (issue) => "evidence." + issue.path.join(".") + ": " + issue.message,
       ),
     );
     return {
@@ -214,13 +236,14 @@ export function auditMdxRetirement(
   }
   const evidence = parsed.data;
   const slugs = expected.map((entry) => entry.slug).sort();
-  for (const key of ["database", "api", "d1", "visualAcceptances"] as const) {
+  for (const key of ["database", "api", "d1"] as const) {
     if (
       stableJson(evidence[key].map((row) => row.slug).sort()) !==
       stableJson(slugs)
     )
       blockers.push(
-        `${key}: exact 201-slug set required (no missing, extra, duplicate or case-changed slugs).`,
+        key +
+          ": exact 201-slug set required (no missing, extra, duplicate or case-changed slugs).",
       );
   }
   if (
@@ -239,19 +262,15 @@ export function auditMdxRetirement(
   const db = new Map(evidence.database.map((row) => [row.slug, row]));
   const api = new Map(evidence.api.map((row) => [row.slug, row]));
   const d1 = new Map(evidence.d1.map((row) => [row.slug, row]));
-  const visuals = new Map(
-    evidence.visualAcceptances.map((row) => [row.slug, row]),
-  );
   let accepted = 0;
   for (const entry of expected) {
-    const row = db.get(entry.slug),
-      response = api.get(entry.slug),
-      snapshot = d1.get(entry.slug),
-      visual = visuals.get(entry.slug);
-    if (!row || !response || !snapshot || !visual) continue;
+    const row = db.get(entry.slug);
+    const response = api.get(entry.slug);
+    const snapshot = d1.get(entry.slug);
+    if (!row || !response || !snapshot) continue;
     const start = blockers.length;
     const check = (condition: boolean, reason: string) => {
-      if (!condition) blockers.push(`${entry.slug}: ${reason}`);
+      if (!condition) blockers.push(entry.slug + ": " + reason);
     };
     check(
       row.currentRevisionId === row.currentRevision.id &&
@@ -268,7 +287,6 @@ export function auditMdxRetirement(
         row.sourceText === row.currentRevision.sourceText,
       "Article/currentRevision source mismatch",
     );
-    // DOCUMENT writes and publication retain sourceText as an exact empty string.
     check(
       row.sourceText === "" && row.currentRevision.sourceText === "",
       "current DOCUMENT sourceText must be empty on Article and currentRevision",
@@ -285,12 +303,11 @@ export function auditMdxRetirement(
       sha256(stableJson(response.body.document)) === entry.documentSha256,
       "API DOCUMENT hash mismatch",
     );
-    for (const key of Object.keys(metadata) as Array<keyof typeof metadata>) {
+    for (const key of Object.keys(metadata) as Array<keyof typeof metadata>)
       check(
         stableJson(row[key]) === stableJson(response[key]),
-        `database/API ${key} mismatch`,
+        "database/API " + key + " mismatch",
       );
-    }
     check(response.body.html.trim().length > 0, "API rendered HTML missing");
     const payloadHash = publicPayloadHash(response);
     try {
@@ -311,7 +328,7 @@ export function auditMdxRetirement(
       }))
         check(
           snapshot[column as keyof typeof snapshot] === value,
-          `D1 ${column} index column mismatch`,
+          "D1 " + column + " index column mismatch",
         );
       check(
         stableJson(JSON.parse(snapshot.tags_json)) ===
@@ -327,25 +344,58 @@ export function auditMdxRetirement(
     } catch {
       check(false, "invalid D1 payload/column JSON");
     }
-    check(
-      visual.sourceSha256 === entry.sourceSha256 &&
-        visual.documentSha256 === entry.documentSha256 &&
-        visual.publicPayloadSha256 === payloadHash,
-      "visual acceptance is stale for source/document/public payload",
-    );
-    for (const viewport of ["desktop", "mobile"] as const) {
-      try {
-        check(
-          sha256(readArtifact(visual[viewport].path)) ===
-            visual[viewport].sha256,
-          `${viewport} evidence hash mismatch`,
-        );
-      } catch {
-        check(false, `${viewport} evidence file missing or unreadable`);
-      }
-    }
     if (blockers.length === start) accepted++;
   }
+  const requiredFeatures = new Set([
+    "text",
+    "code",
+    "tables",
+    "images-media",
+    "quizzes",
+    "dates",
+    "responsive-layout",
+  ]);
+  const covered = new Set<string>();
+  for (const visual of evidence.visualPolicy.representativeChecks) {
+    const entry = expectedBySlug.get(visual.slug);
+    const response = api.get(visual.slug);
+    if (!entry || !response) {
+      blockers.push(
+        "representative visual: unknown or unreadable slug " + visual.slug,
+      );
+      continue;
+    }
+    for (const feature of visual.features) covered.add(feature);
+    if (
+      visual.sourceSha256 !== entry.sourceSha256 ||
+      visual.documentSha256 !== entry.documentSha256 ||
+      visual.publicPayloadSha256 !== publicPayloadHash(response)
+    )
+      blockers.push(visual.slug + ": representative visual evidence is stale");
+    for (const viewport of ["desktop", "mobile"] as const) {
+      try {
+        if (
+          sha256(readArtifact(visual[viewport].path)) !==
+          visual[viewport].sha256
+        )
+          blockers.push(
+            visual.slug + ": " + viewport + " evidence hash mismatch",
+          );
+      } catch {
+        blockers.push(
+          visual.slug +
+            ": " +
+            viewport +
+            " evidence file missing or unreadable",
+        );
+      }
+    }
+  }
+  for (const feature of requiredFeatures)
+    if (!covered.has(feature))
+      blockers.push(
+        "representative visuals: missing feature coverage " + feature,
+      );
   return {
     ready: blockers.length === 0 && accepted === RETAINED_MDX_POSTS,
     expected: expected.length,

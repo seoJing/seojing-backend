@@ -43,37 +43,33 @@ The static tests pin both immutable checksums, allow only the exact DROP stateme
 
 On the production checkout, direct build output to a disposable directory (for example `pnpm build --outDir /private/tmp/<verification-directory>/build`); `dist/` is the live service artifact. Do not use `migrate dev`, reset the shared local cluster, or run deployment commands with inherited production credentials during verification.
 
-## MDX: preparation only
+## MDX: retired active surfaces, preserved history and archive audit
 
-Retain all **201 blog MDX files**, the separate resume source, the web migration manifest, conversion/import/audit tools, migration review UI, canonical `/blog` routes, protected `/ops/articles`, `MDX`/`BLOCKS`/`DOCUMENT` and `RAW_MDX` enum values, both `sourceText` fields, all article/revision/document/asset models, historical revisions, referenced media, and D1 snapshot synchronization.
+Stage 2 is governed by the owner-authorized contract v2 dated 2026-10-22. The former requirement for 201 individual desktop/mobile visual-acceptance records was **waived and risk-accepted, not completed**. Do not claim that those records exist.
 
-Run the corpus-only audit from this repository:
+The active frontend corpus, generated bundles/loaders, migration review UI, authoring/import/conversion tools and MDX write/publish endpoints are retired. PostgreSQL Article/ArticleRevision MDX enum values, sourceText fields and historical revision rows remain byte-preserved and inert. No destructive history migration is authorized. A historical MDX revision may be read as history, but cannot be newly authored or published.
 
-```sh
-pnpm mdx:retirement-audit --content-root /Users/seojing/Projects/SEOJing/apps/web/content --manifest /Users/seojing/Projects/SEOJing/apps/web/src/shared/content/mdx-migration-manifest.json --corpus-only
-```
+The immutable source of retirement audit truth is:
 
-This checks the actual exact-case file/slug sets, exactly 201 entries, original byte hashes, and conversion of every document. Exit 0 means the retained corpus is valid; it explicitly reports `retirementReady: false` without review evidence. The older conversion audit now exits nonzero on conversion errors or an empty input directory.
+- Archive: /Users/seojing/Projects/seojing-retirement-archives/seojing-mdx-pre-retirement-5d9c3133-ed7cc2b1-20261022.tar.gz
+- SHA-256: 7c7405b719a647b9aa61a28800bd5e84734fc342e659eab05242e13cb8987fc4
+- Contents used by the gate: archived apps/web/content, including resume.mdx, and the archived 201-entry migration manifest.
 
-For final review, gather an offline evidence bundle from one frozen release/capture window. Do not perform a conversion, publish, or D1 write to make an audit green. Store the bundle privately because it includes original source text. Use real exports/readbacks and human review records, never generated acceptance records.
+Run the post-removal corpus gate without restoring active content files:
 
-The bundle is JSON with these required fields (the executable schema is in `src/services/mdx-retirement-readiness.ts`):
+    corepack pnpm mdx:retirement-audit --archive /Users/seojing/Projects/seojing-retirement-archives/seojing-mdx-pre-retirement-5d9c3133-ed7cc2b1-20261022.tar.gz --corpus-only
 
-- `version: 1`, ISO `capturedAt`, and the reviewed 40-character `webCommit` and `backendCommit`. The reviewer must verify these commits/deployed artifacts and that no edits/publications occurred during capture; the offline gate cannot attest to deployment provenance or freshness.
-- `database`: exactly 201 records, each with the Article's `id`, `slug`, `status: "PUBLISHED"`, `sourceFormat: "DOCUMENT"`, `sourceText: ""`, `currentRevisionId`, and `latestRevisionId`. Include the actual original `legacyRevision: { id, articleId, sourceFormat: "MDX", sourceText }` and the actual published `currentRevision: { id, articleId, sourceFormat: "DOCUMENT", sourceText: "", document }`. Both revisions must belong to the Article; Article IDs must be unique and all legacy/current revision IDs must be distinct. Article and current revision source fields must agree and follow current DOCUMENT semantics: `sourceText` is exactly empty, not whitespace or retained MDX. Include the raw public metadata fields `title`, `description`, `category`, `tags`, `cover`, `summaryVideo`, `displayDate`, `displayUpdatedAt`, `publishedAt`, and `updatedAt` (ISO dates or null where supported); these must match the API. Obtain these through a read-only database export, including the original MDX revision. The gate derives the legacy hash from `legacyRevision.sourceText` and hashes the actual current document; a free-standing `legacySourceText` or exported hash cannot substitute for the original revision. The latest revision must be the published current revision. A one-newline source difference blocks final retirement until explicitly reconciled and reviewed; do not silently normalize it.
-- `api`: exactly 201 **raw** public article detail responses from `/articles/<encoded-slug>`, including metadata, HTML, blocks and document. Obtain the complete slug inventory independently; do not infer completeness from successful requests to a subset. A staged `migration-snapshot` is not proof of publication.
-- `d1`: exactly 201 raw rows from `SELECT slug,title,description,category,tags_json,cover_json,display_date,display_updated_at,published_at,updated_at,payload_json FROM public_articles ORDER BY slug`. Flatten the read-only export envelope to the rows, preserving all column strings and the raw `payload_json`. This is a read, not the snapshot SQL generator's planned output.
-- `visualAcceptances`: exactly one record per slug with `accepted: true`, named `reviewer`, ISO `reviewedAt`, `sourceSha256`, `documentSha256`, `publicPayloadSha256`, and both `desktop` and `mobile` objects `{ "path": "relative/path/to/evidence.png", "sha256": "64-character hash" }`. Paths resolve relative to the bundle. Capture and compare the original MDX rendering and published native document at both viewport classes, including images, tables, code metadata, quizzes/answers, links and media. Each evidence artifact should show the comparison. The gate reads and hashes the artifacts; human reviewers remain responsible for visual acceptance.
+It verifies the exact archive checksum, clean extraction, exact 201 blog paths/slugs/source hashes and deterministic conversion hashes. A corpus-only pass reports the visual policy as WAIVED_NOT_COMPLETED and does not claim live parity.
 
-`documentSha256` hashes sorted-key canonical JSON (array order preserved) using the exported `stableJson`/`sha256` functions. `publicPayloadSha256` uses the exported `publicPayloadHash` function: the complete raw API response with only `body` projected to `{ document, html: "", blocks: [] }`, matching the existing D1 exporter. This still checks every metadata field, including assets, cover, video, dates and ETag. D1's separately indexed columns must also match. Altered documents require renewed conversion/manifest review and renewed visual acceptance; an arbitrary new hash cannot override the source-derived expectation.
+A final private evidence bundle must still prove exactly 201 unique published Articles across read-only PostgreSQL, raw API details and raw D1 rows, including metadata, DOCUMENT hashes, payload parity and D1 indexed-column parity. Database records must include each actual historical MDX revision and the current published DOCUMENT revision. Current Article and DOCUMENT revision sourceText remain exactly empty; historical MDX sourceText remains hash-exact.
 
-Run the final gate:
+Contract v2 replaces exhaustive visual records with representative, hash-bound desktop/mobile checks. Across the representative set the evidence must cover text, code, tables, images/media, quizzes, dates and responsive layout. The evidence schema records exhaustive201 as WAIVED_NOT_COMPLETED and ownerAcceptedAt as 2026-10-22; it never synthesizes 201 acceptances.
 
-```sh
-pnpm mdx:retirement-audit --content-root /Users/seojing/Projects/SEOJing/apps/web/content --manifest /Users/seojing/Projects/SEOJing/apps/web/src/shared/content/mdx-migration-manifest.json --evidence /private/path/review/evidence.json
-```
+Run the final offline gate with a real evidence bundle:
 
-Exit 1 blocks removal on absent/malformed evidence, any missing/extra/duplicate/case-changed slug, fewer than 201 acceptances, source or DOCUMENT hash differences, unpublished/private revisions, API/D1 payload or index-column differences, stale visual hashes or missing/changed evidence artifacts. No evidence is shipped as accepted by this cleanup. A green report is necessary but does not itself authorize deleting files or deploying. Retain all contracts through independent review and the rollback window; perform final retirement as a separate change.
+    corepack pnpm mdx:retirement-audit --archive /Users/seojing/Projects/seojing-retirement-archives/seojing-mdx-pre-retirement-5d9c3133-ed7cc2b1-20261022.tar.gz --evidence /private/path/retirement-evidence.json
+
+The gate is read-only. It must not publish, synchronize D1 or rewrite evidence. Release still requires deterministic no-active-MDX source/bundle proof, representative live route checks, rollback health, and independent exact-diff review ACCEPT. After merge/deploy, verify the exact deployed frontend/backend identities and public/private surfaces separately.
 
 ## Preserved blockers and shared data
 

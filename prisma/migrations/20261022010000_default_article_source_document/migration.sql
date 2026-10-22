@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE "articles" ALTER COLUMN "source_format" SET DEFAULT 'DOCUMENT';
+
+COMMIT;

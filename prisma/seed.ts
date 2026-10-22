@@ -3,14 +3,25 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const seedSlug = "hello-seojing-backend";
-const seedSource = `---
-title: SEOJing Backend Seed Article
----
-
-# SEOJing Backend Seed Article
-
-This article verifies the Article/Revision/Block schema MVP.
-`;
+const seedDocument = {
+  type: "doc",
+  content: [
+    {
+      type: "heading",
+      attrs: { level: 1 },
+      content: [{ type: "text", text: "SEOJing Backend Seed Article" }],
+    },
+    {
+      type: "paragraph",
+      content: [
+        {
+          type: "text",
+          text: "This article verifies the Article/Revision/Block schema MVP.",
+        },
+      ],
+    },
+  ],
+} as const;
 
 async function main(): Promise<void> {
   const existing = await prisma.article.findUnique({
@@ -28,8 +39,8 @@ async function main(): Promise<void> {
       title: "SEOJing Backend Seed Article",
       description: "Schema MVP smoke article for repository/service tests.",
       status: "DRAFT",
-      sourceFormat: "MDX",
-      sourceText: seedSource,
+      sourceFormat: "DOCUMENT",
+      sourceText: "",
       renderedHtml:
         "<h1>SEOJing Backend Seed Article</h1><p>This article verifies the Article/Revision/Block schema MVP.</p>",
     },
@@ -39,8 +50,9 @@ async function main(): Promise<void> {
     data: {
       articleId: article.id,
       revisionNumber: 1,
-      sourceFormat: "MDX",
-      sourceText: seedSource,
+      sourceFormat: "DOCUMENT",
+      sourceText: "",
+      document: seedDocument,
       renderedHtml: article.renderedHtml,
       changeSummary: "Initial seed revision for Ticket #162.",
       authorName: "OkayJing",

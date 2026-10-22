@@ -10,7 +10,6 @@ import {
   type ArticleDocument,
   type ArticleDocumentNode,
 } from "./article-document.js";
-import { parseFrontmatter } from "./mdx-ingest.js";
 
 type MdxNode = {
   type: string;
@@ -36,6 +35,15 @@ type MdxNode = {
 
 const parser = unified().use(remarkParse).use(remarkMdx).use(remarkGfm);
 
+function archivedMdxBody(sourceText: string): string {
+  const normalized = sourceText.replace(/^\uFEFF/, "");
+  if (!normalized.startsWith("---\n")) return normalized;
+  const end = normalized.indexOf("\n---", 4);
+  if (end < 0) return normalized;
+  const bodyStart = normalized.indexOf("\n", end + 4);
+  return bodyStart < 0 ? "" : normalized.slice(bodyStart + 1);
+}
+
 export class MdxDocumentConversionError extends Error {
   constructor(
     readonly nodeType: string,
@@ -51,7 +59,7 @@ export function convertMdxToArticleDocument(sourceText: string): {
   document: ArticleDocument;
   frontmatter: Record<string, unknown>;
 } {
-  const { body } = parseFrontmatter(sourceText);
+  const body = archivedMdxBody(sourceText);
   const raw = sourceText.replace(/^\uFEFF/, "");
   const end = raw.startsWith("---\n") ? raw.indexOf("\n---", 4) : -1;
   const frontmatter: unknown = end >= 0 ? YAML.parse(raw.slice(4, end)) : {};
