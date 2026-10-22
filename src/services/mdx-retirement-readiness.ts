@@ -6,6 +6,7 @@ import { z } from "zod";
 import { convertMdxToArticleDocument } from "./mdx-to-document.js";
 
 export const RETAINED_MDX_POSTS = 201;
+export const RETAINED_MDX_REVISIONS = 205;
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 // Validate nonblank strings without changing source bytes or public payloads.
 const text = z
@@ -42,10 +43,11 @@ const publicArticle = z
   })
   .passthrough();
 const evidenceSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(2),
   capturedAt: z.iso.datetime(),
   webCommit: z.string().regex(/^[a-f0-9]{40}$/),
   backendCommit: z.string().regex(/^[a-f0-9]{40}$/),
+  historicalMdxRevisionTotal: z.literal(RETAINED_MDX_REVISIONS),
   database: z.array(
     z.object({
       id: text,
@@ -54,12 +56,20 @@ const evidenceSchema = z.object({
       status: z.literal("PUBLISHED"),
       sourceFormat: z.literal("DOCUMENT"),
       sourceText: z.string(),
-      legacyRevision: z.object({
-        id: text,
-        articleId: text,
-        sourceFormat: z.literal("MDX"),
-        sourceText: text,
-      }),
+      historicalMdxRevisionCount: z.number().int().positive(),
+      archivedSourceRevisionId: text,
+      legacyRevisions: z
+        .array(
+          z.object({
+            id: text,
+            articleId: text,
+            revisionNumber: z.number().int().positive(),
+            sourceFormat: z.literal("MDX"),
+            sourceText: text,
+            sourceSha256: hash,
+          }),
+        )
+        .min(1),
       currentRevisionId: text,
       latestRevisionId: text,
       currentRevision: z.object({
@@ -126,7 +136,7 @@ export type ExpectedDocument = {
   sourcePath: string;
   slug: string;
   sourceSha256: string;
-  documentSha256: string;
+  convertedDocumentSha256: string;
 };
 
 export function sha256(value: string | Uint8Array): string {
@@ -200,7 +210,10 @@ export function auditRetainedCorpus(
       if (sha256(source) !== entry.sourceSha256)
         throw new Error(`${entry.slug}: source hash mismatch`);
       const { document: converted } = convertMdxToArticleDocument(source);
-      return { ...entry, documentSha256: sha256(stableJson(converted)) };
+      return {
+        ...entry,
+        convertedDocumentSha256: sha256(stableJson(converted)),
+      };
     })
     .sort((a, b) => (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0));
 }
@@ -251,13 +264,25 @@ export function auditMdxRetirement(
     evidence.database.length
   )
     blockers.push("database: duplicate Article identity.");
+  const historicalRevisions = evidence.database.flatMap(
+    (row) => row.legacyRevisions,
+  );
   const revisionIds = evidence.database.flatMap((row) => [
-    row.legacyRevision.id,
+    ...row.legacyRevisions.map((revision) => revision.id),
     row.currentRevision.id,
   ]);
   if (new Set(revisionIds).size !== revisionIds.length)
     blockers.push(
-      "database: legacy/current revision identities must be distinct.",
+      "database: historical/current revision identities must be globally unique.",
+    );
+  if (
+    evidence.historicalMdxRevisionTotal !== historicalRevisions.length ||
+    evidence.database.some(
+      (row) => row.historicalMdxRevisionCount !== row.legacyRevisions.length,
+    )
+  )
+    blockers.push(
+      "database: declared historical MDX revision counts must match the complete arrays.",
     );
   const db = new Map(evidence.database.map((row) => [row.slug, row]));
   const api = new Map(evidence.api.map((row) => [row.slug, row]));
@@ -279,8 +304,27 @@ export function auditMdxRetirement(
     );
     check(
       row.currentRevision.articleId === row.id &&
-        row.legacyRevision.articleId === row.id,
-      "legacy/current revision Article identity mismatch",
+        row.legacyRevisions.every((revision) => revision.articleId === row.id),
+      "historical/current revision Article identity mismatch",
+    );
+    check(
+      new Set(row.legacyRevisions.map((revision) => revision.revisionNumber))
+        .size === row.legacyRevisions.length,
+      "historical MDX revision numbers must be unique per article",
+    );
+    check(
+      row.legacyRevisions.every(
+        (revision) => sha256(revision.sourceText) === revision.sourceSha256,
+      ),
+      "historical MDX revision source hash mismatch",
+    );
+    const archivedSourceRevision = row.legacyRevisions.find(
+      (revision) => revision.id === row.archivedSourceRevisionId,
+    );
+    check(
+      archivedSourceRevision !== undefined &&
+        archivedSourceRevision.sourceSha256 === entry.sourceSha256,
+      "archived manifest source revision missing or hash mismatch",
     );
     check(
       row.sourceFormat === row.currentRevision.sourceFormat &&
@@ -291,17 +335,12 @@ export function auditMdxRetirement(
       row.sourceText === "" && row.currentRevision.sourceText === "",
       "current DOCUMENT sourceText must be empty on Article and currentRevision",
     );
-    check(
-      sha256(row.legacyRevision.sourceText) === entry.sourceSha256,
-      "retained DB MDX source hash mismatch",
+    const currentDocumentSha256 = sha256(
+      stableJson(row.currentRevision.document),
     );
     check(
-      sha256(stableJson(row.currentRevision.document)) === entry.documentSha256,
-      "database DOCUMENT hash mismatch",
-    );
-    check(
-      sha256(stableJson(response.body.document)) === entry.documentSha256,
-      "API DOCUMENT hash mismatch",
+      sha256(stableJson(response.body.document)) === currentDocumentSha256,
+      "database/API DOCUMENT parity mismatch",
     );
     for (const key of Object.keys(metadata) as Array<keyof typeof metadata>)
       check(
@@ -368,7 +407,8 @@ export function auditMdxRetirement(
     for (const feature of visual.features) covered.add(feature);
     if (
       visual.sourceSha256 !== entry.sourceSha256 ||
-      visual.documentSha256 !== entry.documentSha256 ||
+      visual.documentSha256 !==
+        sha256(stableJson(db.get(visual.slug)!.currentRevision.document)) ||
       visual.publicPayloadSha256 !== publicPayloadHash(response)
     )
       blockers.push(visual.slug + ": representative visual evidence is stale");

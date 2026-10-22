@@ -356,7 +356,15 @@ export class ArticleService {
     if (!Number.isInteger(revisionNumber) || revisionNumber < 1) {
       throw new Error("A valid article revision number is required.");
     }
-    return this.repository.restoreRevision(normalizeSlug(slug), revisionNumber);
+    const normalizedSlug = normalizeSlug(slug);
+    const article = await this.repository.findBySlug(normalizedSlug);
+    const revision = article?.revisions.find(
+      (item) => item.revisionNumber === revisionNumber,
+    );
+    if (!article || !revision) return null;
+    if (revision.sourceFormat === "MDX")
+      throw new ArticleHistoricalMdxRestoreBlocked();
+    return this.repository.restoreRevision(normalizedSlug, revisionNumber);
   }
 
   async unpublishArticle(
@@ -604,6 +612,15 @@ export class ArticlePublicationBlocked extends Error {
   ) {
     super(message);
     this.name = "ArticlePublicationBlocked";
+  }
+}
+
+export class ArticleHistoricalMdxRestoreBlocked extends Error {
+  constructor() {
+    super(
+      "Historical MDX revisions are read-only and cannot be restored after retirement.",
+    );
+    this.name = "ArticleHistoricalMdxRestoreBlocked";
   }
 }
 

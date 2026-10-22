@@ -11,7 +11,17 @@ import {
 } from "../src/services/mdx-retirement-readiness.js";
 
 const source = "# Archived article\n\nA source paragraph.\n";
-const document = convertMdxToArticleDocument(source).document;
+const convertedDocument = convertMdxToArticleDocument(source).document;
+const document = {
+  type: "doc" as const,
+  content: [
+    ...convertedDocument.content,
+    {
+      type: "paragraph",
+      content: [{ type: "text", text: "Legitimate native edit." }],
+    },
+  ],
+};
 const image = Buffer.from("synthetic representative visual bytes");
 const date = "2026-10-22T00:00:00.000Z";
 const features = [
@@ -31,7 +41,7 @@ function fixture() {
       sourcePath: "post-" + index + ".mdx",
       slug: "post-" + index,
       sourceSha256: sha256(source),
-      documentSha256: sha256(stableJson(document)),
+      convertedDocumentSha256: sha256(stableJson(convertedDocument)),
     }),
   );
   const api: RetirementEvidence["api"] = expected.map(({ slug }) => ({
@@ -53,9 +63,22 @@ function fixture() {
       blocks: [],
     },
   }));
+  const legacyRevisionsFor = (slug: string) =>
+    Array.from({ length: slug === "post-0" ? 5 : 1 }, (_, index) => {
+      const revisionSource = index === 0 ? source : source + "edit-" + index;
+      return {
+        id: "legacy-" + slug + "-" + index,
+        articleId: "article-" + slug,
+        revisionNumber: index + 1,
+        sourceFormat: "MDX" as const,
+        sourceText: revisionSource,
+        sourceSha256: sha256(revisionSource),
+      };
+    });
   const evidence: RetirementEvidence = {
-    version: 1,
+    version: 2,
     capturedAt: date,
+    historicalMdxRevisionTotal: 205,
     webCommit: "a".repeat(40),
     backendCommit: "b".repeat(40),
     database: expected.map(({ slug }) => ({
@@ -74,12 +97,9 @@ function fixture() {
       status: "PUBLISHED",
       sourceFormat: "DOCUMENT",
       sourceText: "",
-      legacyRevision: {
-        id: "legacy-" + slug,
-        articleId: "article-" + slug,
-        sourceFormat: "MDX",
-        sourceText: source,
-      },
+      historicalMdxRevisionCount: slug === "post-0" ? 5 : 1,
+      archivedSourceRevisionId: "legacy-" + slug + "-0",
+      legacyRevisions: legacyRevisionsFor(slug),
       currentRevisionId: "revision-" + slug,
       latestRevisionId: "revision-" + slug,
       currentRevision: {
@@ -118,7 +138,7 @@ function fixture() {
           reviewedAt: date,
           features: [...features],
           sourceSha256: expected[0]!.sourceSha256,
-          documentSha256: expected[0]!.documentSha256,
+          documentSha256: sha256(stableJson(document)),
           publicPayloadSha256: publicPayloadHash(api[0]!),
           desktop: {
             path: "representative-desktop.png",
@@ -133,8 +153,11 @@ function fixture() {
 }
 
 describe("post-retirement archive evidence gate", () => {
-  it("accepts exact 201-way DB/API/D1 parity plus hash-bound representative checks", () => {
+  it("accepts a legitimate post-migration native edit with exact DB/API/D1 parity", () => {
     const { expected, evidence } = fixture();
+    expect(expected[0]!.convertedDocumentSha256).not.toBe(
+      sha256(stableJson(evidence.database[0]!.currentRevision.document)),
+    );
     expect(auditMdxRetirement(expected, evidence, () => image)).toEqual({
       ready: true,
       expected: 201,
@@ -180,9 +203,43 @@ describe("post-retirement archive evidence gate", () => {
 
   it("rejects altered historical MDX revision bytes", () => {
     const { expected, evidence } = fixture();
-    evidence.database[0]!.legacyRevision.sourceText += "changed";
+    evidence.database[0]!.legacyRevisions[0]!.sourceText += "changed";
     expect(
       auditMdxRetirement(expected, evidence, () => image).blockers.join("\n"),
-    ).toContain("retained DB MDX source hash mismatch");
+    ).toContain("historical MDX revision source hash mismatch");
+  });
+
+  it("rejects incomplete declared historical revision evidence", () => {
+    const { expected, evidence } = fixture();
+    evidence.database[0]!.historicalMdxRevisionCount = 4;
+    expect(
+      auditMdxRetirement(expected, evidence, () => image).blockers.join("\n"),
+    ).toContain("declared historical MDX revision counts");
+  });
+
+  it("rejects DB/API and API/D1 document divergence", () => {
+    const first = fixture();
+    first.evidence.api[0]!.body.document = convertedDocument;
+    expect(
+      auditMdxRetirement(
+        first.expected,
+        first.evidence,
+        () => image,
+      ).blockers.join("\n"),
+    ).toContain("database/API DOCUMENT parity mismatch");
+
+    const second = fixture();
+    const d1Payload = JSON.parse(second.evidence.d1[0]!.payload_json) as {
+      body: { document: unknown };
+    };
+    d1Payload.body.document = convertedDocument;
+    second.evidence.d1[0]!.payload_json = JSON.stringify(d1Payload);
+    expect(
+      auditMdxRetirement(
+        second.expected,
+        second.evidence,
+        () => image,
+      ).blockers.join("\n"),
+    ).toContain("D1/API public payload parity mismatch");
   });
 });

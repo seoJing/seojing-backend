@@ -64,6 +64,38 @@ function articleFixture(
 }
 
 describe("ArticleService", () => {
+  it("rejects historical MDX restore before any revision copy/write", async () => {
+    const article = articleFixture({
+      revisions: [articleFixture().currentRevision!],
+    });
+    const restoreRevision = vi.fn();
+    const service = new ArticleService({
+      findBySlug: vi.fn().mockResolvedValue(article),
+      restoreRevision,
+    } as unknown as ArticleRepository);
+
+    await expect(service.restoreRevision(article.slug, 1)).rejects.toThrow(
+      "Historical MDX revisions are read-only and cannot be restored after retirement.",
+    );
+    expect(restoreRevision).not.toHaveBeenCalled();
+  });
+
+  it("rejects historical MDX restore before any revision copy/write", async () => {
+    const article = articleFixture({
+      revisions: [articleFixture().currentRevision!],
+    });
+    const restoreRevision = vi.fn();
+    const service = new ArticleService({
+      findBySlug: vi.fn().mockResolvedValue(article),
+      restoreRevision,
+    } as unknown as ArticleRepository);
+
+    await expect(service.restoreRevision(article.slug, 1)).rejects.toThrow(
+      "Historical MDX revisions are read-only and cannot be restored after retirement.",
+    );
+    expect(restoreRevision).not.toHaveBeenCalled();
+  });
+
   it.each([
     { name: "added", images: ["saved", "added"] },
     { name: "removed", images: [] },

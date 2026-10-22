@@ -7,6 +7,7 @@ import type {
 
 import type { ArticleWithContent } from "../repositories/articles.js";
 import {
+  ArticleHistoricalMdxRestoreBlocked,
   ArticlePublicationBlocked,
   previewArticleDraft,
   projectArticleRevision,
@@ -696,14 +697,22 @@ export function registerAdminWritingRoutes(
       }),
     },
     async (request, reply) => {
-      const article = await options.articleService.restoreRevision(
-        request.params.slug,
-        Number(request.params.revisionNumber),
-      );
-      if (!article) {
-        return reply.status(404).send({ error: "Article revision not found" });
+      try {
+        const article = await options.articleService.restoreRevision(
+          request.params.slug,
+          Number(request.params.revisionNumber),
+        );
+        if (!article) {
+          return reply
+            .status(404)
+            .send({ error: "Article revision not found" });
+        }
+        return reply.status(201).send(toEditorPayload(article));
+      } catch (error) {
+        if (error instanceof ArticleHistoricalMdxRestoreBlocked)
+          return reply.status(409).send({ error: error.message });
+        throw error;
       }
-      return reply.status(201).send(toEditorPayload(article));
     },
   );
 

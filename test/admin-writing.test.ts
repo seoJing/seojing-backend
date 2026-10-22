@@ -5,7 +5,10 @@ import { ArticleDocumentValidationError } from "../src/services/article-document
 import { buildApp } from "../src/app.js";
 import type { toPublicArticleDetail } from "../src/routes/articles.js";
 import type { ArticleWithContent } from "../src/repositories/articles.js";
-import type { ArticleService } from "../src/services/articles.js";
+import {
+  ArticleHistoricalMdxRestoreBlocked,
+  type ArticleService,
+} from "../src/services/articles.js";
 
 interface EditorPayload {
   article: {
@@ -436,6 +439,24 @@ describe("admin writing API", () => {
       "admin-draft",
       current.revisionNumber,
     );
+    await app.close();
+  });
+
+  it("returns a clear conflict for historical MDX restore", async () => {
+    const restoreRevision = vi
+      .fn()
+      .mockRejectedValue(new ArticleHistoricalMdxRestoreBlocked());
+    const app = await appWithArticleService({ restoreRevision });
+    const response = await app.inject({
+      method: "POST",
+      url: "/admin/articles/admin-draft/revisions/1/restore",
+      headers: { authorization: "Bearer test-admin-token" },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      error:
+        "Historical MDX revisions are read-only and cannot be restored after retirement.",
+    });
     await app.close();
   });
 
