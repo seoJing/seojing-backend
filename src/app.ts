@@ -9,7 +9,6 @@ import { ArticleRepository } from "./repositories/articles.js";
 import { registerAdminWritingRoutes } from "./routes/admin-writing.js";
 import { registerArticleRoutes } from "./routes/articles.js";
 import { registerHealthRoutes } from "./routes/health.js";
-import { registerReadmeRoutes } from "./routes/readme.js";
 import { ArticleService } from "./services/articles.js";
 import { type PythonWorkerClient } from "./services/python-worker.js";
 import { registerPublicRateLimit } from "./services/public-rate-limit.js";
@@ -65,10 +64,6 @@ export async function buildApp(
           description:
             "Admin-only article draft, revision, block editor, and publish workflow",
         },
-        {
-          name: "readme",
-          description: "Synthetic README reading preview",
-        },
       ],
       components: {
         securitySchemes: {
@@ -86,7 +81,6 @@ export async function buildApp(
   });
 
   registerHealthRoutes(app, { pythonWorkerClient: options.pythonWorkerClient });
-  registerReadmeRoutes(app);
   const needsPrisma = !options.articleService;
   const ownsPrisma = needsPrisma && !options.prisma;
   const prisma = needsPrisma
